@@ -1,73 +1,74 @@
-.auth-body {
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 32px 20px;
-  background:
-    radial-gradient(120% 80% at 50% -10%, #EAEFFF 0%, transparent 60%),
-    var(--bg);
+/* Auth Layout Container */
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 20px;
 }
 
+/* Modern Dark Flat Auth Card */
 .auth-card {
   width: 100%;
-  max-width: 400px;
-  padding: 40px 32px 36px;
-  border-radius: 28px;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
-.auth-brand {
+.auth-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
-.brand-mark {
-  width: 64px;
-  height: 64px;
+.auth-logo {
+  width: 44px;
+  height: 44px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid rgba(59, 102, 245, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.2rem;
   margin: 0 auto 16px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 1.6rem;
-  color: var(--primary);
-  background: var(--bg);
-  box-shadow:
-    8px 8px 16px var(--shadow-dark),
-    -8px -8px 16px var(--shadow-light),
-    inset 1px 1px 0 rgba(255,255,255,.6);
 }
 
-.auth-brand h1 {
-  font-size: 1.75rem;
-  letter-spacing: .22em;
-  color: var(--primary);
-  font-weight: 800;
+.auth-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  margin-bottom: 4px;
 }
 
-.auth-sub {
-  font-size: .82rem;
+.auth-subtitle {
+  font-size: 0.82rem;
   color: var(--text-muted);
-  margin-top: 6px;
-  letter-spacing: .04em;
 }
 
-.auth-form { margin-top: 8px; }
+/* Form Overrides */
+.auth-form .field {
+  margin-bottom: 18px;
+}
 
-.auth-form .field { margin-bottom: 18px; }
-
-.auth-form .btn-primary {
+.auth-btn {
   width: 100%;
-  padding: 15px 20px;
+  padding: 12px;
+  font-size: 0.95rem;
   margin-top: 8px;
-  font-size: .95rem;
-  letter-spacing: .04em;
 }
 
 .auth-msg {
-  margin-top: 16px;
-  font-size: .85rem;
+  margin-top: 14px;
+  font-size: 0.82rem;
   text-align: center;
-  min-height: 1.2em;
+  min-height: 20px;
 }
 .auth-msg.error { color: var(--danger); }
-.auth-msg.ok { color: var(--success); }
+.auth-msg.success { color: var(--success); }

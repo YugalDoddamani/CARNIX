@@ -122,3 +122,12 @@ a { color: var(--primary); text-decoration: none; }
     var(--shadow-inset),
     0 0 0 2px var(--primary-soft);
 }
+
+
+/* Layout additions */
+[hidden] { display: none !important; }
+
+body.app-body {
+  background: var(--bg);
+  color: var(--text);
+}

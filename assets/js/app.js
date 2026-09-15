@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js';
+import { renderPriceList, wirePriceList } from './pages/price-list.js';
 
 // ---------- Auth guard ----------
 const { data: { session } } = await supabase.auth.getSession();
@@ -56,13 +56,15 @@ async function navigate() {
   // Render
   const main = document.getElementById('page');
   main.innerHTML = '<p style="color:var(--text-muted)">Loading…</p>';
-  try {
-    const html = await route.render();
-    main.innerHTML = html;
-  } catch (err) {
-    console.error(err);
-    main.innerHTML = `<p style="color:var(--danger)">Error: ${err.message}</p>`;
-  }
+ try {
+  const html = await route.render();
+  main.innerHTML = html;
+  // Run any page-specific wiring after DOM is in place
+  if (key === 'price-list') wirePriceList();
+} catch (err) {
+  console.error(err);
+  main.innerHTML = `<p style="color:var(--danger)">Error: ${err.message}</p>`;
+}
 }
 
 window.addEventListener('hashchange', navigate);
@@ -98,9 +100,7 @@ async function renderExpenses() {
 async function renderPL() {
   return `<div class="neu-card"><h3>P&amp;L</h3><p style="color:var(--text-muted)">Coming soon.</p></div>`;
 }
-async function renderPriceList() {
-  return `<div class="neu-card"><h3>Price List</h3><p style="color:var(--text-muted)">Coming soon.</p></div>`;
-}
+
 
 // ---------- Logout ----------
 document.getElementById('logout-btn')?.addEventListener('click', async () => {

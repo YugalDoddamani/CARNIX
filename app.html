@@ -2,21 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CARNIX — Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>CARNIX</title>
   <link rel="stylesheet" href="/assets/css/variables.css" />
+  <link rel="stylesheet" href="/assets/css/app.css" />
 </head>
-<body style="padding: 40px; font-family: system-ui;">
-  <h1>Dashboard placeholder</h1>
-  <p>Login worked. Shell coming next.</p>
-  <button id="logout">Log out</button>
+<body class="app-body">
 
-  <script type="module">
-    import { supabase } from '/assets/js/supabase.js';
-    document.getElementById('logout').onclick = async () => {
-      await supabase.auth.signOut();
-      window.location.replace('/');
-    };
-  </script>
+  <!-- Sidebar (desktop) -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">C</div>
+      <span>CARNIX</span>
+    </div>
+
+    <a class="nav-item" data-route=""           href="#/">          <span class="icon">▦</span> Dashboard</a>
+    <a class="nav-item" data-route="cases"      href="#/cases">     <span class="icon">☰</span> Cases</a>
+    <a class="nav-item admin-only" data-route="billing"    href="#/billing">    <span class="icon">₹</span> Billing</a>
+    <a class="nav-item admin-only" data-route="expenses"   href="#/expenses">   <span class="icon">↓</span> Expenses</a>
+    <a class="nav-item admin-only" data-route="pl"         href="#/pl">         <span class="icon">◔</span> P&amp;L</a>
+    <a class="nav-item admin-only" data-route="price-list" href="#/price-list"> <span class="icon">◈</span> Price List</a>
+
+    <div class="sidebar-footer">
+      Signed in as <b data-user-name>…</b><br>
+      Role: <span data-user-role>…</span>
+    </div>
+  </aside>
+
+  <!-- Main column -->
+  <div class="main-col">
+    <header class="topbar">
+      <h2 data-page-title>Dashboard</h2>
+      <button class="user-chip" id="logout-btn" title="Log out">
+        <span data-user-name>…</span>
+        <span style="opacity:.5">⎋</span>
+      </button>
+    </header>
+
+    <main class="content" id="page">
+      <p style="color:var(--text-muted)">Loading…</p>
+    </main>
+  </div>
+
+  <!-- Bottom nav (mobile) -->
+  <nav class="bottom-nav">
+    <a class="nav-item" data-route=""      href="#/">        <span class="icon">▦</span> Home</a>
+    <a class="nav-item" data-route="cases" href="#/cases">   <span class="icon">☰</span> Cases</a>
+    <a class="nav-item admin-only" data-route="billing" href="#/billing"> <span class="icon">₹</span> Billing</a>
+    <a class="nav-item admin-only" data-route="pl"      href="#/pl">      <span class="icon">◔</span> P&amp;L</a>
+  </nav>
+
+  <script type="module" src="/assets/js/app.js"></script>
 </body>
 </html>

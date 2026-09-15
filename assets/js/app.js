@@ -1,3 +1,4 @@
+import { supabase } from './supabase.js';
 import { renderPriceList, wirePriceList } from './pages/price-list.js';
 
 // ---------- Auth guard ----------

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CARNIX — Login</title>
+  <link rel="stylesheet" href="/assets/css/variables.css" />
+  <link rel="stylesheet" href="/assets/css/auth.css" />
+</head>
+<body class="auth-body">
+  <main class="auth-card neu-card">
+    <div class="auth-brand">
+      <div class="brand-mark">C</div>
+      <h1>CARNIX</h1>
+      <p class="auth-sub">Creation Lab Dashboard</p>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <label class="field">
+        <span>Email</span>
+        <input type="email" id="email" autocomplete="email" required />
+      </label>
+
+      <label class="field">
+        <span>Password</span>
+        <input type="password" id="password" autocomplete="current-password" required />
+      </label>
+
+      <button type="submit" class="btn-primary" id="login-btn">Sign in</button>
+      <p id="login-msg" class="auth-msg" role="status"></p>
+    </form>
+  </main>
+
+  <script type="module" src="/assets/js/auth.js"></script>
+</body>
+</html>

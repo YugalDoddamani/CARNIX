@@ -2,52 +2,69 @@
   min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 24px;
-  background: var(--bg);
+  padding: 32px 20px;
+  background:
+    radial-gradient(120% 80% at 50% -10%, #EAEFFF 0%, transparent 60%),
+    var(--bg);
 }
 
 .auth-card {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
+  padding: 40px 32px 36px;
+  border-radius: 28px;
 }
 
 .auth-brand {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .brand-mark {
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 12px;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   color: var(--primary);
   background: var(--bg);
   box-shadow:
-    6px 6px 12px var(--shadow-dark),
-    -6px -6px 12px var(--shadow-light);
+    8px 8px 16px var(--shadow-dark),
+    -8px -8px 16px var(--shadow-light),
+    inset 1px 1px 0 rgba(255,255,255,.6);
 }
 
 .auth-brand h1 {
   font-size: 1.75rem;
-  letter-spacing: .18em;
+  letter-spacing: .22em;
   color: var(--primary);
+  font-weight: 800;
 }
 
 .auth-sub {
-  font-size: .85rem;
+  font-size: .82rem;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: 6px;
+  letter-spacing: .04em;
 }
 
 .auth-form { margin-top: 8px; }
 
+.auth-form .field { margin-bottom: 18px; }
+
+.auth-form .btn-primary {
+  width: 100%;
+  padding: 15px 20px;
+  margin-top: 8px;
+  font-size: .95rem;
+  letter-spacing: .04em;
+}
+
 .auth-msg {
-  margin-top: 12px;
+  margin-top: 16px;
   font-size: .85rem;
   text-align: center;
   min-height: 1.2em;

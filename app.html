@@ -2,56 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CARNIX</title>
-  <link rel="stylesheet" href="/assets/css/variables.css" />
-  <link rel="stylesheet" href="/assets/css/app.css" />
+  <link rel="stylesheet" href="assets/css/variables.css" />
+  <link rel="stylesheet" href="assets/css/app.css" />
 </head>
-<body class="app-body">
+<body>
+  <div class="app-shell">
+    <!-- Desktop Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span>CARNIX</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#/" class="nav-item">Dashboard</a>
+        <a href="#/cases" class="nav-item">Cases</a>
+        <a href="#/billing" class="nav-item admin-only">Billing</a>
+        <a href="#/expenses" class="nav-item admin-only">Expenses</a>
+        <a href="#/pl" class="nav-item admin-only">P&L</a>
+        <a href="#/price-list" class="nav-item admin-only">Price List</a>
+      </nav>
+      <div class="sidebar-user" id="user-info"></div>
+    </aside>
 
-  <!-- Sidebar (desktop) -->
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <div class="brand-mark">C</div>
-      <span>CARNIX</span>
+    <!-- Main Content Canvas -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div id="page-title" style="font-weight: 600;">Dashboard</div>
+        <button id="logout-btn" class="btn-ghost">Logout</button>
+      </header>
+
+      <main id="app" class="content-area"></main>
     </div>
 
-    <a class="nav-item" data-route=""           href="#/">          <span class="icon">▦</span> Dashboard</a>
-    <a class="nav-item" data-route="cases"      href="#/cases">     <span class="icon">☰</span> Cases</a>
-    <a class="nav-item admin-only" data-route="billing"    href="#/billing">    <span class="icon">₹</span> Billing</a>
-    <a class="nav-item admin-only" data-route="expenses"   href="#/expenses">   <span class="icon">↓</span> Expenses</a>
-    <a class="nav-item admin-only" data-route="pl"         href="#/pl">         <span class="icon">◔</span> P&amp;L</a>
-    <a class="nav-item admin-only" data-route="price-list" href="#/price-list"> <span class="icon">◈</span> Price List</a>
-
-    <div class="sidebar-footer">
-      Signed in as <b data-user-name>…</b><br>
-      Role: <span data-user-role>…</span>
-    </div>
-  </aside>
-
-  <!-- Main column -->
-  <div class="main-col">
-    <header class="topbar">
-      <h2 data-page-title>Dashboard</h2>
-      <button class="user-chip" id="logout-btn" title="Log out">
-        <span data-user-name>…</span>
-        <span style="opacity:.5">⎋</span>
-      </button>
-    </header>
-
-    <main class="content" id="page">
-      <p style="color:var(--text-muted)">Loading…</p>
-    </main>
+    <!-- Mobile Bottom Nav -->
+    <nav class="bottom-nav">
+      <a href="#/" class="bottom-nav-item">Dashboard</a>
+      <a href="#/cases" class="bottom-nav-item">Cases</a>
+      <a href="#/billing" class="bottom-nav-item admin-only">Billing</a>
+      <a href="#/pl" class="bottom-nav-item admin-only">P&L</a>
+    </nav>
   </div>
 
-  <!-- Bottom nav (mobile) -->
-  <nav class="bottom-nav">
-    <a class="nav-item" data-route=""      href="#/">        <span class="icon">▦</span> Home</a>
-    <a class="nav-item" data-route="cases" href="#/cases">   <span class="icon">☰</span> Cases</a>
-    <a class="nav-item admin-only" data-route="billing" href="#/billing"> <span class="icon">₹</span> Billing</a>
-    <a class="nav-item admin-only" data-route="pl"      href="#/pl">      <span class="icon">◔</span> P&amp;L</a>
-  </nav>
-
-  <script type="module" src="/assets/js/app.js"></script>
+  <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>

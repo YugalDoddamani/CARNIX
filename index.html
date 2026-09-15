@@ -3,34 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CARNIX — Login</title>
-  <link rel="stylesheet" href="/assets/css/variables.css" />
-  <link rel="stylesheet" href="/assets/css/auth.css" />
+  <title>Login — CARNIX</title>
+  <link rel="stylesheet" href="assets/css/variables.css" />
+  <link rel="stylesheet" href="assets/css/auth.css" />
 </head>
-<body class="auth-body">
-  <main class="auth-card neu-card">
-    <div class="auth-brand">
-      <div class="brand-mark">C</div>
-      <h1>CARNIX</h1>
-      <p class="auth-sub">Creation Lab Dashboard</p>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">C</div>
+        <h1 class="auth-title">CARNIX</h1>
+        <p class="auth-subtitle">Creation Lab Management</p>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <label class="field">
+          <span>Email</span>
+          <input type="email" id="email" required placeholder="name@domain.com" autocomplete="email" />
+        </label>
+
+        <label class="field">
+          <span>Password</span>
+          <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password" />
+        </label>
+
+        <button type="submit" class="btn-primary auth-btn" id="login-btn">Sign in</button>
+        <p id="auth-msg" class="auth-msg"></p>
+      </form>
     </div>
+  </div>
 
-    <form id="login-form" class="auth-form">
-      <label class="field">
-        <span>Email</span>
-        <input type="email" id="email" autocomplete="email" required />
-      </label>
-
-      <label class="field">
-        <span>Password</span>
-        <input type="password" id="password" autocomplete="current-password" required />
-      </label>
-
-      <button type="submit" class="btn-primary" id="login-btn">Sign in</button>
-      <p id="login-msg" class="auth-msg" role="status"></p>
-    </form>
-  </main>
-
-  <script type="module" src="/assets/js/auth.js"></script>
+  <script type="module" src="assets/js/auth.js"></script>
 </body>
 </html>

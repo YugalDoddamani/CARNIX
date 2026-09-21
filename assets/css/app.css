@@ -922,3 +922,263 @@ a.btn-ghost {
      filter: brightness(0) saturate(100%) invert(17%) sepia(52%) saturate(2295%)
              hue-rotate(220deg) brightness(92%) contrast(95%); */
 }
+
+
+
+/* ============================================================
+   DASHBOARD — full rework
+   ============================================================ */
+
+/* Header */
+.dash-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.dash-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.dash-header p {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ============ KPI cards ============ */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.kpi {
+  padding: 20px 22px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.04),
+    0 8px 24px rgba(15,20,40,.04);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.kpi:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.05),
+    0 12px 32px rgba(15,20,40,.08);
+}
+
+.kpi-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.kpi-label {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.kpi-icon {
+  font-size: 1rem;
+  opacity: .5;
+}
+.kpi-value {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.1;
+}
+.kpi-sub {
+  margin-top: 6px;
+  font-size: .76rem;
+  color: var(--text-muted);
+}
+
+.kpi-danger  .kpi-value { color: var(--danger); }
+.kpi-warning .kpi-value { color: var(--warning); }
+.kpi-success .kpi-value { color: var(--success); }
+.kpi-primary .kpi-value { color: var(--primary); }
+
+/* ============ Main chart + snapshot row ============ */
+.dash-main {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) {
+  .dash-main { grid-template-columns: 1fr; }
+}
+
+.dash-chart-card {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.04),
+    0 8px 24px rgba(15,20,40,.04);
+}
+.chart-wrap {
+  position: relative;
+  height: 220px;
+  margin-top: 8px;
+}
+
+.dash-snapshot {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.dash-snapshot-item {
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.dash-snap-label {
+  font-size: .74rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.dash-snapshot-item b {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ============ Section cards ============ */
+.dash-section {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.04),
+    0 8px 24px rgba(15,20,40,.04);
+  margin-bottom: 20px;
+}
+
+.dash-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.dash-card-head h4 {
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.dash-card-sub {
+  display: block;
+  font-size: .74rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.dash-link {
+  font-size: .8rem;
+  color: var(--primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dash-link.danger { color: var(--danger); }
+
+/* Two-column bottom */
+.dash-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .dash-two-col { grid-template-columns: 1fr; }
+}
+
+/* Dashboard table tweaks */
+.dash-table th {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: .7rem;
+  letter-spacing: .1em;
+}
+.dash-table tbody tr { cursor: default; }
+
+/* Lists inside cards */
+.dash-list { display: flex; flex-direction: column; }
+.dash-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid rgba(0,0,0,.05);
+  gap: 12px;
+}
+.dash-row:first-child { border-top: none; padding-top: 4px; }
+.dash-row-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.dash-row-left b {
+  font-size: .88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-row-left span {
+  font-size: .74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-row-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.dash-date { font-size: .76rem; color: var(--text-muted); }
+.dash-date.overdue { color: var(--danger); font-weight: 600; }
+.dash-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dash-pill.primary { background: var(--primary-soft); color: var(--primary); }
+.dash-pill.danger  { background: var(--danger-soft);  color: var(--danger); }
+
+.dash-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: .88rem;
+}
+
+/* Remove the OLD dashboard CSS to avoid conflicts */
+.dash-welcome, .dash-grid, .dash-card { /* legacy — no-op */ }

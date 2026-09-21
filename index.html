@@ -71,13 +71,13 @@
     for (let i = 0; i < 6; i++) {
       const el = document.createElement('div');
       el.className = 'blob';
-      const size = Math.random() * 200 + 150;
-      el.style.width  = size + 'px';
-      el.style.height = size + 'px';
-      el.style.left   = (Math.random() * 80 + 10) + '%';
-      el.style.top    = (Math.random() * 80 + 10) + '%';
-      el.style.animationDelay    = (Math.random() * -20) + 's';
-      el.style.animationDuration = (Math.random() * 15 + 15) + 's';
+     const size = Math.random() * 120 + 90;       // smaller: 90–210px
+el.style.width  = size + 'px';
+el.style.height = size + 'px';
+el.style.left   = (Math.random() * 80 + 10) + '%';
+el.style.top    = (Math.random() * 80 + 10) + '%';
+el.style.animationDelay    = (Math.random() * -12) + 's';
+el.style.animationDuration = (Math.random() * 6 + 8) + 's';   // 8–14s, snappier
       stage.appendChild(el);
       blobs.push(el);
     }

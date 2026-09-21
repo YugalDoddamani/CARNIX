@@ -35,7 +35,7 @@ html, body.mercury-body {
   inset: 0;
   z-index: 0;
   filter: var(--filter-goo);
-  opacity: 0.6;
+  opacity: 0.35;
   pointer-events: none;
 }
 
@@ -43,7 +43,7 @@ html, body.mercury-body {
   position: absolute;
   background: linear-gradient(135deg, var(--mercury), #888);
   border-radius: 50%;
-  filter: blur(20px);
+  filter: blur(30px);
   animation: float 20s infinite alternate ease-in-out;
   box-shadow:
     inset -10px -10px 20px rgba(0,0,0,0.5),
@@ -221,4 +221,17 @@ html, body.mercury-body {
   .auth-container { padding: 28px 24px; }
   .auth-header { margin-bottom: 40px; }
   .brand-logo img { width: 140px; }
+}
+
+
+/* Kill Chrome autofill's white/blue background */
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus,
+.form-group input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--accent) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--mercury-bg) inset !important;
+  box-shadow: 0 0 0 1000px var(--mercury-bg) inset !important;
+  caret-color: var(--accent);
+  transition: background-color 5000s ease-in-out 0s;
 }

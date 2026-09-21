@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import { renderPriceList, wirePriceList } from './pages/price-list.js';
+import { renderCases, wireCases } from './pages/cases.js';
 
 // ---------- Auth guard ----------
 const { data: { session } } = await supabase.auth.getSession();
@@ -81,8 +82,8 @@ async function navigate() {
     main.innerHTML = html;
 
     // Run page wiring if available
-    if (key === 'price-list' && typeof wirePriceList === 'function') {
-      wirePriceList();
+   if (key === 'price-list') wirePriceList();
+if (key === 'cases')       wireCases();
     }
   } catch (err) {
     console.error('Page render error:', err);
@@ -105,14 +106,7 @@ async function renderDashboard() {
   `;
 }
 
-async function renderCases() {
-  return `
-    <div class="card">
-      <h3 style="margin-bottom:8px;">Work Queue</h3>
-      <p style="color:var(--text-muted)">Case list coming next.</p>
-    </div>
-  `;
-}
+
 
 async function renderBilling() {
   return `<div class="card"><h3>Billing</h3><p style="color:var(--text-muted);margin-top:8px;">Coming soon.</p></div>`;

@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { renderPriceList, wirePriceList } from './pages/price-list.js';
 import { renderCases, wireCases, renderNewCase, wireNewCase } from './pages/cases.js';
+import { renderDashboard, wireDashboard } from './pages/dashboard.js';
 
 // ---------- Auth guard ----------
 const { data: { session } } = await supabase.auth.getSession();
@@ -8,7 +9,7 @@ if (!session) {
   window.location.replace('/');
 }
 
-// ---------- Load user profile ----------
+// ---------- Profile ----------
 const { data: profile } = await supabase
   .from('users')
   .select('name, role, email')
@@ -23,7 +24,6 @@ const user = profile ?? {
 
 document.body.classList.toggle('is-admin', user.role === 'admin');
 
-// ---------- Sidebar user info ----------
 const userInfoEl = document.getElementById('user-info');
 if (userInfoEl) {
   userInfoEl.innerHTML = `
@@ -48,6 +48,23 @@ function currentRoute() {
   return window.location.hash.replace(/^#\/?/, '').split('?')[0];
 }
 
+// ---------- Progress bar helpers ----------
+function progressStart() {
+  const bar = document.getElementById('route-progress');
+  if (!bar) return;
+  bar.classList.remove('done');
+  bar.classList.remove('active');
+  void bar.offsetWidth; // force reflow so transition restarts
+  bar.classList.add('active');
+}
+function progressDone() {
+  const bar = document.getElementById('route-progress');
+  if (!bar) return;
+  bar.classList.remove('active');
+  bar.classList.add('done');
+}
+
+// ---------- Navigate ----------
 async function navigate() {
   const key = currentRoute();
   const route = routes[key] ?? routes[''];
@@ -61,45 +78,36 @@ async function navigate() {
   if (titleEl) titleEl.textContent = route.title;
 
   const main = document.getElementById('app');
-  if (!main) {
-    console.error('Routing failed: #app not found.');
-    return;
-  }
+  if (!main) { console.error('Routing failed: #app not found.'); return; }
 
   document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
     const routeAttr = el.getAttribute('href')?.replace(/^#\/?/, '');
     el.classList.toggle('active', routeAttr === key);
   });
 
-  main.innerHTML = '<p style="color:var(--text-muted)">Loading…</p>';
+  progressStart();
+  main.innerHTML = '<div class="page-loading"><span class="loader"></span></div>';
 
   try {
-    const html = await route.render();
+    const html = await route.render(user);
     main.innerHTML = html;
 
     if (key === 'price-list') wirePriceList();
     if (key === 'cases')      wireCases();
     if (key === 'cases/new')  wireNewCase();
+    if (key === '')           wireDashboard();
   } catch (err) {
     console.error('Page render error:', err);
     main.innerHTML = `<p style="color:var(--danger)">Error loading page: ${escapeHtml(err.message)}</p>`;
+  } finally {
+    progressDone();
   }
 }
 
 window.addEventListener('hashchange', navigate);
 navigate();
 
-// ---------- Placeholder renderers (still to be built) ----------
-async function renderDashboard() {
-  return `
-    <div class="neu-card">
-      <h3 style="margin-bottom:8px;">Welcome, ${escapeHtml(user.name)}</h3>
-      <p style="color:var(--text-muted)">
-        Case counts, upcoming deadlines, and unpaid balances will appear here.
-      </p>
-    </div>
-  `;
-}
+// ---------- Placeholders ----------
 async function renderBilling() {
   return `<div class="neu-card"><h3>Billing</h3><p style="color:var(--text-muted);margin-top:8px;">Coming soon.</p></div>`;
 }

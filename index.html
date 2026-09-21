@@ -2,37 +2,128 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login — CARNIX</title>
-  <link rel="stylesheet" href="assets/css/variables.css" />
-  <link rel="stylesheet" href="assets/css/auth.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>CARNIX — Access</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;800&family=Space+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/auth.css" />
 </head>
-<body>
-  <div class="auth-wrapper">
-    <div class="auth-card">
-      <div class="auth-header">
-        <div class="auth-logo">C</div>
-        <h1 class="auth-title">CARNIX</h1>
-        <p class="auth-subtitle">Creation Lab Management</p>
+<body class="mercury-body">
+
+  <!-- Gooey SVG filter (needed for the mercury button effect) -->
+  <svg class="svg-filter-hidden" aria-hidden="true">
+    <defs>
+      <filter id="gooey">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
+        <feColorMatrix in="blur" mode="matrix"
+          values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+        <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Floating mercury blobs -->
+  <div class="stage" id="stage" aria-hidden="true"></div>
+
+  <!-- Auth card -->
+  <main class="auth-container">
+    <header class="auth-header">
+      <span class="brand-id">System Node: 0x992</span>
+      <div class="brand-logo">
+        <img src="/assets/logo.png" alt="Creation Lab" />
+      </div>
+    </header>
+
+    <form id="login-form" autocomplete="off">
+      <div class="form-group">
+        <label for="email">User Identity</label>
+        <input type="email" id="email" placeholder="you@example.com" required />
+        <div class="input-glow"></div>
       </div>
 
-      <form id="login-form" class="auth-form">
-        <label class="field">
-          <span>Email</span>
-          <input type="email" id="email" required placeholder="name@domain.com" autocomplete="email" />
-        </label>
+      <div class="form-group">
+        <label for="password">Sequence Key</label>
+        <input type="password" id="password" placeholder="••••••••" required />
+        <div class="input-glow"></div>
+      </div>
 
-        <label class="field">
-          <span>Password</span>
-          <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password" />
-        </label>
+      <div class="submit-wrap">
+        <div class="mercury-drop"></div>
+        <button type="submit" class="btn-base" id="login-btn">Initialize Stream</button>
+      </div>
 
-        <button type="submit" class="btn-primary auth-btn" id="login-btn">Sign in</button>
-        <p id="auth-msg" class="auth-msg"></p>
-      </form>
-    </div>
-  </div>
+      <p id="login-msg" class="auth-msg" role="status"></p>
+    </form>
 
-  <script type="module" src="assets/js/auth.js"></script>
+    <footer class="footer-nav">
+      <a href="#recovery">ENCRYPTED RECOVERY</a>
+      <a href="#archive">NEW ARCHIVE</a>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { supabase } from '/assets/js/supabase.js';
+
+    // ---------- Blob generation ----------
+    const stage = document.getElementById('stage');
+    const blobs = [];
+    for (let i = 0; i < 6; i++) {
+      const el = document.createElement('div');
+      el.className = 'blob';
+      const size = Math.random() * 200 + 150;
+      el.style.width  = size + 'px';
+      el.style.height = size + 'px';
+      el.style.left   = (Math.random() * 80 + 10) + '%';
+      el.style.top    = (Math.random() * 80 + 10) + '%';
+      el.style.animationDelay    = (Math.random() * -20) + 's';
+      el.style.animationDuration = (Math.random() * 15 + 15) + 's';
+      stage.appendChild(el);
+      blobs.push(el);
+    }
+
+    // ---------- Parallax on mouse ----------
+    document.addEventListener('mousemove', (e) => {
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+      blobs.forEach((b, i) => {
+        const speed = (i + 1) * 20;
+        b.style.marginLeft = (x * speed) + 'px';
+        b.style.marginTop  = (y * speed) + 'px';
+      });
+    });
+
+    // ---------- Already signed in? ----------
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) window.location.replace('/app.html');
+
+    // ---------- Login ----------
+    const form = document.getElementById('login-form');
+    const btn  = document.getElementById('login-btn');
+    const msg  = document.getElementById('login-msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = '';
+      msg.className = 'auth-msg';
+      btn.disabled = true;
+      btn.textContent = 'Initializing…';
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        msg.textContent = error.message;
+        msg.className = 'auth-msg error';
+        btn.disabled = false;
+        btn.textContent = 'Initialize Stream';
+        return;
+      }
+
+      window.location.replace('/app.html');
+    });
+  </script>
 </body>
 </html>

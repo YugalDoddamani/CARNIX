@@ -700,3 +700,17 @@ a.btn-ghost {
   box-shadow: none !important;
   border: 1px solid rgba(0, 0, 0, .1) !important;
 }
+
+
+.case-total-row {
+  background: var(--surface-soft) !important;
+  color: var(--text) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 500 !important;
+  border: 1px solid rgba(0, 0, 0, .08) !important;
+}
+.case-total-row b {
+  color: var(--text) !important;
+  font-weight: 700 !important;
+}

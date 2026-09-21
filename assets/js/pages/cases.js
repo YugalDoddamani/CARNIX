@@ -352,6 +352,17 @@ export function wireNewCase() {
     row.querySelector('.stage-type').focus();
   }
 
+  // Date inputs: click anywhere opens the native picker
+function openDatePicker(input) {
+  if (typeof input.showPicker === 'function') {
+    try { input.showPicker(); } catch (e) {}
+  }
+}
+document.addEventListener('click', (e) => {
+  const el = e.target;
+  if (el.matches('input[type="date"]')) openDatePicker(el);
+});
+
   stagesList.addEventListener('change', recalcTotals);
   stagesList.addEventListener('input',  recalcTotals);
   stagesList.addEventListener('click', (e) => {

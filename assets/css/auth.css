@@ -92,10 +92,10 @@ html, body.mercury-body {
   max-width: 70%;
   height: auto;
   display: block;
-  /* If your logo is already light/colored, DELETE the next line */
-  filter: invert(1) brightness(1.4) contrast(0.9);
+  /* If your logo already renders white, do nothing.
+     If it renders black, add the line below: */
+  /* filter: invert(1); */
 }
-
 /* ---------- Form fields ---------- */
 .form-group {
   position: relative;

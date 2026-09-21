@@ -35,12 +35,12 @@ if (userInfoEl) {
 
 // ---------- Hash router ----------
 const routes = {
-  '':          { title: 'Dashboard', render: renderDashboard },
-  'cases':     { title: 'Cases',      render: renderCases },
-  'billing':   { title: 'Billing',    render: renderBilling, adminOnly: true },
-  'expenses':  { title: 'Expenses',   render: renderExpenses, adminOnly: true },
-  'pl':        { title: 'P&L',        render: renderPL, adminOnly: true },
-  'price-list':{ title: 'Price List', render: renderPriceList, adminOnly: true },
+  '':           { title: 'Dashboard',  render: renderDashboard },
+  'cases':      { title: 'Cases',      render: renderCases },
+  'billing':    { title: 'Billing',    render: renderBilling,    adminOnly: true },
+  'expenses':   { title: 'Expenses',   render: renderExpenses,   adminOnly: true },
+  'pl':         { title: 'P&L',        render: renderPL,         adminOnly: true },
+  'price-list': { title: 'Price List', render: renderPriceList,  adminOnly: true },
 };
 
 function currentRoute() {
@@ -56,13 +56,9 @@ async function navigate() {
     return;
   }
 
-  // Update topbar title
   const titleEl = document.getElementById('page-title');
-  if (titleEl) {
-    titleEl.textContent = route.title;
-  }
+  if (titleEl) titleEl.textContent = route.title;
 
-  // Target the container matching app.html (#app)
   const main = document.getElementById('app');
   if (!main) {
     console.error('Routing failed: Target container #app not found in DOM.');
@@ -81,10 +77,8 @@ async function navigate() {
     const html = await route.render();
     main.innerHTML = html;
 
-    // Run page wiring if available
-   if (key === 'price-list') wirePriceList();
-if (key === 'cases')       wireCases();
-    }
+    if (key === 'price-list') wirePriceList();
+    if (key === 'cases')      wireCases();
   } catch (err) {
     console.error('Page render error:', err);
     main.innerHTML = `<p style="color:var(--danger)">Error loading page: ${escapeHtml(err.message)}</p>`;
@@ -106,8 +100,6 @@ async function renderDashboard() {
   `;
 }
 
-
-
 async function renderBilling() {
   return `<div class="card"><h3>Billing</h3><p style="color:var(--text-muted);margin-top:8px;">Coming soon.</p></div>`;
 }
@@ -124,6 +116,7 @@ document.getElementById('logout-btn')?.addEventListener('click', async () => {
   window.location.replace('/');
 });
 
+// ---------- Utilities ----------
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'

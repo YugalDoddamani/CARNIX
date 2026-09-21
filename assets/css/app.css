@@ -1793,3 +1793,145 @@ a.btn-ghost {
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
+
+
+/* ============================================================
+   WIDTH CONTAINMENT — fixes desktop overflow
+   ============================================================ */
+
+/* Change 1fr → minmax(0, 1fr) so the main column can shrink */
+.app-body {
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) !important;
+  overflow-x: hidden;
+}
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Prevent any grid child from forcing its parent wider */
+.main-col,
+.content,
+.dash-main > *,
+.dash-two-col > *,
+.kpi-row > *,
+.stats-row > *,
+.form-grid > *,
+.dash-chart-card,
+.dash-section { min-width: 0; }
+
+/* Wide things get their own scroll, not the page's */
+.table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.chart-wrap canvas {
+  max-width: 100% !important;
+}
+
+
+/* ============================================================
+   MOBILE CASE ROWS — intentional layout
+   ============================================================ */
+@media (max-width: 860px) {
+
+  .mobile-cases {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0;
+  }
+
+  .mcase-row {
+    display: block;
+    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid rgba(0, 0, 0, .06);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform .12s ease;
+  }
+  .mcase-row:active {
+    transform: scale(.99);
+    background: var(--surface-soft);
+  }
+
+  /* Line 1: doctor name + kebab on the same line */
+  .mcase-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .mcase-doctor {
+    font-size: .98rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .mcase-row .kebab-btn {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
+  }
+
+  /* Line 2: case type */
+  .mcase-type {
+    font-size: .82rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 6px;
+  }
+
+  /* Line 3: dates */
+  .mcase-dates {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .74rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 10px;
+  }
+  .mcase-arrow { opacity: .45; }
+
+  /* Line 4: badges */
+  .mcase-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Kill the old zigzag CSS if it's still present */
+  .mcase-main,
+  .mcase-line-1,
+  .mcase-line-2,
+  .mcase-line-3 { all: unset; display: block; }
+
+  /* Page action button full width on mobile */
+  .page-header-actions {
+    display: block;
+    margin-bottom: 16px;
+  }
+  .page-header-actions .btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 18px;
+  }
+
+  /* Hide the redundant page-level h3 on mobile — topbar already shows it */
+  .content h3:first-child { display: none; }
+}

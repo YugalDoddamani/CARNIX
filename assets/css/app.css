@@ -194,3 +194,120 @@ body:not(.is-admin) .admin-only {
     text-decoration: none;
   }
 }
+
+
+/* ============ Stats ============ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow:
+    4px 4px 10px var(--shadow-dark),
+    -4px -4px 10px var(--shadow-light);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-label {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.stat-card.tone-primary .stat-value { color: var(--primary); }
+.stat-card.tone-danger  .stat-value { color: var(--danger); }
+.stat-card.tone-warning .stat-value { color: var(--warning); }
+
+@media (max-width: 720px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============ Filter row ============ */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: .8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.chip:hover { color: var(--primary); }
+.chip.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow:
+    3px 3px 8px var(--shadow-dark),
+    -3px -3px 8px var(--shadow-light);
+}
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  box-shadow: var(--shadow-inset);
+  outline: none;
+  font-size: .88rem;
+}
+
+/* ============ Badges ============ */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.badge-primary { background: var(--primary-soft); color: var(--primary); }
+.badge-success { background: #E3F5EA; color: var(--success); }
+.badge-danger  { background: var(--danger-soft); color: var(--danger); }
+.badge-warning { background: #FCF1DC; color: var(--warning); }
+
+.cell-overdue { color: var(--danger); font-weight: 600; }
+.row-sub {
+  font-size: .75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ============ Form grid (in modal) ============ */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+.form-grid .field-wide { grid-column: 1 / -1; }
+
+@media (max-width: 560px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* Wide modal for the case form */
+#case-modal .modal { max-width: 560px; }

@@ -911,3 +911,14 @@ a.btn-ghost {
 .case-row { cursor: pointer; }
 .case-row:hover { background: rgba(31, 58, 147, .04); }
 .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+
+/* Sidebar logo */
+.sidebar-brand img {
+  width: 110px;
+  height: auto;
+  display: block;
+  /* If the logo renders black on the light sidebar and you need it dark-blue:
+     filter: brightness(0) saturate(100%) invert(17%) sepia(52%) saturate(2295%)
+             hue-rotate(220deg) brightness(92%) contrast(95%); */
+}

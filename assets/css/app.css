@@ -311,3 +311,143 @@ body:not(.is-admin) .admin-only {
 
 /* Wide modal for the case form */
 #case-modal .modal { max-width: 560px; }
+
+/* ============ Case form (full page) ============ */
+.page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.back-link {
+  color: var(--text-muted);
+  font-size: .88rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  transition: background .15s;
+}
+.back-link:hover {
+  background: var(--surface-soft);
+  color: var(--primary);
+}
+
+.case-form { max-width: 900px; }
+
+.form-card {
+  padding: 32px 36px;
+  border-radius: var(--radius-lg);
+}
+
+.form-section {
+  padding: 24px 0;
+  border-top: 1px solid var(--surface-soft);
+}
+.form-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.form-section:last-of-type { padding-bottom: 0; }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; gap: 14px; }
+  .form-card { padding: 22px 20px; }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid var(--surface-soft);
+  margin-top: 8px;
+}
+
+/* ============ Stage rows ============ */
+.stage-row {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  margin-bottom: 10px;
+}
+.stage-fields {
+  display: grid;
+  grid-template-columns: 1fr 100px 130px 40px;
+  gap: 12px;
+  align-items: end;
+}
+.stage-fields .field { margin: 0; }
+.stage-fields select,
+.stage-fields input {
+  padding: 12px 14px;
+  font-size: .92rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  box-shadow: var(--shadow-inset);
+  outline: none;
+  width: 100%;
+  color: var(--text);
+}
+.stage-price {
+  font-weight: 600;
+  text-align: right;
+}
+.stage-remove {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+  align-self: end;
+}
+.stage-remove:hover { background: var(--danger-soft); color: var(--danger); }
+.stage-label {
+  font-size: .75rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  padding-left: 2px;
+}
+
+.case-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  margin-top: 12px;
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: .9rem;
+  font-weight: 500;
+}
+.case-total-row b { font-size: 1.25rem; }
+
+@media (max-width: 640px) {
+  .stage-fields {
+    grid-template-columns: 1fr 80px 40px;
+    grid-template-areas:
+      "type  type  type"
+      "qty   price remove";
+  }
+  .stage-fields .field:nth-child(1) { grid-area: type; }
+  .stage-fields .field:nth-child(2) { grid-area: qty; }
+  .stage-fields .field:nth-child(3) { grid-area: price; }
+  .stage-remove { grid-area: remove; }
+}
+
+/* ============ Buttons as links ============ */
+a.btn-primary,
+a.btn-ghost {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

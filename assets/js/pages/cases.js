@@ -132,30 +132,30 @@ function renderMobileRows(list) {
     const stages = c.case_stages ?? [];
     const primaryType = stages[0]?.case_type ?? '—';
     const stageNote = stages.length > 1 ? ` <span class="stage-count">+${stages.length - 1}</span>` : '';
+    const received = c.received_date ? fmtShort(c.received_date) : '—';
+    const delivery = c.delivery_date ? fmtShort(c.delivery_date) : '—';
+    const overdue = isOverdue(c);
 
     return `
       <div class="mcase-row" data-id="${c.id}">
-        <div class="mcase-main">
-          <div class="mcase-line-1">
-            <b class="mcase-doctor">${escapeHtml(c.doctor_name)}</b>
-            <span class="badge badge-${st.cls}">${st.label}</span>
-          </div>
-          <div class="mcase-line-2">
-            <span class="mcase-type">${escapeHtml(primaryType)}${stageNote}</span>
-            ${!c.payment_status ? '<span class="badge badge-warning">Unpaid</span>' : ''}
-          </div>
-          <div class="mcase-line-3">
-            <span class="mcase-date">${fmtShort(c.received_date)}</span>
-            <span class="mcase-arrow">→</span>
-            <span class="mcase-date ${isOverdue(c) ? 'cell-overdue' : ''}">${fmtShort(c.delivery_date)}</span>
-          </div>
+        <div class="mcase-head">
+          <b class="mcase-doctor">${escapeHtml(c.doctor_name)}</b>
+          <button class="kebab-btn" data-action="menu" data-id="${c.id}" aria-label="Actions">⋯</button>
         </div>
-        <button class="kebab-btn" data-action="menu" data-id="${c.id}" aria-label="Actions">⋯</button>
+        <div class="mcase-type">${escapeHtml(primaryType)}${stageNote}</div>
+        <div class="mcase-dates">
+          <span>${received}</span>
+          <span class="mcase-arrow">→</span>
+          <span class="${overdue ? 'cell-overdue' : ''}">${delivery}</span>
+        </div>
+        <div class="mcase-badges">
+          <span class="badge badge-${st.cls}">${st.label}</span>
+          ${!c.payment_status ? '<span class="badge badge-warning">Unpaid</span>' : ''}
+        </div>
       </div>
     `;
   }).join('');
 }
-
 // ================= LIST VIEW =================
 export async function renderCases() {
   await loadData();

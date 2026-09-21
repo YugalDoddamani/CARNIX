@@ -25,9 +25,7 @@ async function loadData() {
 
 // ---------- Helpers ----------
 const today = () => new Date().toISOString().slice(0, 10);
-
-const caseTotal = c =>
-  (c.case_stages ?? []).reduce((s, st) => s + Number(st.amount || 0), 0);
+const caseTotal = c => (c.case_stages ?? []).reduce((s, st) => s + Number(st.amount || 0), 0);
 
 function isOverdue(c) {
   if (!c.delivery_date) return false;
@@ -37,11 +35,10 @@ function isOverdue(c) {
 
 function computeStats(list) {
   return {
-    total:     list.length,
-    inQueue:   list.filter(c => c.status === 'in-queue').length,
-    overdue:   list.filter(isOverdue).length,
-    delivered: list.filter(c => c.status === 'delivered').length,
-    unpaid:    list.filter(c => !c.payment_status).reduce((s, c) => s + caseTotal(c), 0),
+    total:   list.length,
+    inQueue: list.filter(c => c.status === 'in-queue').length,
+    overdue: list.filter(isOverdue).length,
+    unpaid:  list.filter(c => !c.payment_status).reduce((s, c) => s + caseTotal(c), 0),
   };
 }
 
@@ -74,6 +71,10 @@ function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+function fmtShort(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+}
 
 function statCard(label, value, tone = '') {
   return `<div class="stat-card ${tone ? 'tone-' + tone : ''}">
@@ -88,20 +89,19 @@ function statusOf(c) {
   return { label: 'In Queue', cls: 'primary' };
 }
 
-// ================= LIST ROWS =================
+// ================= DESKTOP TABLE ROWS =================
 function renderRows(list) {
   if (!list.length) {
-    return `<tr><td colspan="7" class="empty-row">No cases yet</td></tr>`;
+    return `<tr><td colspan="6" class="empty-row">No cases yet</td></tr>`;
   }
   return list.map(c => {
     const st = statusOf(c);
-    const total = caseTotal(c);
     const stages = c.case_stages ?? [];
     const primaryType = stages[0]?.case_type ?? '—';
     const stageNote = stages.length > 1 ? ` <span class="stage-count">+${stages.length - 1}</span>` : '';
 
     return `<tr data-id="${c.id}" class="case-row">
-      <td data-label="Received">${fmtDate(c.received_date)}</td>
+      <td data-label="Received">${fmtShort(c.received_date)}</td>
       <td data-label="Doctor">
         <div class="cell-main">${escapeHtml(c.doctor_name)}</div>
         ${c.patient_identifier ? `<div class="cell-sub">${escapeHtml(c.patient_identifier)}</div>` : ''}
@@ -110,18 +110,49 @@ function renderRows(list) {
         <div class="cell-main">${escapeHtml(primaryType)}${stageNote}</div>
         ${stages.length > 1 ? `<div class="cell-sub">${stages.length} stages</div>` : ''}
       </td>
-      <td data-label="Total">₹${total.toFixed(0)}</td>
-      <td data-label="Delivery" class="${isOverdue(c) ? 'cell-overdue' : ''}">${fmtDate(c.delivery_date)}</td>
+      <td data-label="Delivery" class="${isOverdue(c) ? 'cell-overdue' : ''}">${fmtShort(c.delivery_date)}</td>
       <td data-label="Status">
         <span class="badge badge-${st.cls}">${st.label}</span>
         ${!c.payment_status ? `<span class="badge badge-warning">Unpaid</span>` : ''}
       </td>
       <td data-label="" class="row-actions">
-        ${c.status !== 'delivered'
-          ? `<button class="btn-ghost" data-action="deliver" data-id="${c.id}" title="Mark delivered">✓ Deliver</button>`
-          : ''}
+        <button class="kebab-btn" data-action="menu" data-id="${c.id}" aria-label="Actions">⋯</button>
       </td>
     </tr>`;
+  }).join('');
+}
+
+// ================= MOBILE LIST =================
+function renderMobileRows(list) {
+  if (!list.length) {
+    return `<div class="empty-row">No cases yet</div>`;
+  }
+  return list.map(c => {
+    const st = statusOf(c);
+    const stages = c.case_stages ?? [];
+    const primaryType = stages[0]?.case_type ?? '—';
+    const stageNote = stages.length > 1 ? ` <span class="stage-count">+${stages.length - 1}</span>` : '';
+
+    return `
+      <div class="mcase-row" data-id="${c.id}">
+        <div class="mcase-main">
+          <div class="mcase-line-1">
+            <b class="mcase-doctor">${escapeHtml(c.doctor_name)}</b>
+            <span class="badge badge-${st.cls}">${st.label}</span>
+          </div>
+          <div class="mcase-line-2">
+            <span class="mcase-type">${escapeHtml(primaryType)}${stageNote}</span>
+            ${!c.payment_status ? '<span class="badge badge-warning">Unpaid</span>' : ''}
+          </div>
+          <div class="mcase-line-3">
+            <span class="mcase-date">${fmtShort(c.received_date)}</span>
+            <span class="mcase-arrow">→</span>
+            <span class="mcase-date ${isOverdue(c) ? 'cell-overdue' : ''}">${fmtShort(c.delivery_date)}</span>
+          </div>
+        </div>
+        <button class="kebab-btn" data-action="menu" data-id="${c.id}" aria-label="Actions">⋯</button>
+      </div>
+    `;
   }).join('');
 }
 
@@ -129,10 +160,10 @@ function renderRows(list) {
 export async function renderCases() {
   await loadData();
   const s = computeStats(allCases);
+  const filtered = filterCases();
 
   return `
-    <div class="page-header">
-      <h3>Cases</h3>
+    <div class="page-header-actions">
       <a class="btn-primary" href="#/cases/new">+ New Case</a>
     </div>
 
@@ -155,21 +186,26 @@ export async function renderCases() {
              placeholder="Search doctor, case, patient…" value="${escapeAttr(searchQuery)}" />
     </div>
 
-    <div class="table-wrap neu-card">
+    <!-- Desktop table -->
+    <div class="table-wrap neu-card desktop-only">
       <table class="data-table" id="cases-table">
         <thead>
           <tr>
             <th>Received</th>
             <th>Doctor</th>
             <th>Case</th>
-            <th>Total</th>
             <th>Delivery</th>
             <th>Status</th>
             <th></th>
           </tr>
         </thead>
-        <tbody id="cases-rows">${renderRows(filterCases())}</tbody>
+        <tbody id="cases-rows">${renderRows(filtered)}</tbody>
       </table>
+    </div>
+
+    <!-- Mobile list -->
+    <div class="mobile-cases mobile-only" id="cases-mobile">
+      ${renderMobileRows(filtered)}
     </div>
 
     <div id="modal-root"></div>
@@ -183,7 +219,7 @@ export function wireCases() {
       activeFilter = chip.dataset.filter;
       document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
-      document.getElementById('cases-rows').innerHTML = renderRows(filterCases());
+      paintRows();
     });
   });
 
@@ -194,34 +230,126 @@ export function wireCases() {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       searchQuery = e.target.value.trim();
-      document.getElementById('cases-rows').innerHTML = renderRows(filterCases());
+      paintRows();
     }, 180);
   });
 
-  // Row clicks: quick deliver or open detail
-  document.getElementById('cases-rows')?.addEventListener('click', async (e) => {
-    const deliverBtn = e.target.closest('button[data-action="deliver"]');
-    if (deliverBtn) {
+  // Desktop + mobile row click / kebab
+  document.addEventListener('click', (e) => {
+    // Kebab
+    const kebab = e.target.closest('button[data-action="menu"]');
+    if (kebab) {
       e.stopPropagation();
-      await quickDeliver(deliverBtn.dataset.id);
+      openActions(kebab.dataset.id, kebab);
       return;
     }
+
+    // Row click (desktop table only)
     const row = e.target.closest('tr[data-id]');
-    if (row) openCaseDetail(row.dataset.id);
+    if (row) { openCaseDetail(row.dataset.id); return; }
+
+    // Mobile row click (but not when tapping kebab)
+    const mrow = e.target.closest('.mcase-row[data-id]');
+    if (mrow) { openCaseDetail(mrow.dataset.id); return; }
   });
 }
 
-// ================= QUICK DELIVER =================
-async function quickDeliver(id) {
+function paintRows() {
+  const f = filterCases();
+  const desktop = document.getElementById('cases-rows');
+  const mobile  = document.getElementById('cases-mobile');
+  if (desktop) desktop.innerHTML = renderRows(f);
+  if (mobile)  mobile.innerHTML  = renderMobileRows(f);
+}
+
+// ================= ACTION SHEET =================
+function openActions(id, anchorEl) {
   const c = allCases.find(x => x.id === id);
   if (!c) return;
-  if (!confirm(`Mark this case as delivered?\n\n${c.doctor_name} — ${c.case_stages?.[0]?.case_type ?? ''}`)) return;
-  const { error } = await supabase
-    .from('cases')
-    .update({ status: 'delivered', delivered_at: today() })
-    .eq('id', id);
-  if (error) return alert(error.message);
-  await refresh();
+
+  // Remove any existing menu
+  document.getElementById('kebab-menu-root')?.remove();
+
+  const isDelivered = c.status === 'delivered';
+
+  const menu = document.createElement('div');
+  menu.id = 'kebab-menu-root';
+  menu.className = 'kebab-menu-root';
+  menu.innerHTML = `
+    <div class="kebab-backdrop"></div>
+    <div class="kebab-sheet">
+      <button class="kebab-action" data-action="edit">
+        <span>Edit case</span>
+      </button>
+      <button class="kebab-action" data-action="deliver">
+        <span>${isDelivered ? 'Reopen case' : 'Mark delivered'}</span>
+      </button>
+      <button class="kebab-action danger" data-action="delete">
+        <span>Delete</span>
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(menu);
+
+  const close = () => menu.remove();
+
+  menu.querySelector('.kebab-backdrop').addEventListener('click', close);
+
+  menu.querySelector('[data-action="edit"]').onclick = () => {
+    close();
+    openEdit(c.id);
+  };
+
+  menu.querySelector('[data-action="deliver"]').onclick = async () => {
+    close();
+    if (isDelivered) {
+      const { error } = await supabase
+        .from('cases').update({ status: 'in-queue', delivered_at: null }).eq('id', c.id);
+      if (error) return alert(error.message);
+    } else {
+      const { error } = await supabase
+        .from('cases').update({ status: 'delivered', delivered_at: today() }).eq('id', c.id);
+      if (error) return alert(error.message);
+    }
+    await refresh();
+  };
+
+  menu.querySelector('[data-action="delete"]').onclick = () => {
+    close();
+    confirmDelete(c);
+  };
+}
+
+// ================= CONFIRM DELETE =================
+function confirmDelete(c) {
+  document.getElementById('confirm-root')?.remove();
+  const root = document.createElement('div');
+  root.id = 'confirm-root';
+  root.className = 'case-modal-backdrop confirm-backdrop';
+  root.innerHTML = `
+    <div class="confirm-modal">
+      <h3>Delete this case?</h3>
+      <p>This will permanently remove <b>${escapeHtml(c.doctor_name)}</b>'s case from
+      ${fmtShort(c.received_date)}. This cannot be undone.</p>
+      <div class="case-modal-actions">
+        <button class="btn-ghost" id="cf-cancel">Cancel</button>
+        <button class="btn-danger" id="cf-delete">Delete permanently</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(root);
+
+  root.querySelector('#cf-cancel').onclick = () => root.remove();
+  root.querySelector('#cf-delete').onclick = async () => {
+    const btn = root.querySelector('#cf-delete');
+    btn.disabled = true;
+    btn.textContent = 'Deleting…';
+    const { error } = await supabase.from('cases').delete().eq('id', c.id);
+    if (error) { alert(error.message); btn.disabled = false; btn.textContent = 'Delete permanently'; return; }
+    root.remove();
+    await refresh();
+  };
 }
 
 // ================= DETAIL MODAL =================
@@ -244,28 +372,19 @@ function renderDetail(c) {
 
         <div class="case-modal-badges">
           <span class="badge badge-${st.cls}">${st.label}</span>
-          ${!c.payment_status ? `<span class="badge badge-warning">Unpaid</span>` : `<span class="badge badge-success">Paid</span>`}
+          ${!c.payment_status
+            ? `<span class="badge badge-warning">Unpaid</span>`
+            : `<span class="badge badge-success">Paid</span>`}
         </div>
 
         <div class="detail-grid">
-          <div class="detail-item">
-            <span>Received</span>
-            <b>${fmtDate(c.received_date)}</b>
-          </div>
-          <div class="detail-item">
-            <span>Delivery</span>
-            <b class="${isOverdue(c) ? 'cell-overdue' : ''}">${fmtDate(c.delivery_date)}</b>
-          </div>
-          <div class="detail-item">
-            <span>Delivered at</span>
-            <b>${fmtDate(c.delivered_at)}</b>
-          </div>
+          <div class="detail-item"><span>Received</span><b>${fmtDate(c.received_date)}</b></div>
+          <div class="detail-item"><span>Delivery</span><b class="${isOverdue(c) ? 'cell-overdue' : ''}">${fmtDate(c.delivery_date)}</b></div>
+          <div class="detail-item"><span>Delivered at</span><b>${fmtDate(c.delivered_at)}</b></div>
         </div>
 
         <div class="detail-section">
-          <div class="detail-section-head">
-            <h4>Stages</h4>
-          </div>
+          <div class="detail-section-head"><h4>Stages</h4></div>
           <div class="stage-list">
             ${stages.map((s, i) => `
               <div class="stage-line">
@@ -279,19 +398,14 @@ function renderDetail(c) {
                 <b>₹${Number(s.amount).toFixed(0)}</b>
               </div>
             `).join('')}
-            <div class="stage-total">
-              <span>Total</span>
-              <b>₹${total.toFixed(2)}</b>
-            </div>
+            <div class="stage-total"><span>Total</span><b>₹${total.toFixed(2)}</b></div>
           </div>
         </div>
 
         <div class="detail-section">
           <div class="detail-section-head"><h4>Notes</h4></div>
           <textarea id="detail-notes" rows="3" placeholder="Add notes about this case…">${escapeHtml(c.notes ?? '')}</textarea>
-          <div class="notes-actions">
-            <button class="btn-ghost" id="save-notes">Save notes</button>
-          </div>
+          <div class="notes-actions"><button class="btn-ghost" id="save-notes">Save notes</button></div>
         </div>
 
         <div class="case-modal-actions">
@@ -307,9 +421,53 @@ function renderDetail(c) {
   `;
 }
 
+function openCaseDetail(id) {
+  const c = allCases.find(x => x.id === id);
+  if (!c) return;
+  const root = document.getElementById('modal-root');
+  root.innerHTML = renderDetail(c);
+  wireDetail(c);
+}
+
+function wireDetail(c) {
+  const root = document.getElementById('modal-root');
+  root.querySelector('#detail-close').onclick = () => { root.innerHTML = ''; };
+  root.querySelector('.case-modal-backdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'case-detail') root.innerHTML = '';
+  });
+
+  root.querySelector('#save-notes').onclick = async () => {
+    const notes = root.querySelector('#detail-notes').value.trim() || null;
+    const { error } = await supabase.from('cases').update({ notes }).eq('id', c.id);
+    const msg = root.querySelector('#detail-msg');
+    if (error) { msg.textContent = error.message; msg.className = 'auth-msg error'; return; }
+    msg.textContent = 'Notes saved'; msg.className = 'auth-msg ok';
+    setTimeout(() => { msg.textContent = ''; msg.className = 'auth-msg'; }, 1500);
+  };
+
+  root.querySelector('#detail-deliver')?.addEventListener('click', async () => {
+    const { error } = await supabase.from('cases')
+      .update({ status: 'delivered', delivered_at: today() }).eq('id', c.id);
+    if (error) return alert(error.message);
+    root.innerHTML = '';
+    await refresh();
+  });
+
+  root.querySelector('#detail-reopen')?.addEventListener('click', async () => {
+    const { error } = await supabase.from('cases')
+      .update({ status: 'in-queue', delivered_at: null }).eq('id', c.id);
+    if (error) return alert(error.message);
+    root.innerHTML = '';
+    await refresh();
+  });
+
+  root.querySelector('#detail-edit').onclick = () => openEdit(c.id);
+  root.querySelector('#detail-delete').onclick = () => { root.innerHTML = ''; confirmDelete(c); };
+}
+
+// ================= EDIT MODAL =================
 function renderEditForm(c) {
   const stageRows = (c.case_stages ?? []).map(s => {
-    const opt = priceList.find(p => p.case_type === s.case_type);
     const opts = priceList.map(p => `
       <option value="${p.id}"
         data-label="${escapeAttr(p.label)}"
@@ -356,22 +514,14 @@ function renderEditForm(c) {
         <form id="edit-form">
           <div class="form-section">
             <div class="form-grid">
-              <label class="field">
-                <span>Received</span>
-                <input type="date" id="e-received" value="${c.received_date ?? ''}" required />
-              </label>
-              <label class="field">
-                <span>Delivery</span>
-                <input type="date" id="e-delivery" value="${c.delivery_date ?? ''}" />
-              </label>
-              <label class="field">
-                <span>Doctor</span>
-                <input type="text" id="e-doctor" value="${escapeAttr(c.doctor_name ?? '')}" required />
-              </label>
-              <label class="field">
-                <span>Patient / Case ID</span>
-                <input type="text" id="e-patient" value="${escapeAttr(c.patient_identifier ?? '')}" />
-              </label>
+              <label class="field"><span>Received</span>
+                <input type="date" id="e-received" value="${c.received_date ?? ''}" required /></label>
+              <label class="field"><span>Delivery</span>
+                <input type="date" id="e-delivery" value="${c.delivery_date ?? ''}" /></label>
+              <label class="field"><span>Doctor</span>
+                <input type="text" id="e-doctor" value="${escapeAttr(c.doctor_name ?? '')}" required /></label>
+              <label class="field"><span>Patient / Case ID</span>
+                <input type="text" id="e-patient" value="${escapeAttr(c.patient_identifier ?? '')}" /></label>
             </div>
           </div>
 
@@ -381,10 +531,7 @@ function renderEditForm(c) {
               <button type="button" class="btn-ghost" id="edit-add-stage">+ Add stage</button>
             </div>
             <div id="edit-stages">${stageRows}</div>
-            <div class="case-total-row">
-              <span>Case total</span>
-              <b id="edit-total">₹0.00</b>
-            </div>
+            <div class="case-total-row"><span>Case total</span><b id="edit-total">₹0.00</b></div>
           </div>
 
           <div class="case-modal-actions">
@@ -398,135 +545,27 @@ function renderEditForm(c) {
   `;
 }
 
-function renderConfirm(c) {
-  return `
-    <div class="case-modal-backdrop confirm-backdrop" id="confirm-delete">
-      <div class="confirm-modal">
-        <h3>Delete this case?</h3>
-        <p>This will permanently remove <b>${escapeHtml(c.doctor_name)}</b>'s case from
-        ${fmtDate(c.received_date)} and all its stages. This cannot be undone.</p>
-        <div class="case-modal-actions">
-          <button class="btn-ghost" id="confirm-cancel">Cancel</button>
-          <button class="btn-danger" id="confirm-delete-btn">Delete permanently</button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// ---------- Modal root helpers ----------
-const root = () => document.getElementById('modal-root');
-
-function closeModal() { const r = root(); if (r) r.innerHTML = ''; }
-
-function openCaseDetail(id) {
-  const c = allCases.find(x => x.id === id);
-  if (!c) return;
-  const r = root();
-  r.innerHTML = renderDetail(c);
-  wireDetail(c);
-}
-
-function wireDetail(c) {
-  const r = root();
-
-  r.querySelector('#detail-close').onclick = closeModal;
-  r.querySelector('.case-modal-backdrop').addEventListener('click', (e) => {
-    if (e.target.id === 'case-detail') closeModal();
-  });
-
-  // Save notes
-  r.querySelector('#save-notes').onclick = async () => {
-    const notes = r.querySelector('#detail-notes').value.trim() || null;
-    const { error } = await supabase.from('cases').update({ notes }).eq('id', c.id);
-    const msg = r.querySelector('#detail-msg');
-    if (error) { msg.textContent = error.message; msg.className = 'auth-msg error'; return; }
-    msg.textContent = 'Notes saved';
-    msg.className = 'auth-msg ok';
-    setTimeout(() => { msg.textContent = ''; msg.className = 'auth-msg'; }, 1500);
-    const local = allCases.find(x => x.id === c.id);
-    if (local) local.notes = notes;
-  };
-
-  // Mark delivered
-  r.querySelector('#detail-deliver')?.addEventListener('click', async () => {
-    const { error } = await supabase
-      .from('cases')
-      .update({ status: 'delivered', delivered_at: today() })
-      .eq('id', c.id);
-    if (error) return alert(error.message);
-    closeModal();
-    await refresh();
-  });
-
-  // Reopen
-  r.querySelector('#detail-reopen')?.addEventListener('click', async () => {
-    const { error } = await supabase
-      .from('cases')
-      .update({ status: 'in-queue', delivered_at: null })
-      .eq('id', c.id);
-    if (error) return alert(error.message);
-    closeModal();
-    await refresh();
-  });
-
-  // Edit
-  r.querySelector('#detail-edit').onclick = () => openEdit(c.id);
-
-  // Delete → confirm modal
-  r.querySelector('#detail-delete').onclick = () => {
-    r.insertAdjacentHTML('beforeend', renderConfirm(c));
-    wireConfirm(c);
-  };
-}
-
-function wireConfirm(c) {
-  const r = root();
-  const cancel = r.querySelector('#confirm-cancel');
-  const del = r.querySelector('#confirm-delete-btn');
-  cancel.onclick = () => r.querySelector('#confirm-delete')?.remove();
-  r.querySelector('#confirm-delete').addEventListener('click', (e) => {
-    if (e.target.id === 'confirm-delete') e.target.remove();
-  });
-  del.onclick = async () => {
-    del.disabled = true;
-    del.textContent = 'Deleting…';
-    const { error } = await supabase.from('cases').delete().eq('id', c.id);
-    if (error) {
-      alert(error.message);
-      del.disabled = false;
-      del.textContent = 'Delete permanently';
-      return;
-    }
-    closeModal();
-    await refresh();
-  };
-}
-
-// ---------- Edit modal ----------
 function openEdit(id) {
   const c = allCases.find(x => x.id === id);
   if (!c) return;
-  const r = root();
-  r.innerHTML = renderEditForm(c);
+  const root = document.getElementById('modal-root');
+  root.innerHTML = renderEditForm(c);
   wireEdit(c);
 }
 
 function wireEdit(c) {
-  const r = root();
-  const stagesList = r.querySelector('#edit-stages');
-  const totalEl = r.querySelector('#edit-total');
+  const root = document.getElementById('modal-root');
+  const stagesList = root.querySelector('#edit-stages');
+  const totalEl = root.querySelector('#edit-total');
 
   function recalcTotals() {
     let total = 0;
     stagesList.querySelectorAll('.stage-row').forEach(row => {
       const qty = Number(row.querySelector('.stage-qty').value) || 0;
-      const sel = row.querySelector('.stage-type');
-      const opt = sel.selectedOptions[0];
+      const opt = row.querySelector('.stage-type').selectedOptions[0];
       const price = opt && opt.value ? Number(opt.dataset.price) || 0 : 0;
-      const line = qty * price;
-      total += line;
-      row.querySelector('.stage-price').value = '₹' + line.toFixed(2);
+      total += qty * price;
+      row.querySelector('.stage-price').value = '₹' + (qty * price).toFixed(2);
     });
     totalEl.textContent = '₹' + total.toFixed(2);
   }
@@ -541,22 +580,16 @@ function wireEdit(c) {
             <select class="stage-type" required>
               <option value="">— Select —</option>
               ${priceList.map(p => `
-                <option value="${p.id}"
-                  data-label="${escapeAttr(p.label)}"
-                  data-price="${p.price}"
-                  data-type="${escapeAttr(p.case_type)}">
+                <option value="${p.id}" data-label="${escapeAttr(p.label)}"
+                  data-price="${p.price}" data-type="${escapeAttr(p.case_type)}">
                   ${escapeHtml(p.case_type)}
                 </option>`).join('')}
             </select>
           </label>
-          <label class="field">
-            <span>Qty</span>
-            <input type="number" class="stage-qty" min="1" value="1" required />
-          </label>
-          <label class="field">
-            <span>Price</span>
-            <input type="text" class="stage-price" readonly value="₹0.00" />
-          </label>
+          <label class="field"><span>Qty</span>
+            <input type="number" class="stage-qty" min="1" value="1" required /></label>
+          <label class="field"><span>Price</span>
+            <input type="text" class="stage-price" readonly value="₹0.00" /></label>
           <button type="button" class="stage-remove" title="Remove">×</button>
         </div>
       </div>`;
@@ -572,25 +605,20 @@ function wireEdit(c) {
       recalcTotals();
     }
   });
-  r.querySelector('#edit-add-stage').onclick = addStageRow;
-  r.querySelector('#edit-close').onclick = closeModal;
-  r.querySelector('#edit-cancel').onclick = () => openCaseDetail(c.id);
-  r.querySelector('.case-modal-backdrop').addEventListener('click', (e) => {
-    if (e.target.id === 'case-detail') closeModal();
-  });
+
+  root.querySelector('#edit-add-stage').onclick = addStageRow;
+  root.querySelector('#edit-close').onclick  = () => { root.innerHTML = ''; };
+  root.querySelector('#edit-cancel').onclick = () => openCaseDetail(c.id);
 
   recalcTotals();
 
-  r.querySelector('#edit-form').addEventListener('submit', async (e) => {
+  root.querySelector('#edit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const msg = r.querySelector('#edit-msg');
-    msg.textContent = '';
-    msg.className = 'auth-msg';
+    const msg = root.querySelector('#edit-msg');
+    msg.textContent = ''; msg.className = 'auth-msg';
 
-    const stageEls = [...stagesList.querySelectorAll('.stage-row')];
-    const newStages = stageEls.map((row, i) => {
-      const sel = row.querySelector('.stage-type');
-      const opt = sel.selectedOptions[0];
+    const newStages = [...stagesList.querySelectorAll('.stage-row')].map((row, i) => {
+      const opt = row.querySelector('.stage-type').selectedOptions[0];
       return {
         position:   i,
         case_type:  opt?.dataset.type ?? '',
@@ -601,51 +629,34 @@ function wireEdit(c) {
     }).filter(s => s.case_type);
 
     if (!newStages.length) {
-      msg.textContent = 'Add at least one stage.';
-      msg.className = 'auth-msg error';
-      return;
+      msg.textContent = 'Add at least one stage.'; msg.className = 'auth-msg error'; return;
     }
 
-    const saveBtn = r.querySelector('#edit-save');
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
+    const saveBtn = root.querySelector('#edit-save');
+    saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
 
     const { error: upErr } = await supabase.from('cases').update({
-      received_date:      r.querySelector('#e-received').value,
-      delivery_date:      r.querySelector('#e-delivery').value || null,
-      doctor_name:        r.querySelector('#e-doctor').value.trim(),
-      patient_identifier: r.querySelector('#e-patient').value.trim() || null,
+      received_date:      root.querySelector('#e-received').value,
+      delivery_date:      root.querySelector('#e-delivery').value || null,
+      doctor_name:        root.querySelector('#e-doctor').value.trim(),
+      patient_identifier: root.querySelector('#e-patient').value.trim() || null,
     }).eq('id', c.id);
 
     if (upErr) {
-      msg.textContent = upErr.message;
-      msg.className = 'auth-msg error';
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Save changes';
-      return;
+      msg.textContent = upErr.message; msg.className = 'auth-msg error';
+      saveBtn.disabled = false; saveBtn.textContent = 'Save changes'; return;
     }
 
-    // Replace stages: delete all, re-insert
-    const { error: delErr } = await supabase.from('case_stages').delete().eq('case_id', c.id);
-    if (delErr) {
-      msg.textContent = delErr.message;
-      msg.className = 'auth-msg error';
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Save changes';
-      return;
-    }
+    await supabase.from('case_stages').delete().eq('case_id', c.id);
+    const { error: insErr } = await supabase.from('case_stages')
+      .insert(newStages.map(s => ({ ...s, case_id: c.id })));
 
-    const payload = newStages.map(s => ({ ...s, case_id: c.id }));
-    const { error: insErr } = await supabase.from('case_stages').insert(payload);
     if (insErr) {
-      msg.textContent = insErr.message;
-      msg.className = 'auth-msg error';
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Save changes';
-      return;
+      msg.textContent = insErr.message; msg.className = 'auth-msg error';
+      saveBtn.disabled = false; saveBtn.textContent = 'Save changes'; return;
     }
 
-    closeModal();
+    root.innerHTML = '';
     await refresh();
   });
 }
@@ -663,8 +674,7 @@ async function refresh() {
       statCard('Unpaid', '₹' + s.unpaid.toFixed(0), 'warning'),
     ].join('');
   }
-  const rows = document.getElementById('cases-rows');
-  if (rows) rows.innerHTML = renderRows(filterCases());
+  paintRows();
 }
 
 // ================= NEW CASE (full page) =================
@@ -677,22 +687,16 @@ function stageRowHtml() {
           <select class="stage-type" required>
             <option value="">— Select a case type —</option>
             ${priceList.map(p => `
-              <option value="${p.id}"
-                data-label="${escapeAttr(p.label)}"
-                data-price="${p.price}"
-                data-type="${escapeAttr(p.case_type)}">
+              <option value="${p.id}" data-label="${escapeAttr(p.label)}"
+                data-price="${p.price}" data-type="${escapeAttr(p.case_type)}">
                 ${escapeHtml(p.case_type)}
               </option>`).join('')}
           </select>
         </label>
-        <label class="field">
-          <span>Qty</span>
-          <input type="number" class="stage-qty" min="1" value="1" required />
-        </label>
-        <label class="field">
-          <span>Price</span>
-          <input type="text" class="stage-price" readonly value="₹0.00" />
-        </label>
+        <label class="field"><span>Qty</span>
+          <input type="number" class="stage-qty" min="1" value="1" required /></label>
+        <label class="field"><span>Price</span>
+          <input type="text" class="stage-price" readonly value="₹0.00" /></label>
         <button type="button" class="stage-remove" title="Remove" hidden>×</button>
       </div>
     </div>
@@ -736,10 +740,7 @@ export async function renderNewCase() {
             <button type="button" class="btn-ghost" id="add-stage">+ Add stage</button>
           </div>
           <div id="stages-list"></div>
-          <div class="case-total-row">
-            <span>Case total</span>
-            <b id="case-total">₹0.00</b>
-          </div>
+          <div class="case-total-row"><span>Case total</span><b id="case-total">₹0.00</b></div>
         </div>
 
         <div class="form-section">
@@ -776,8 +777,7 @@ export function wireNewCase() {
     let total = 0;
     stagesList.querySelectorAll('.stage-row').forEach(row => {
       const qty = Number(row.querySelector('.stage-qty').value) || 0;
-      const sel = row.querySelector('.stage-type');
-      const opt = sel.selectedOptions[0];
+      const opt = row.querySelector('.stage-type').selectedOptions[0];
       const price = opt && opt.value ? Number(opt.dataset.price) || 0 : 0;
       total += qty * price;
       row.querySelector('.stage-price').value = '₹' + (qty * price).toFixed(2);
@@ -804,7 +804,6 @@ export function wireNewCase() {
   });
   document.getElementById('add-stage').onclick = addStage;
 
-  // Date inputs: click anywhere opens picker
   form.querySelectorAll('input[type="date"]').forEach(inp => {
     inp.addEventListener('click', () => {
       if (typeof inp.showPicker === 'function') { try { inp.showPicker(); } catch {} }
@@ -815,10 +814,8 @@ export function wireNewCase() {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const stageEls = [...stagesList.querySelectorAll('.stage-row')];
-    const stages = stageEls.map((row, i) => {
-      const sel = row.querySelector('.stage-type');
-      const opt = sel.selectedOptions[0];
+    const stages = [...stagesList.querySelectorAll('.stage-row')].map((row, i) => {
+      const opt = row.querySelector('.stage-type').selectedOptions[0];
       return {
         position:   i,
         case_type:  opt?.dataset.type ?? '',
@@ -834,8 +831,7 @@ export function wireNewCase() {
       return;
     }
 
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
+    saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
 
     const { data: caseRow, error: caseErr } = await supabase.from('cases').insert({
       received_date:      document.getElementById('f-received').value,
@@ -848,19 +844,17 @@ export function wireNewCase() {
     }).select().single();
 
     if (caseErr) {
-      msg.textContent = caseErr.message;
-      msg.className = 'auth-msg error';
+      msg.textContent = caseErr.message; msg.className = 'auth-msg error';
       saveBtn.disabled = false; saveBtn.textContent = 'Save Case';
       return;
     }
 
-    const { error: stageErr } = await supabase
-      .from('case_stages').insert(stages.map(s => ({ ...s, case_id: caseRow.id })));
+    const { error: stageErr } = await supabase.from('case_stages')
+      .insert(stages.map(s => ({ ...s, case_id: caseRow.id })));
 
     if (stageErr) {
       await supabase.from('cases').delete().eq('id', caseRow.id);
-      msg.textContent = stageErr.message;
-      msg.className = 'auth-msg error';
+      msg.textContent = stageErr.message; msg.className = 'auth-msg error';
       saveBtn.disabled = false; saveBtn.textContent = 'Save Case';
       return;
     }

@@ -1,4 +1,7 @@
 :root {
+   color-scheme: light;
+  /* Surfaces */
+  --bg: #F8F9FA;
   /* Dark Surfaces */
   --bg: #0D0E11;              /* Base app canvas */
   --surface: #16181D;         /* Cards and containers */

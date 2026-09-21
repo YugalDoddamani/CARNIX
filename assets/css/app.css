@@ -714,3 +714,200 @@ a.btn-ghost {
   color: var(--text) !important;
   font-weight: 700 !important;
 }
+
+
+/* ============ Case detail modal ============ */
+.case-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 20, 40, .55);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+.case-modal {
+  width: 100%;
+  max-width: 620px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, .25),
+    0 4px 12px rgba(0, 0, 0, .1);
+}
+@media (max-width: 640px) {
+  .case-modal-backdrop { padding: 0; }
+  .case-modal {
+    max-width: 100%;
+    max-height: 100dvh;
+    min-height: 100dvh;
+    border-radius: 0;
+    padding: 24px 20px;
+  }
+}
+
+.case-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.case-modal-eyebrow {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.case-modal-header h3 { font-size: 1.35rem; }
+.case-modal-sub {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.case-modal-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--surface-soft);
+  border-bottom: 1px solid var(--surface-soft);
+  margin-bottom: 20px;
+}
+.detail-item span {
+  display: block;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.detail-item b { font-size: .92rem; }
+
+.detail-section { margin-bottom: 20px; }
+.detail-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.detail-section-head h4 {
+  font-size: .74rem;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.stage-list { display: flex; flex-direction: column; gap: 8px; }
+.stage-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--surface-soft);
+  border-radius: var(--radius-sm);
+}
+.stage-line-main { display: flex; align-items: center; gap: 12px; }
+.stage-line-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 600;
+}
+.stage-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+  margin-top: 4px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.stage-total b { font-size: 1.1rem; }
+
+#detail-notes {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0,0,0,.08);
+  background: var(--bg);
+  font-family: inherit;
+  font-size: .9rem;
+  resize: vertical;
+  outline: none;
+  color: var(--text);
+}
+#detail-notes:focus { border-color: var(--primary); }
+.notes-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.case-modal-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid var(--surface-soft);
+  margin-top: 20px;
+}
+.case-modal-actions .btn-ghost { padding: 12px 18px; }
+.case-modal-actions .btn-primary { padding: 12px 20px; }
+
+.btn-danger {
+  padding: 12px 20px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--danger);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: .9rem;
+}
+.btn-danger:hover { filter: brightness(1.1); }
+.btn-danger:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Confirm modal (nested) */
+.confirm-backdrop { z-index: 300; }
+.confirm-modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+.confirm-modal h3 { font-size: 1.1rem; margin-bottom: 12px; }
+.confirm-modal p {
+  color: var(--text-muted);
+  font-size: .9rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+/* Row is clickable */
+.case-row { cursor: pointer; }
+.case-row:hover { background: rgba(31, 58, 147, .04); }
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }

@@ -493,7 +493,7 @@ async function buildPDF({ doctor, start, end, items, total, invoiceNumber }) {
   // ---- Header: logo (falls back to text if missing) ----
   let headerBottomY = M + 12;
   try {
-    const logo = await loadImage('/assets/BILL LOGO.png');
+    const logo = await loadImage('/assets/bill-logo.png');
     const logoHeight = 14;
     const logoWidth = (logo.width / logo.height) * logoHeight;
     doc.addImage(logo.dataUrl, 'PNG', M, M, logoWidth, logoHeight);

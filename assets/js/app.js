@@ -12,6 +12,7 @@ import { renderControlPanel, wireControlPanel } from './pages/control-panel.js';
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) {
   window.location.replace('/');
+  throw new Error('Not authenticated');
 }
 
 // ---------- Profile ----------

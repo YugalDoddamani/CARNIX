@@ -12,7 +12,7 @@ async function loadData() {
   return data ?? [];
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
 const caseTotal = c =>
   (c.case_stages ?? []).reduce((s, st) => s + Number(st.amount || 0), 0);

@@ -2218,3 +2218,56 @@ html, body {
   .bill-preview-actions > * { width: 100%; justify-content: center; }
   .bill-history-top { flex-wrap: wrap; }
 }
+
+
+/* Billing preview — payment block */
+.bill-payment-preview {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px dashed rgba(0,0,0,.1);
+}
+.bill-payment-label {
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.bill-payment-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  align-items: start;
+}
+.bill-payment-bank {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 20px;
+  font-size: .8rem;
+}
+.bill-payment-bank > div { display: flex; flex-direction: column; gap: 2px; }
+.bill-payment-bank span { font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+.bill-payment-bank b { color: var(--text); font-weight: 500; }
+.bill-payment-qr {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: .7rem;
+}
+.qr-placeholder {
+  width: 72px;
+  height: 72px;
+  border: 1px dashed rgba(0,0,0,.2);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: .78rem;
+  margin-bottom: 4px;
+}
+@media (max-width: 560px) {
+  .bill-payment-bank { grid-template-columns: 1fr; }
+  .bill-payment-grid { grid-template-columns: 1fr; }
+  .bill-payment-qr { justify-self: start; }
+}

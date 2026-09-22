@@ -1,4 +1,5 @@
 import { supabase } from '../supabase.js';
+import { loadImage, DEFAULT_SETTINGS } from '../pdf-helpers.js';
 
 let allInvoices = [];
 let currentItems = [];
@@ -128,6 +129,23 @@ export async function renderBilling() {
       <div id="b-preview" class="bill-preview-body">
         <div class="empty-row">Select a doctor and date range to preview</div>
       </div>
+
+      <div class="bill-payment-preview">
+        <div class="bill-payment-label">Payment details</div>
+        <div class="bill-payment-grid">
+          <div class="bill-payment-bank">
+            <div><span>Bank</span><b>Configure in Control Panel</b></div>
+            <div><span>Account</span><b>• • • • • • •</b></div>
+            <div><span>IFSC</span><b>• • • • • •</b></div>
+            <div><span>UPI</span><b>• • • • •</b></div>
+          </div>
+          <div class="bill-payment-qr">
+            <div class="qr-placeholder">QR</div>
+            <span>Scan to pay</span>
+          </div>
+        </div>
+      </div>
+
       <div class="bill-preview-actions">
         <button class="btn-ghost" id="b-pdf" disabled>Download PDF</button>
         <button class="btn-primary" id="b-save" disabled>Save as Invoice</button>
@@ -192,6 +210,8 @@ export function wireBilling() {
   const pdfBtn = document.getElementById('b-pdf');
   const saveBtn = document.getElementById('b-save');
   const msg = document.getElementById('b-msg');
+
+  if (!doctorSel) return;
 
   let refreshTimer = null;
 
@@ -270,35 +290,34 @@ export function wireBilling() {
     }
   }
 
-  function debouncedRefresh() {
-    clearTimeout(refreshTimer);
-    refreshTimer = setTimeout(refresh, 250);
-  }
-
   doctorSel.addEventListener('change', refresh);
   startInput.addEventListener('change', refresh);
   endInput.addEventListener('change', refresh);
   uninvoicedBox.addEventListener('change', refresh);
 
-  // Open date pickers on click
   [startInput, endInput].forEach(inp => {
     inp.addEventListener('click', () => {
       if (typeof inp.showPicker === 'function') { try { inp.showPicker(); } catch {} }
     });
   });
 
-  // Download PDF (preview — no DB write)
-  pdfBtn.addEventListener('click', () => {
+  // Download PDF (preview only, no DB write)
+  pdfBtn.addEventListener('click', async () => {
     if (!currentItems.length) return;
-    const doc = buildPDF({
-      doctor: currentDoctor,
-      start: currentStart,
-      end: currentEnd,
-      items: currentItems,
-      total: currentTotal,
-      invoiceNumber: 'DRAFT',
-    });
-    doc.save(`carnix-draft-${currentDoctor.replace(/\s+/g, '_')}.pdf`);
+    try {
+      const doc = await buildPDF({
+        doctor: currentDoctor,
+        start: currentStart,
+        end: currentEnd,
+        items: currentItems,
+        total: currentTotal,
+        invoiceNumber: 'DRAFT',
+      });
+      doc.save(`carnix-draft-${currentDoctor.replace(/\s+/g, '_')}.pdf`);
+    } catch (err) {
+      msg.textContent = err.message ?? String(err);
+      msg.className = 'auth-msg error';
+    }
   });
 
   // Save as invoice
@@ -311,13 +330,11 @@ export function wireBilling() {
     saveBtn.textContent = 'Saving…';
 
     try {
-      // 1. Number
       const year = new Date().getFullYear();
       const { data: num, error: numErr } = await supabase
         .rpc('next_invoice_number', { p_year: year });
       if (numErr) throw numErr;
 
-      // 2. Invoice row
       const { data: inv, error: invErr } = await supabase
         .from('invoices')
         .insert({
@@ -332,7 +349,6 @@ export function wireBilling() {
         .single();
       if (invErr) throw invErr;
 
-      // 3. Items
       const itemRows = currentItems.map(it => ({
         invoice_id: inv.id,
         case_id: it.case_id,
@@ -347,7 +363,6 @@ export function wireBilling() {
         throw itemsErr;
       }
 
-      // 4. Link cases
       const caseIds = [...new Set(currentItems.map(i => i.case_id))];
       const { error: linkErr } = await supabase
         .from('cases').update({ invoice_id: inv.id }).in('id', caseIds);
@@ -356,12 +371,10 @@ export function wireBilling() {
       msg.textContent = `Invoice ${num} saved.`;
       msg.className = 'auth-msg ok';
 
-      // Refresh history + preview
       await loadInvoices();
       document.getElementById('b-history').innerHTML = renderHistory();
 
-      // Download PDF with real number
-      const doc = buildPDF({
+      const doc = await buildPDF({
         doctor: currentDoctor,
         start: currentStart,
         end: currentEnd,
@@ -382,7 +395,7 @@ export function wireBilling() {
   });
 
   // Invoice history kebab
-  document.getElementById('b-history').addEventListener('click', async (e) => {
+  document.getElementById('b-history')?.addEventListener('click', async (e) => {
     const kebab = e.target.closest('button[data-action="menu"]');
     if (!kebab) return;
     e.stopPropagation();
@@ -419,7 +432,7 @@ function openInvoiceMenu(inv) {
     const { data: items } = await supabase
       .from('invoice_items').select('*').eq('invoice_id', inv.id);
     if (!items?.length) return alert('No items found');
-    const doc = buildPDF({
+    const doc = await buildPDF({
       doctor: inv.doctor_name,
       start: inv.start_date,
       end: inv.end_date,
@@ -449,11 +462,9 @@ function openInvoiceMenu(inv) {
   menu.querySelector('[data-action="delete"]').onclick = async () => {
     close();
     if (!confirm(`Delete ${inv.invoice_number}?\n\nCases will be unlocked and can be re-invoiced.`)) return;
-    // Unlink cases
     await supabase.from('cases')
       .update({ invoice_id: null, payment_status: false })
       .eq('invoice_id', inv.id);
-    // Delete invoice (items cascade)
     await supabase.from('invoices').delete().eq('id', inv.id);
     await loadInvoices();
     document.getElementById('b-history').innerHTML = renderHistory();
@@ -461,11 +472,9 @@ function openInvoiceMenu(inv) {
 }
 
 async function setInvoicePaid(inv, paid) {
-  // Update invoice
   await supabase.from('invoices')
     .update({ status: paid ? 'paid' : 'unpaid', paid_at: paid ? new Date().toISOString() : null })
     .eq('id', inv.id);
-  // Update linked cases
   await supabase.from('cases')
     .update({ payment_status: paid })
     .eq('invoice_id', inv.id);
@@ -474,24 +483,30 @@ async function setInvoicePaid(inv, paid) {
 }
 
 // ---------- PDF ----------
-function buildPDF({ doctor, start, end, items, total, invoiceNumber }) {
+async function buildPDF({ doctor, start, end, items, total, invoiceNumber }) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
   const M = 18;
 
-  // Brand
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(31, 58, 147);
-  doc.text('CARNIX', M, M + 6);
+  // ---- Header: logo (falls back to text if missing) ----
+  let headerBottomY = M + 12;
+  try {
+    const logo = await loadImage('/assets/BILL LOGO.png');
+    const logoHeight = 14;
+    const logoWidth = (logo.width / logo.height) * logoHeight;
+    doc.addImage(logo.dataUrl, 'PNG', M, M, logoWidth, logoHeight);
+    headerBottomY = M + logoHeight + 4;
+  } catch (e) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(31, 58, 147);
+    doc.text('CARNIX', M, M + 6);
+    headerBottomY = M + 12;
+  }
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(120);
-  doc.text('Creation Lab', M, M + 12);
-
-  // Invoice label
+  // ---- Invoice label ----
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.setTextColor(0);
@@ -501,8 +516,8 @@ function buildPDF({ doctor, start, end, items, total, invoiceNumber }) {
   doc.setTextColor(120);
   doc.text(invoiceNumber, W - M, M + 12, { align: 'right' });
 
-  // Bill to / period
-  let y = M + 30;
+  // ---- Bill to / period ----
+  let y = Math.max(headerBottomY, M + 20) + 8;
   doc.setTextColor(120);
   doc.setFontSize(8);
   doc.text('BILL TO', M, y);
@@ -515,10 +530,9 @@ function buildPDF({ doctor, start, end, items, total, invoiceNumber }) {
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  const periodStr = `${fmtLong(start)} – ${fmtLong(end)}`;
-  doc.text(periodStr, W - M, y + 6, { align: 'right' });
+  doc.text(`${fmtLong(start)} – ${fmtLong(end)}`, W - M, y + 6, { align: 'right' });
 
-  // Line items table
+  // ---- Line items table ----
   doc.autoTable({
     startY: y + 16,
     head: [['Date', 'Description', 'Qty', 'Rate', 'Amount']],
@@ -529,7 +543,7 @@ function buildPDF({ doctor, start, end, items, total, invoiceNumber }) {
       `Rs. ${Number(it.unit_price).toFixed(2)}`,
       `Rs. ${Number(it.amount).toFixed(2)}`,
     ]),
-    foot: [[ '', '', '', 'Total', `Rs. ${Number(total).toFixed(2)}` ]],
+    foot: [['', '', '', 'Total', `Rs. ${Number(total).toFixed(2)}`]],
     margin: { left: M, right: M },
     styles: { font: 'helvetica', fontSize: 9, cellPadding: 3 },
     headStyles: { fillColor: [31, 58, 147], textColor: 255, fontStyle: 'bold' },
@@ -542,11 +556,65 @@ function buildPDF({ doctor, start, end, items, total, invoiceNumber }) {
     },
   });
 
-  const footY = doc.lastAutoTable.finalY + 14;
+  // ---- Payment section ----
+  const s = DEFAULT_SETTINGS;
+  const payY = doc.lastAutoTable.finalY + 12;
+
+  doc.setDrawColor(230);
+  doc.setLineWidth(0.3);
+  doc.line(M, payY, W - M, payY);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(0);
+  doc.text('PAYMENT DETAILS', M, payY + 8);
+
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(9);
+  doc.setTextColor(60);
+
+  let leftY = payY + 14;
+  const leftX = M;
+  const lineGap = 5;
+
+  doc.text(`Bank: ${s.bank.name}`, leftX, leftY);            leftY += lineGap;
+  doc.text(`A/c Name: ${s.bank.accountName}`, leftX, leftY); leftY += lineGap;
+  doc.text(`A/c No: ${s.bank.accountNumber}`, leftX, leftY); leftY += lineGap;
+  doc.text(`IFSC: ${s.bank.ifsc}`, leftX, leftY);            leftY += lineGap;
+  doc.text(`Branch: ${s.bank.branch}`, leftX, leftY);        leftY += lineGap + 2;
+
   doc.setTextColor(120);
-  doc.text('Thank you for your business.', M, footY);
+  doc.setFontSize(8);
+  doc.text(`UPI: ${s.upi.id}`, leftX, leftY);                leftY += lineGap;
+  doc.text(`Ph: ${s.contact.phone}`, leftX, leftY);          leftY += lineGap;
+  doc.text(`Email: ${s.contact.email}`, leftX, leftY);
+
+  // QR
+  const qrSize = 30;
+  const qrX = W - M - qrSize;
+  const qrY = payY + 14;
+
+  try {
+    const qr = await loadImage(s.upi.qrUrl);
+    doc.addImage(qr.dataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+    doc.setFontSize(7);
+    doc.setTextColor(120);
+    doc.text('Scan to pay via UPI', qrX + qrSize / 2, qrY + qrSize + 4, { align: 'center' });
+  } catch (e) {
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(qrX, qrY, qrSize, qrSize, 2, 2);
+    doc.setFontSize(7);
+    doc.setTextColor(160);
+    doc.text('QR', qrX + qrSize / 2, qrY + qrSize / 2 + 1, { align: 'center' });
+    doc.text('Scan to pay via UPI', qrX + qrSize / 2, qrY + qrSize + 4, { align: 'center' });
+  }
+
+  // ---- Footer ----
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(140);
+  doc.text('Thank you for your business.', M, H - 12);
 
   return doc;
 }

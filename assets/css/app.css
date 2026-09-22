@@ -1,5 +1,5 @@
 /* Layout Shell */
-.app-shell {
+.app-body {
   display: flex;
   min-height: 100vh;
   background: var(--bg);
@@ -65,7 +65,7 @@
 }
 
 /* Main Content Wrapper Offset */
-.main-wrapper {
+.main-col {
   margin-left: var(--sidebar-w);
   flex: 1;
   display: flex;
@@ -83,9 +83,8 @@
   background: var(--bg);
 }
 
-.content-area {
-  padding: 28px;
-  flex: 1;
+.content {
+  padding: 20px 16px calc(var(--bottom-nav-h) + 32px + env(safe-area-inset-bottom));
 }
 
 /* Tables & Cards */
@@ -172,7 +171,7 @@ body:not(.is-admin) .admin-only {
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .sidebar { display: none; }
   .main-wrapper { margin-left: 0; margin-bottom: var(--bottom-nav-h); }
   .bottom-nav {

@@ -101,7 +101,7 @@ function renderRows(list) {
       </td>
       <td data-label="Vendor / Description">
         <div class="cell-main">${escapeHtml(e.vendor || '—')}</div>
-        ${e.description ? `<div class="cell-sub">${escapeHtml(e.description)}</div>` : ''}
+        ${e.description && e.description !== 'Null' ? `<div class="cell-sub">${escapeHtml(e.description)}</div>` : ''}
       </td>
       <td data-label="Paid from">${escapeHtml(e.paid_from || '—')}</td>
       <td data-label="Amount" class="num"><b>₹${Number(e.amount).toFixed(2)}</b></td>
@@ -180,7 +180,7 @@ function renderMobileRows(list) {
         <b class="mcase-doctor">${escapeHtml(e.vendor || e.category)}</b>
         <button class="kebab-btn" data-action="menu" data-id="${e.id}" aria-label="Actions">⋯</button>
       </div>
-      <div class="mcase-type">${escapeHtml(e.description || e.category)}</div>
+      <div class="mcase-type">${escapeHtml(e.description && e.description !== 'Null' ? e.description : e.category)}</div>
       <div class="mcase-dates">
         <span>${fmtShort(e.date)}</span>
         ${e.paid_from ? `<span class="mcase-arrow">·</span><span>${escapeHtml(e.paid_from)}</span>` : ''}
@@ -222,13 +222,22 @@ export function wireExpenses() {
 
   document.getElementById('new-expense-btn')?.addEventListener('click', () => openForm());
 
-  const appRoot = document.getElementById('app');
+   const appRoot = document.getElementById('app');
   appRoot.addEventListener('click', (e) => {
+    // Kebab → actions menu
     const kebab = e.target.closest('button[data-action="menu"]');
     if (kebab) {
       e.stopPropagation();
       const exp = allExpenses.find(x => x.id === kebab.dataset.id);
       if (exp) openActions(exp);
+      return;
+    }
+
+    // Row click → open edit form directly
+    const row = e.target.closest('tr[data-id], .mcase-row[data-id]');
+    if (row) {
+      const exp = allExpenses.find(x => x.id === row.dataset.id);
+      if (exp) openForm(exp);
     }
   });
 

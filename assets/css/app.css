@@ -2657,3 +2657,36 @@ html, body {
 .expense-row {
   border-radius: 0;
 }
+
+
+/* ============================================================
+   Fix: desktop-only / mobile-only visibility
+   These override anything earlier — no more double render.
+   ============================================================ */
+.desktop-only {
+  display: block !important;
+}
+.mobile-only,
+.mobile-cases.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 860px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: block !important;
+  }
+  .mobile-cases.mobile-only {
+    display: flex !important;
+  }
+}
+
+.expense-row,
+.mobile-cases .mcase-row {
+  cursor: pointer;
+}
+.expense-row:hover {
+  background: rgba(0, 0, 0, .02);
+}

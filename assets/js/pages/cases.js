@@ -246,7 +246,9 @@ export function wireCases() {
     const mrow = e.target.closest('.mcase-row[data-id]');
     if (mrow) { openCaseDetail(mrow.dataset.id); return; }
   });
+}
 
+  
 function paintRows() {
   const f = filterCases();
   const desktop = document.getElementById('cases-rows');

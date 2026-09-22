@@ -32,19 +32,33 @@ function fmtDate(d) {
 // ---------- Loaders ----------
 async function loadAll() {
   const [s, st, db, act, us] = await Promise.all([
-    supabase.from('settings').select('*').eq('id', 1).single(),
+    supabase.from('settings').select('*').eq('id', 1).maybeSingle(),
     supabase.rpc('get_storage_stats'),
     supabase.rpc('get_database_stats'),
     supabase.rpc('get_activity_stats'),
     supabase.from('users').select('id, name, email, role, created_at').order('created_at', { ascending: true }),
   ]);
 
-  if (s.error) throw s.error;
-  settings = s.data;
-  storageStats = st.data;
-  dbStats = db.data;
-  activityStats = act.data;
-  users = us.data ?? [];
+  // Never throw here — fall back to safe defaults
+  if (s.error)    console.error('settings load error:', s.error);
+  if (st.error)   console.error('storage stats error:', st.error);
+  if (db.error)   console.error('database stats error:', db.error);
+  if (act.error)  console.error('activity stats error:', act.error);
+  if (us.error)   console.error('users load error:', us.error);
+
+  settings = s.data ?? {
+    id: 1,
+    bank:    { name: '', accountName: '', accountNumber: '', ifsc: '', branch: '' },
+    upi:     { id: '', qrUrl: '' },
+    contact: { phone: '', email: '', address: '' },
+    invoice: { prefix: 'CARNIX', terms: '' },
+    storage_quota_bytes: 1073741824,
+  };
+
+  storageStats = st.data   ?? { totalBytes: 0, totalFiles: 0, buckets: [] };
+  dbStats      = db.data   ?? { databaseBytes: 0, tables: [], connections: 0 };
+  activityStats = act.data ?? {};
+  users        = us.data   ?? [];
 }
 
 function statCard(label, value, sub, tone = '') {
@@ -59,7 +73,7 @@ function statCard(label, value, sub, tone = '') {
 
 // ---------- Render ----------
 
-  const quota = Number(settings.storage_quota_bytes) || 1073741824;
+  const quota = Number(settings?.storage_quota_bytes) || 1073741824;
   const quotaUsagePct = quota > 0 ? (st.totalBytes / quota) * 100 : 0;
 
 export async function renderControlPanel() {

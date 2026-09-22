@@ -3,6 +3,7 @@ import { renderPriceList, wirePriceList } from './pages/price-list.js';
 import { renderCases, wireCases, renderNewCase, wireNewCase } from './pages/cases.js';
 import { renderDashboard, wireDashboard } from './pages/dashboard.js';
 import { renderBilling, wireBilling } from './pages/billing.js';
+import { renderExpenses, wireExpenses } from './pages/expenses.js';
 
 // ---------- Auth guard ----------
 const { data: { session } } = await supabase.auth.getSession();
@@ -102,6 +103,7 @@ async function navigate() {
     if (key === 'cases/new')  wireNewCase();
     if (key === '')           wireDashboard();
      if (key === 'billing')    wireBilling();  
+     if (key === 'expenses')   wireExpenses();
   } catch (err) {
     console.error('Page render error:', err);
     main.innerHTML = `<p style="color:var(--danger)">Error loading page: ${escapeHtml(err.message)}</p>`;
@@ -114,10 +116,6 @@ window.addEventListener('hashchange', navigate);
 navigate();
 
 // ---------- Placeholders ----------
-
-async function renderExpenses() {
-  return `<div class="neu-card"><h3>Expenses</h3><p style="color:var(--text-muted);margin-top:8px;">Coming soon.</p></div>`;
-}
 async function renderPL() {
   return `<div class="neu-card"><h3>P&amp;L</h3><p style="color:var(--text-muted);margin-top:8px;">Coming soon.</p></div>`;
 }

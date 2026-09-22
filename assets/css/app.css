@@ -2271,3 +2271,33 @@ html, body {
   .bill-payment-grid { grid-template-columns: 1fr; }
   .bill-payment-qr { justify-self: start; }
 }
+
+/* ============ Expenses ============ */
+.filter-row-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-row-right .search-input {
+  max-width: 200px;
+}
+@media (max-width: 860px) {
+  .filter-row-right { width: 100%; }
+  .filter-row-right .search-input { max-width: 100%; flex: 1; min-width: 0; }
+}
+
+.badge-neutral {
+  background: var(--surface-soft);
+  color: var(--text-muted);
+}
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.expense-row { cursor: pointer; }
+.expense-row:hover { background: rgba(31, 58, 147, .03); }
+
+.field-checkbox.field-wide {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+}

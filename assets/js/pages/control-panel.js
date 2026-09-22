@@ -5,6 +5,7 @@ let storageStats = null;
 let dbStats = null;
 let activityStats = null;
 let users = [];
+import { invalidateSettings } from '../pdf-helpers.js';
 
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
@@ -57,6 +58,10 @@ function statCard(label, value, sub, tone = '') {
 }
 
 // ---------- Render ----------
+
+  const quota = Number(settings.storage_quota_bytes) || 1073741824;
+  const quotaUsagePct = quota > 0 ? (st.totalBytes / quota) * 100 : 0;
+
 export async function renderControlPanel() {
   await loadAll();
 
@@ -78,69 +83,33 @@ export async function renderControlPanel() {
     <!-- ============ OVERVIEW ============ -->
     <div class="cp-pane" data-pane="overview">
       <div class="kpi-row">
-        ${statCard('Storage used', totalStorageGB + ' GB', `${st.totalFiles} files across ${st.buckets.length} buckets`)}
+             <div class="kpi-row">
+        ${statCard(
+          'Storage used',
+          totalStorageGB + ' GB',
+          `of ${(quota / 1024**3).toFixed(2)} GB plan`,
+          quotaUsagePct > 80 ? 'danger' : quotaUsagePct > 50 ? 'warning' : ''
+        )}
         ${statCard('Database', dbMB + ' MB', `${db.connections} connections`, 'primary')}
         ${statCard('Total cases', act.cases ?? 0, `${act.delivered ?? 0} delivered`)}
         ${statCard('Doctors', act.doctors ?? 0, `${act.users ?? 0} users`)}
       </div>
 
-      <div class="cp-grid">
-        <div class="cp-section">
-          <div class="dash-card-head">
-            <div><h4>Storage by bucket</h4><span class="dash-card-sub">File count and size</span></div>
-          </div>
-          ${st.buckets.length ? `
-            <div class="cp-list">
-              ${st.buckets.map(b => `
-                <div class="cp-list-row">
-                  <div>
-                    <b>${escapeHtml(b.bucket)}</b>
-                    <span>${b.files} file${b.files === 1 ? '' : 's'}</span>
-                  </div>
-                  <b>${fmtBytes(b.bytes)}</b>
-                </div>
-              `).join('')}
-            </div>
-          ` : '<div class="empty-row">No files uploaded yet</div>'}
-        </div>
-
-        <div class="cp-section">
-          <div class="dash-card-head">
-            <div><h4>Database tables</h4><span class="dash-card-sub">Size and row count</span></div>
-          </div>
-          ${db.tables.length ? `
-            <div class="cp-list">
-              ${db.tables.map(t => `
-                <div class="cp-list-row">
-                  <div>
-                    <b>${escapeHtml(t.name)}</b>
-                    <span>${t.rows} row${t.rows === 1 ? '' : 's'}</span>
-                  </div>
-                  <b>${fmtBytes(t.bytes)}</b>
-                </div>
-              `).join('')}
-            </div>
-          ` : '<div class="empty-row">No tables yet</div>'}
-        </div>
-      </div>
-
       <div class="cp-section">
         <div class="dash-card-head">
-          <div><h4>Business snapshot</h4><span class="dash-card-sub">All-time totals</span></div>
+          <div>
+            <h4>Storage usage</h4>
+            <span class="dash-card-sub">
+              ${fmtBytes(st.totalBytes)} of ${fmtBytes(quota)} · ${quotaUsagePct.toFixed(1)}% used
+            </span>
+          </div>
         </div>
-        <div class="cp-snapshot">
-          <div><span>Cases</span><b>${act.cases ?? 0}</b></div>
-          <div><span>Delivered</span><b>${act.delivered ?? 0}</b></div>
-          <div><span>Invoices</span><b>${act.invoices ?? 0}</b></div>
-          <div><span>Expenses</span><b>${act.expenses ?? 0}</b></div>
-          <div><span>Inventory items</span><b>${act.inventory ?? 0}</b></div>
-          <div><span>Doctors</span><b>${act.doctors ?? 0}</b></div>
-          <div><span>Income (paid)</span><b>${inr(act.income)}</b></div>
-          <div><span>Expenses (paid)</span><b>${inr(act.expenseTotal)}</b></div>
+        <div class="cp-quota-bar">
+          <div class="cp-quota-fill ${quotaUsagePct > 80 ? 'danger' : quotaUsagePct > 50 ? 'warning' : ''}"
+               style="width:${Math.min(quotaUsagePct, 100).toFixed(1)}%"></div>
         </div>
       </div>
-    </div>
-
+      
     <!-- ============ SETTINGS ============ -->
     <div class="cp-pane" data-pane="settings" hidden>
       <form id="cp-settings-form">
@@ -160,14 +129,36 @@ export async function renderControlPanel() {
           </div>
         </div>
 
-        <div class="cp-section">
+                <div class="cp-section">
           <div class="dash-card-head"><div><h4>UPI</h4><span class="dash-card-sub">Shown on invoice PDFs</span></div></div>
           <div class="form-grid">
-            <label class="field"><span>UPI ID</span>
-              <input type="text" id="s-upi-id" value="${escapeAttr(s.upi?.id ?? '')}" /></label>
-            <label class="field"><span>QR image path</span>
-              <input type="text" id="s-upi-qr" value="${escapeAttr(s.upi?.qrUrl ?? '')}" /></label>
+            <label class="field field-wide"><span>UPI ID</span>
+              <input type="text" id="s-upi-id" value="${escapeAttr(s.upi?.id ?? '')}"
+                     placeholder="yourlab@upi" /></label>
           </div>
+
+          <div class="qr-uploader">
+            <div class="qr-preview-wrap">
+              <div class="qr-preview" id="qr-preview">
+                ${s.upi?.qrUrl
+                  ? `<img src="${escapeAttr(s.upi.qrUrl)}" alt="UPI QR" onerror="this.parentElement.innerHTML='<span>No QR</span>'" />`
+                  : `<span>No QR</span>`}
+              </div>
+              <div class="qr-preview-info">
+                <b>Payment QR code</b>
+                <span id="qr-filename">${s.upi?.qrUrl ? escapeHtml(s.upi.qrUrl.split('/').pop()) : 'Nothing uploaded'}</span>
+              </div>
+            </div>
+            <div class="qr-uploader-actions">
+              <input type="file" accept="image/png,image/jpeg,image/webp"
+                     id="qr-file" style="display:none" />
+              <button type="button" class="btn-ghost" id="qr-upload-btn">Upload QR</button>
+              ${s.upi?.qrUrl && s.upi.qrUrl.includes('/storage/v1/object/public/branding/')
+                ? `<button type="button" class="btn-ghost danger" id="qr-remove-btn">Remove</button>`
+                : ''}
+            </div>
+          </div>
+          <p class="auth-msg" id="qr-msg"></p>
         </div>
 
         <div class="cp-section">
@@ -189,6 +180,21 @@ export async function renderControlPanel() {
               <input type="text" id="s-inv-prefix" value="${escapeAttr(s.invoice?.prefix ?? 'CARNIX')}" /></label>
             <label class="field field-wide"><span>Terms / footer note</span>
               <input type="text" id="s-inv-terms" value="${escapeAttr(s.invoice?.terms ?? '')}" /></label>
+          </div>
+        </div>
+
+                <div class="cp-section">
+          <div class="dash-card-head"><div><h4>Storage quota</h4><span class="dash-card-sub">Your Supabase plan limit</span></div></div>
+          <div class="form-grid">
+            <label class="field"><span>Quota (GB)</span>
+              <input type="number" step="0.1" min="0" id="s-quota-gb"
+                     value="${((Number(s.storage_quota_bytes) || 1073741824) / (1024**3)).toFixed(2)}" /></label>
+            <div class="field" style="justify-content:flex-end">
+              <span>&nbsp;</span>
+              <div style="font-size:.8rem;color:var(--text-muted);padding:14px 0">
+                Free tier = 1 GB · Pro = 100 GB
+              </div>
+            </div>
           </div>
         </div>
 
@@ -277,6 +283,11 @@ export function wireControlPanel() {
     msg.textContent = ''; msg.className = 'auth-msg';
 
     const payload = {
+
+              storage_quota_bytes: Math.round(
+        (Number(document.getElementById('s-quota-gb').value) || 1) * (1024 ** 3)
+      ),
+
       bank: {
         name: document.getElementById('s-bank-name').value.trim(),
         accountName: document.getElementById('s-bank-acct-name').value.trim(),
@@ -332,3 +343,98 @@ export function wireControlPanel() {
     setTimeout(() => { btn.textContent = 'Save'; }, 1200);
   });
 }
+
+  // ---------- QR upload ----------
+  const qrFile = document.getElementById('qr-file');
+  const qrUploadBtn = document.getElementById('qr-upload-btn');
+  const qrRemoveBtn = document.getElementById('qr-remove-btn');
+  const qrMsg = document.getElementById('qr-msg');
+
+  qrUploadBtn?.addEventListener('click', () => qrFile?.click());
+
+  qrFile?.addEventListener('change', async () => {
+    const file = qrFile.files?.[0];
+    if (!file) return;
+
+    qrMsg.textContent = '';
+    qrMsg.className = 'auth-msg';
+
+    if (file.size > 5 * 1024 * 1024) {
+      qrMsg.textContent = 'File too large. Max 5 MB.';
+      qrMsg.className = 'auth-msg error';
+      return;
+    }
+
+    qrUploadBtn.disabled = true;
+    qrUploadBtn.textContent = 'Uploading…';
+
+    const path = 'upi-qr.' + (file.name.split('.').pop() || 'png').toLowerCase();
+
+    const { error: upErr } = await supabase.storage
+      .from('branding')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (upErr) {
+      qrMsg.textContent = upErr.message;
+      qrMsg.className = 'auth-msg error';
+      qrUploadBtn.disabled = false;
+      qrUploadBtn.textContent = 'Upload QR';
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('branding')
+      .getPublicUrl(path);
+
+    // Add a cache-buster so the preview refreshes immediately
+    const urlWithBuster = publicUrl + '?v=' + Date.now();
+
+    const { error: saveErr } = await supabase
+      .from('settings')
+      .update({ upi: { ...settings.upi, qrUrl: publicUrl }, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+
+    if (saveErr) {
+      qrMsg.textContent = saveErr.message;
+      qrMsg.className = 'auth-msg error';
+      qrUploadBtn.disabled = false;
+      qrUploadBtn.textContent = 'Upload QR';
+      return;
+    }
+
+    // Update local state + preview
+    settings.upi.qrUrl = publicUrl;
+    invalidateSettings();
+    document.getElementById('qr-preview').innerHTML =
+      `<img src="${urlWithBuster}" alt="UPI QR" />`;
+    document.getElementById('qr-filename').textContent = path;
+
+    qrMsg.textContent = 'QR uploaded. New invoices will use it.';
+    qrMsg.className = 'auth-msg ok';
+    qrUploadBtn.disabled = false;
+    qrUploadBtn.textContent = 'Upload QR';
+
+    // Reload so Remove button appears
+    setTimeout(() => location.reload(), 900);
+  });
+
+  qrRemoveBtn?.addEventListener('click', async () => {
+    if (!confirm('Remove the QR code? Invoices will show a placeholder box.')) return;
+    qrRemoveBtn.disabled = true;
+    qrRemoveBtn.textContent = 'Removing…';
+
+    // List files in bucket to find the QR (handles .png, .jpg, .webp)
+    const { data: files } = await supabase.storage.from('branding').list();
+    const qrFiles = (files || []).filter(f => f.name.startsWith('upi-qr.'));
+    if (qrFiles.length) {
+      await supabase.storage.from('branding').remove(qrFiles.map(f => f.name));
+    }
+
+    await supabase.from('settings')
+      .update({ upi: { ...settings.upi, qrUrl: '' }, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+
+    settings.upi.qrUrl = '';
+    invalidateSettings();
+    location.reload();
+  });

@@ -72,7 +72,7 @@ async function navigate() {
   const key = currentRoute();
   const route = routes[key] ?? routes[''];
 
-  if (key === 'billing') wireBilling();
+ 
 
   if (route.adminOnly && user.role !== 'admin') {
     window.location.hash = '';
@@ -101,6 +101,7 @@ async function navigate() {
     if (key === 'cases')      wireCases();
     if (key === 'cases/new')  wireNewCase();
     if (key === '')           wireDashboard();
+     if (key === 'billing')    wireBilling();  
   } catch (err) {
     console.error('Page render error:', err);
     main.innerHTML = `<p style="color:var(--danger)">Error loading page: ${escapeHtml(err.message)}</p>`;

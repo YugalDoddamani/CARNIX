@@ -2690,3 +2690,74 @@ html, body {
 .expense-row:hover {
   background: rgba(0, 0, 0, .02);
 }
+
+
+/* ============================================================
+   INVENTORY
+   ============================================================ */
+
+/* Stock cell — inline +/- controls */
+.stock-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all .1s ease;
+  font-family: inherit;
+}
+.stock-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.stock-btn:active {
+  transform: scale(.92);
+}
+
+.stock-value {
+  min-width: 34px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: .95rem;
+}
+.stock-value.stock-low { color: var(--warning); }
+.stock-value.stock-out { color: var(--danger); }
+
+.stock-unit {
+  font-size: .74rem;
+  color: var(--text-muted);
+}
+
+.inv-row { cursor: pointer; }
+.inv-row:hover { background: rgba(0, 0, 0, .02); }
+
+/* Mobile stock control */
+.inv-mobile-stock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0,0,0,.05);
+}
+.inv-qty {
+  flex: 1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

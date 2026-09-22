@@ -5,7 +5,7 @@ import { renderDashboard, wireDashboard } from './pages/dashboard.js';
 import { renderBilling, wireBilling } from './pages/billing.js';
 import { renderExpenses, wireExpenses } from './pages/expenses.js';
 import { renderPL, wirePL } from './pages/pl.js';
-
+import { renderInventory, wireInventory } from './pages/inventory.js';
 
 // ---------- Auth guard ----------
 const { data: { session } } = await supabase.auth.getSession();
@@ -48,6 +48,8 @@ const routes = {
   'expenses':   { title: 'Expenses',   render: renderExpenses,   adminOnly: true },
   'pl':         { title: 'P&L',        render: renderPL,         adminOnly: true },
   'price-list': { title: 'Price List', render: renderPriceList,  adminOnly: true },
+  'inventory':  { title: 'Inventory',  render: renderInventory },
+
 };
 
 function currentRoute() {
@@ -107,6 +109,7 @@ async function navigate() {
      if (key === 'billing')    wireBilling();  
      if (key === 'expenses')   wireExpenses();
      if (key === 'pl')         wirePL();
+     if (key === 'inventory')  wireInventory();
   } catch (err) {
     console.error('Page render error:', err);
     main.innerHTML = `<p style="color:var(--danger)">Error loading page: ${escapeHtml(err.message)}</p>`;

@@ -50,6 +50,7 @@ const routes = {
   'pl':         { title: 'P&L',        render: renderPL,         adminOnly: true },
   'price-list': { title: 'Price List', render: renderPriceList,  adminOnly: true },
   'inventory':  { title: 'Inventory',  render: renderInventory },
+  'control-panel': { title: 'Control Panel', render: renderControlPanel, adminOnly: true },
 
 };
 

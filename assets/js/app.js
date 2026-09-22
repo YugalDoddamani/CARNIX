@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { renderPriceList, wirePriceList } from './pages/price-list.js';
 import { renderCases, wireCases, renderNewCase, wireNewCase } from './pages/cases.js';
 import { renderDashboard, wireDashboard } from './pages/dashboard.js';
+import { renderBilling, wireBilling } from './pages/billing.js';
 
 // ---------- Auth guard ----------
 const { data: { session } } = await supabase.auth.getSession();
@@ -10,11 +11,13 @@ if (!session) {
 }
 
 // ---------- Profile ----------
-const { data: profile } = await supabase
+const { data: profile, error: profileError } = await supabase
   .from('users')
   .select('name, role, email')
   .eq('id', session.user.id)
-  .single();
+  .maybeSingle();
+
+if (profileError) console.error('Profile fetch error:', profileError);
 
 const user = profile ?? {
   name: session.user.email,
@@ -69,6 +72,8 @@ async function navigate() {
   const key = currentRoute();
   const route = routes[key] ?? routes[''];
 
+  if (key === 'billing') wireBilling();
+
   if (route.adminOnly && user.role !== 'admin') {
     window.location.hash = '';
     return;
@@ -108,9 +113,7 @@ window.addEventListener('hashchange', navigate);
 navigate();
 
 // ---------- Placeholders ----------
-async function renderBilling() {
-  return `<div class="neu-card"><h3>Billing</h3><p style="color:var(--text-muted);margin-top:8px;">Coming soon.</p></div>`;
-}
+
 async function renderExpenses() {
   return `<div class="neu-card"><h3>Expenses</h3><p style="color:var(--text-muted);margin-top:8px;">Coming soon.</p></div>`;
 }
@@ -122,6 +125,13 @@ async function renderPL() {
 document.getElementById('logout-btn')?.addEventListener('click', async () => {
   await supabase.auth.signOut();
   window.location.replace('/');
+});
+
+// Auto-logout on session expiry
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT' || !session) {
+    window.location.replace('/');
+  }
 });
 
 // ---------- Utilities ----------

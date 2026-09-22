@@ -24,7 +24,9 @@ async function loadData() {
 }
 
 // ---------- Helpers ----------
-const today = () => new Date().toISOString().slice(0, 10);
+// IST-aware today
+const today = () =>
+  new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 const caseTotal = c => (c.case_stages ?? []).reduce((s, st) => s + Number(st.amount || 0), 0);
 
 function isOverdue(c) {
@@ -234,25 +236,16 @@ export function wireCases() {
     }, 180);
   });
 
-  // Desktop + mobile row click / kebab
-  document.addEventListener('click', (e) => {
-    // Kebab
+    // Row / kebab clicks — scoped to #app so it's GC'd when the page is replaced
+  const appRoot = document.getElementById('app');
+  appRoot.addEventListener('click', (e) => {
     const kebab = e.target.closest('button[data-action="menu"]');
-    if (kebab) {
-      e.stopPropagation();
-      openActions(kebab.dataset.id, kebab);
-      return;
-    }
-
-    // Row click (desktop table only)
+    if (kebab) { e.stopPropagation(); openActions(kebab.dataset.id, kebab); return; }
     const row = e.target.closest('tr[data-id]');
     if (row) { openCaseDetail(row.dataset.id); return; }
-
-    // Mobile row click (but not when tapping kebab)
     const mrow = e.target.closest('.mcase-row[data-id]');
     if (mrow) { openCaseDetail(mrow.dataset.id); return; }
   });
-}
 
 function paintRows() {
   const f = filterCases();

@@ -6,6 +6,7 @@ import { renderBilling, wireBilling } from './pages/billing.js';
 import { renderExpenses, wireExpenses } from './pages/expenses.js';
 import { renderPL, wirePL } from './pages/pl.js';
 import { renderInventory, wireInventory } from './pages/inventory.js';
+import { renderControlPanel, wireControlPanel } from './pages/control-panel.js';
 
 // ---------- Auth guard ----------
 const { data: { session } } = await supabase.auth.getSession();
@@ -110,6 +111,7 @@ async function navigate() {
      if (key === 'expenses')   wireExpenses();
      if (key === 'pl')         wirePL();
      if (key === 'inventory')  wireInventory();
+     if (key === 'control-panel') wireControlPanel();
   } catch (err) {
     console.error('Page render error:', err);
     main.innerHTML = `<p style="color:var(--danger)">Error loading page: ${escapeHtml(err.message)}</p>`;

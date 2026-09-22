@@ -1,9 +1,13 @@
-// Loads an image from a URL and returns { dataUrl, width, height }.
-// Cached so repeated PDFs don't re-fetch.
-const cache = new Map();
+import { supabase } from './supabase.js';
+
+// ============================================================
+// Image loader — used for logo + QR in PDFs
+// ============================================================
+const imageCache = new Map();
 
 export async function loadImage(url) {
-  if (cache.has(url)) return cache.get(url);
+  if (!url) throw new Error('No image URL provided');
+  if (imageCache.has(url)) return imageCache.get(url);
 
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -16,7 +20,7 @@ export async function loadImage(url) {
       ctx.drawImage(img, 0, 0);
       const dataUrl = canvas.toDataURL('image/png');
       const result = { dataUrl, width: img.naturalWidth, height: img.naturalHeight };
-      cache.set(url, result);
+      imageCache.set(url, result);
       resolve(result);
     };
     img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
@@ -24,22 +28,60 @@ export async function loadImage(url) {
   });
 }
 
-// Placeholder settings. Later this will read from a `settings` table
-// populated via the admin control panel.
-export const DEFAULT_SETTINGS = {
+// ============================================================
+// Settings loader — reads from public.settings (single row)
+// Falls back to empty values if the row is missing.
+// Cached for the lifetime of the page. Call invalidateSettings()
+// after saving from Control Panel to force a refresh.
+// ============================================================
+let settingsCache = null;
+
+const FALLBACK_SETTINGS = {
   bank: {
-    name: 'Bank Name',
-    accountName: 'Creation Lab',
-    accountNumber: 'XXXXXXXXXXXX',
-    ifsc: 'XXXX0000000',
-    branch: 'Branch',
+    name: '',
+    accountName: '',
+    accountNumber: '',
+    ifsc: '',
+    branch: '',
   },
   upi: {
-    id: 'creationlab@upi',
+    id: '',
     qrUrl: '/assets/upi-qr.png',
   },
   contact: {
-    phone: '+91 XXXXXXXXXX',
-    email: 'lab@example.com',
+    phone: '',
+    email: '',
+    address: '',
+  },
+  invoice: {
+    prefix: 'CARNIX',
+    terms: '',
   },
 };
+
+export async function loadSettings() {
+  if (settingsCache) return settingsCache;
+
+  const { data, error } = await supabase
+    .from('settings')
+    .select('bank, upi, contact, invoice')
+    .eq('id', 1)
+    .maybeSingle();
+
+  if (error || !data) {
+    settingsCache = { ...FALLBACK_SETTINGS };
+    return settingsCache;
+  }
+
+  settingsCache = {
+    bank:    { ...FALLBACK_SETTINGS.bank,    ...(data.bank    || {}) },
+    upi:     { ...FALLBACK_SETTINGS.upi,     ...(data.upi     || {}) },
+    contact: { ...FALLBACK_SETTINGS.contact, ...(data.contact || {}) },
+    invoice: { ...FALLBACK_SETTINGS.invoice, ...(data.invoice || {}) },
+  };
+  return settingsCache;
+}
+
+export function invalidateSettings() {
+  settingsCache = null;
+}

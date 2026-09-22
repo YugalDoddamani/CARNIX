@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { loadImage, DEFAULT_SETTINGS } from '../pdf-helpers.js';
+import { loadImage, loadSettings } from '../pdf-helpers.js';
 
 let allInvoices = [];
 let currentItems = [];
@@ -557,7 +557,7 @@ async function buildPDF({ doctor, start, end, items, total, invoiceNumber }) {
   });
 
   // ---- Payment section ----
-  const s = DEFAULT_SETTINGS;
+  const s = await loadSettings();
   const payY = doc.lastAutoTable.finalY + 12;
 
   doc.setDrawColor(230);

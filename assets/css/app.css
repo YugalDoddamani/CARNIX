@@ -2301,3 +2301,122 @@ html, body {
   gap: 8px;
   grid-column: 1 / -1;
 }
+
+
+/* ============================================================
+   P&L
+   ============================================================ */
+
+.pl-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.pl-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.pl-header p {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.pl-year {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pl-year span {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.pl-year select {
+  padding: 10px 14px;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: .9rem;
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+}
+.pl-year select:focus { border-color: var(--primary); }
+
+.pl-chart-card {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+  margin-bottom: 16px;
+}
+.pl-chart { height: 320px; }
+
+.pl-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 960px) {
+  .pl-grid { grid-template-columns: 1fr; }
+}
+
+.pl-section {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+}
+
+.pl-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.pl-table .pl-total-row td {
+  border-top: 2px solid rgba(0,0,0,.08);
+  padding-top: 12px;
+}
+
+.pl-cats { display: flex; flex-direction: column; gap: 14px; }
+.pl-cat { display: flex; flex-direction: column; gap: 6px; }
+.pl-cat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .85rem;
+}
+.pl-cat-head span { color: var(--text); }
+.pl-cat-head b { font-variant-numeric: tabular-nums; color: var(--text); }
+.pl-cat-bar {
+  height: 6px;
+  background: var(--surface-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pl-cat-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+.pl-cat-pct {
+  font-size: .7rem;
+  color: var(--text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 860px) {
+  .pl-header h2 { font-size: 1.2rem; }
+  .pl-chart-card { padding: 18px 16px; }
+  .pl-chart { height: 220px; }
+  .pl-section { padding: 18px 16px; }
+  .pl-year select { padding: 8px 12px; }
+}

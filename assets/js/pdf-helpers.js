@@ -86,6 +86,3 @@ export function invalidateSettings() {
   settingsCache = null;
   imageCache.clear();
 }
-export function invalidateImages() {
-  imageCache.clear();
-}

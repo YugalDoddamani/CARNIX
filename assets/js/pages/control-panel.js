@@ -1,11 +1,11 @@
 import { supabase } from '../supabase.js';
+import { invalidateSettings } from '../pdf-helpers.js';
 
 let settings = null;
 let storageStats = null;
 let dbStats = null;
 let activityStats = null;
 let users = [];
-import { invalidateSettings } from '../pdf-helpers.js';
 
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
@@ -19,7 +19,7 @@ function fmtBytes(bytes) {
   if (n < 1024) return n + ' B';
   if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
   if (n < 1024 * 1024 * 1024) return (n / (1024 * 1024)).toFixed(2) + ' MB';
-  return (n / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  return (n / (1024 * 1024 * 1024)).toFixed(3) + ' GB';
 }
 function inr(n) {
   return '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -39,12 +39,11 @@ async function loadAll() {
     supabase.from('users').select('id, name, email, role, created_at').order('created_at', { ascending: true }),
   ]);
 
-  // Never throw here — fall back to safe defaults
-  if (s.error)    console.error('settings load error:', s.error);
-  if (st.error)   console.error('storage stats error:', st.error);
-  if (db.error)   console.error('database stats error:', db.error);
-  if (act.error)  console.error('activity stats error:', act.error);
-  if (us.error)   console.error('users load error:', us.error);
+  if (s.error)   console.error('settings load error:', s.error);
+  if (st.error)  console.error('storage stats error:', st.error);
+  if (db.error)  console.error('database stats error:', db.error);
+  if (act.error) console.error('activity stats error:', act.error);
+  if (us.error)  console.error('users load error:', us.error);
 
   settings = s.data ?? {
     id: 1,
@@ -55,10 +54,10 @@ async function loadAll() {
     storage_quota_bytes: 1073741824,
   };
 
-  storageStats = st.data   ?? { totalBytes: 0, totalFiles: 0, buckets: [] };
-  dbStats      = db.data   ?? { databaseBytes: 0, tables: [], connections: 0 };
-  activityStats = act.data ?? {};
-  users        = us.data   ?? [];
+  storageStats  = st.data   ?? { totalBytes: 0, totalFiles: 0, buckets: [] };
+  dbStats       = db.data   ?? { databaseBytes: 0, tables: [], connections: 0 };
+  activityStats = act.data  ?? {};
+  users         = us.data   ?? [];
 }
 
 function statCard(label, value, sub, tone = '') {
@@ -72,20 +71,20 @@ function statCard(label, value, sub, tone = '') {
 }
 
 // ---------- Render ----------
-
-  const quota = Number(settings?.storage_quota_bytes) || 1073741824;
-  const quotaUsagePct = quota > 0 ? (st.totalBytes / quota) * 100 : 0;
-
 export async function renderControlPanel() {
   await loadAll();
 
-  const s = settings;
-  const st = storageStats || { totalBytes: 0, totalFiles: 0, buckets: [] };
-  const db = dbStats || { databaseBytes: 0, tables: [], connections: 0 };
-  const act = activityStats || {};
+  const s   = settings;
+  const st  = storageStats;
+  const db  = dbStats;
+  const act = activityStats;
 
-  const totalStorageGB = (st.totalBytes / (1024 ** 3)).toFixed(3);
-  const dbMB = (db.databaseBytes / (1024 ** 2)).toFixed(1);
+  const quota = Number(s.storage_quota_bytes) || 1073741824;
+  const quotaUsagePct = quota > 0 ? (st.totalBytes / quota) * 100 : 0;
+
+  const totalStorageStr = fmtBytes(st.totalBytes);
+  const quotaStr        = fmtBytes(quota);
+  const dbMB            = (db.databaseBytes / (1024 ** 2)).toFixed(1);
 
   return `
     <div class="cp-tabs">
@@ -97,11 +96,10 @@ export async function renderControlPanel() {
     <!-- ============ OVERVIEW ============ -->
     <div class="cp-pane" data-pane="overview">
       <div class="kpi-row">
-             <div class="kpi-row">
         ${statCard(
           'Storage used',
-          totalStorageGB + ' GB',
-          `of ${(quota / 1024**3).toFixed(2)} GB plan`,
+          totalStorageStr,
+          `${st.totalFiles} file${st.totalFiles === 1 ? '' : 's'} · of ${quotaStr}`,
           quotaUsagePct > 80 ? 'danger' : quotaUsagePct > 50 ? 'warning' : ''
         )}
         ${statCard('Database', dbMB + ' MB', `${db.connections} connections`, 'primary')}
@@ -114,16 +112,73 @@ export async function renderControlPanel() {
           <div>
             <h4>Storage usage</h4>
             <span class="dash-card-sub">
-              ${fmtBytes(st.totalBytes)} of ${fmtBytes(quota)} · ${quotaUsagePct.toFixed(1)}% used
+              ${totalStorageStr} of ${quotaStr} · ${quotaUsagePct.toFixed(2)}% used
             </span>
           </div>
         </div>
         <div class="cp-quota-bar">
           <div class="cp-quota-fill ${quotaUsagePct > 80 ? 'danger' : quotaUsagePct > 50 ? 'warning' : ''}"
-               style="width:${Math.min(quotaUsagePct, 100).toFixed(1)}%"></div>
+               style="width:${Math.min(quotaUsagePct, 100).toFixed(2)}%"></div>
         </div>
       </div>
-      
+
+      <div class="cp-grid">
+        <div class="cp-section">
+          <div class="dash-card-head">
+            <div><h4>Storage by bucket</h4><span class="dash-card-sub">File count and size</span></div>
+          </div>
+          ${st.buckets.length ? `
+            <div class="cp-list">
+              ${st.buckets.map(b => `
+                <div class="cp-list-row">
+                  <div>
+                    <b>${escapeHtml(b.bucket)}</b>
+                    <span>${b.files} file${b.files === 1 ? '' : 's'}</span>
+                  </div>
+                  <b>${fmtBytes(b.bytes)}</b>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<div class="empty-row">No files uploaded yet</div>'}
+        </div>
+
+        <div class="cp-section">
+          <div class="dash-card-head">
+            <div><h4>Database tables</h4><span class="dash-card-sub">Size and row count</span></div>
+          </div>
+          ${db.tables.length ? `
+            <div class="cp-list">
+              ${db.tables.map(t => `
+                <div class="cp-list-row">
+                  <div>
+                    <b>${escapeHtml(t.name)}</b>
+                    <span>${t.rows} row${t.rows === 1 ? '' : 's'}</span>
+                  </div>
+                  <b>${fmtBytes(t.bytes)}</b>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<div class="empty-row">No tables yet</div>'}
+        </div>
+      </div>
+
+      <div class="cp-section">
+        <div class="dash-card-head">
+          <div><h4>Business snapshot</h4><span class="dash-card-sub">All-time totals</span></div>
+        </div>
+        <div class="cp-snapshot">
+          <div><span>Cases</span><b>${act.cases ?? 0}</b></div>
+          <div><span>Delivered</span><b>${act.delivered ?? 0}</b></div>
+          <div><span>Invoices</span><b>${act.invoices ?? 0}</b></div>
+          <div><span>Expenses</span><b>${act.expenses ?? 0}</b></div>
+          <div><span>Inventory items</span><b>${act.inventory ?? 0}</b></div>
+          <div><span>Doctors</span><b>${act.doctors ?? 0}</b></div>
+          <div><span>Income (paid)</span><b>${inr(act.income)}</b></div>
+          <div><span>Expenses (paid)</span><b>${inr(act.expenseTotal)}</b></div>
+        </div>
+      </div>
+    </div>
+
     <!-- ============ SETTINGS ============ -->
     <div class="cp-pane" data-pane="settings" hidden>
       <form id="cp-settings-form">
@@ -143,7 +198,7 @@ export async function renderControlPanel() {
           </div>
         </div>
 
-                <div class="cp-section">
+        <div class="cp-section">
           <div class="dash-card-head"><div><h4>UPI</h4><span class="dash-card-sub">Shown on invoice PDFs</span></div></div>
           <div class="form-grid">
             <label class="field field-wide"><span>UPI ID</span>
@@ -164,8 +219,7 @@ export async function renderControlPanel() {
               </div>
             </div>
             <div class="qr-uploader-actions">
-              <input type="file" accept="image/png,image/jpeg,image/webp"
-                     id="qr-file" style="display:none" />
+              <input type="file" accept="image/png,image/jpeg,image/webp" id="qr-file" style="display:none" />
               <button type="button" class="btn-ghost" id="qr-upload-btn">Upload QR</button>
               ${s.upi?.qrUrl && s.upi.qrUrl.includes('/storage/v1/object/public/branding/')
                 ? `<button type="button" class="btn-ghost danger" id="qr-remove-btn">Remove</button>`
@@ -197,12 +251,12 @@ export async function renderControlPanel() {
           </div>
         </div>
 
-                <div class="cp-section">
+        <div class="cp-section">
           <div class="dash-card-head"><div><h4>Storage quota</h4><span class="dash-card-sub">Your Supabase plan limit</span></div></div>
           <div class="form-grid">
             <label class="field"><span>Quota (GB)</span>
               <input type="number" step="0.1" min="0" id="s-quota-gb"
-                     value="${((Number(s.storage_quota_bytes) || 1073741824) / (1024**3)).toFixed(2)}" /></label>
+                     value="${((Number(s.storage_quota_bytes) || 1073741824) / (1024 ** 3)).toFixed(2)}" /></label>
             <div class="field" style="justify-content:flex-end">
               <span>&nbsp;</span>
               <div style="font-size:.8rem;color:var(--text-muted);padding:14px 0">
@@ -297,11 +351,6 @@ export function wireControlPanel() {
     msg.textContent = ''; msg.className = 'auth-msg';
 
     const payload = {
-
-              storage_quota_bytes: Math.round(
-        (Number(document.getElementById('s-quota-gb').value) || 1) * (1024 ** 3)
-      ),
-
       bank: {
         name: document.getElementById('s-bank-name').value.trim(),
         accountName: document.getElementById('s-bank-acct-name').value.trim(),
@@ -311,7 +360,7 @@ export function wireControlPanel() {
       },
       upi: {
         id: document.getElementById('s-upi-id').value.trim(),
-        qrUrl: document.getElementById('s-upi-qr').value.trim(),
+        qrUrl: settings.upi?.qrUrl ?? '',
       },
       contact: {
         phone: document.getElementById('s-phone').value.trim(),
@@ -322,6 +371,9 @@ export function wireControlPanel() {
         prefix: document.getElementById('s-inv-prefix').value.trim() || 'CARNIX',
         terms: document.getElementById('s-inv-terms').value.trim(),
       },
+      storage_quota_bytes: Math.round(
+        (Number(document.getElementById('s-quota-gb').value) || 1) * (1024 ** 3)
+      ),
       updated_at: new Date().toISOString(),
     };
 
@@ -335,6 +387,7 @@ export function wireControlPanel() {
       msg.className = 'auth-msg error';
       return;
     }
+    invalidateSettings();
     msg.textContent = 'Settings saved. Invoices will use these values.';
     msg.className = 'auth-msg ok';
   });
@@ -356,9 +409,8 @@ export function wireControlPanel() {
     btn.textContent = '✓';
     setTimeout(() => { btn.textContent = 'Save'; }, 1200);
   });
-}
 
-  // ---------- QR upload ----------
+  // QR upload
   const qrFile = document.getElementById('qr-file');
   const qrUploadBtn = document.getElementById('qr-upload-btn');
   const qrRemoveBtn = document.getElementById('qr-remove-btn');
@@ -382,7 +434,8 @@ export function wireControlPanel() {
     qrUploadBtn.disabled = true;
     qrUploadBtn.textContent = 'Uploading…';
 
-    const path = 'upi-qr.' + (file.name.split('.').pop() || 'png').toLowerCase();
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+    const path = 'upi-qr.' + ext;
 
     const { error: upErr } = await supabase.storage
       .from('branding')
@@ -396,16 +449,14 @@ export function wireControlPanel() {
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('branding')
-      .getPublicUrl(path);
-
-    // Add a cache-buster so the preview refreshes immediately
-    const urlWithBuster = publicUrl + '?v=' + Date.now();
+    const { data: { publicUrl } } = supabase.storage.from('branding').getPublicUrl(path);
 
     const { error: saveErr } = await supabase
       .from('settings')
-      .update({ upi: { ...settings.upi, qrUrl: publicUrl }, updated_at: new Date().toISOString() })
+      .update({
+        upi: { ...settings.upi, qrUrl: publicUrl },
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', 1);
 
     if (saveErr) {
@@ -416,19 +467,15 @@ export function wireControlPanel() {
       return;
     }
 
-    // Update local state + preview
     settings.upi.qrUrl = publicUrl;
     invalidateSettings();
-    document.getElementById('qr-preview').innerHTML =
-      `<img src="${urlWithBuster}" alt="UPI QR" />`;
+    document.getElementById('qr-preview').innerHTML = `<img src="${publicUrl}?v=${Date.now()}" alt="UPI QR" />`;
     document.getElementById('qr-filename').textContent = path;
-
     qrMsg.textContent = 'QR uploaded. New invoices will use it.';
     qrMsg.className = 'auth-msg ok';
     qrUploadBtn.disabled = false;
     qrUploadBtn.textContent = 'Upload QR';
 
-    // Reload so Remove button appears
     setTimeout(() => location.reload(), 900);
   });
 
@@ -437,7 +484,6 @@ export function wireControlPanel() {
     qrRemoveBtn.disabled = true;
     qrRemoveBtn.textContent = 'Removing…';
 
-    // List files in bucket to find the QR (handles .png, .jpg, .webp)
     const { data: files } = await supabase.storage.from('branding').list();
     const qrFiles = (files || []).filter(f => f.name.startsWith('upi-qr.'));
     if (qrFiles.length) {
@@ -445,10 +491,14 @@ export function wireControlPanel() {
     }
 
     await supabase.from('settings')
-      .update({ upi: { ...settings.upi, qrUrl: '' }, updated_at: new Date().toISOString() })
+      .update({
+        upi: { ...settings.upi, qrUrl: '' },
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', 1);
 
     settings.upi.qrUrl = '';
     invalidateSettings();
     location.reload();
   });
+}

@@ -1608,14 +1608,7 @@ a.btn-ghost {
 
 
 /* ============ Layout containment ============ */
-.main-col {
-  min-width: 0;
-  overflow: hidden;
-}
-.content {
-  min-width: 0;
-  overflow: hidden;
-}
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -3023,5 +3016,68 @@ html, body {
     right: 0 !important;
     top: auto !important;
     z-index: 100 !important;
+  }
+}
+
+
+/* ============================================================
+   OVERFLOW — final, using clip (no scroll containers created)
+   ============================================================ */
+
+/* Page: clip X, let the viewport scroll Y */
+html {
+  overflow-x: clip;
+  overflow-y: visible;
+  height: auto;
+}
+
+body {
+  overflow-x: clip;
+  overflow-y: visible;
+  height: auto;
+  min-height: 100vh;
+}
+
+/* Wrappers: no clipping, no scroll containers */
+.app-body,
+.app-shell,
+.main-col,
+.main-wrapper,
+.content,
+.content-area {
+  overflow-x: clip;
+  overflow-y: visible;
+  height: auto;
+  max-height: none;
+}
+
+/* Children that MUST scroll internally (wide tables) */
+.table-wrap,
+.case-modal,
+.bill-preview-body {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+.table-wrap { -webkit-overflow-scrolling: touch; }
+
+/* Mobile — no change needed here now; clip handles it */
+@media (max-width: 860px) {
+  html, body {
+    overflow-x: clip;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100vw;
+  }
+  .main-col,
+  .main-wrapper,
+  .content,
+  .content-area {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+  .content {
+    padding: 16px 16px calc(var(--bottom-nav-h) + 32px + env(safe-area-inset-bottom));
   }
 }

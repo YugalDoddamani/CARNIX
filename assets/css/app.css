@@ -2420,3 +2420,240 @@ html, body {
   .pl-section { padding: 18px 16px; }
   .pl-year select { padding: 8px 12px; }
 }
+
+
+/* ============================================================
+   TABLE LANGUAGE — Notion / Supabase style
+   Overrides all previous table + mobile-row styling.
+   ============================================================ */
+
+/* ---------- Desktop table container ---------- */
+.table-wrap {
+  padding: 0 !important;
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* ---------- Desktop table ---------- */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.data-table th {
+  padding: 11px 16px;
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  background: transparent;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+  font-size: .87rem;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.data-table tbody tr {
+  background: transparent;
+  transition: background .1s ease;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(0,0,0,.02);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keep row-actions light */
+.row-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* ============================================================
+   MOBILE — flat list, not cards
+   ============================================================ */
+@media (max-width: 860px) {
+
+  .table-wrap {
+    padding: 0 !important;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,.06);
+  }
+
+  .data-table { min-width: 0; }
+  .data-table thead { display: none; }
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* Each row is a flat list item, not a card */
+  .data-table tr {
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    cursor: pointer;
+  }
+  .data-table tr:last-child { border-bottom: none; }
+  .data-table tr:active { background: rgba(0,0,0,.03); }
+  .data-table tr:hover { background: transparent; }
+
+  .data-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 3px 0;
+    border: none !important;
+    font-size: .85rem;
+  }
+
+  .data-table td::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .data-table td:first-child { padding-top: 0; }
+  .data-table td:last-child  { padding-bottom: 0; }
+
+  .row-actions {
+    justify-content: flex-end;
+    padding-top: 8px !important;
+    margin-top: 4px;
+    border-top: 1px solid rgba(0,0,0,.04) !important;
+  }
+  .row-actions::before { content: ''; display: none; }
+
+  /* ---------- Mobile case list (mcase-row) — same flat treatment ---------- */
+  .mobile-cases {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .mcase-row {
+    display: block;
+    padding: 14px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    border-radius: 0;
+    box-shadow: none;
+    cursor: pointer;
+    transition: background .1s ease;
+    transform: none;
+  }
+  .mcase-row:last-child { border-bottom: none; }
+  .mcase-row:active { transform: none; background: rgba(0,0,0,.03); }
+
+  /* ---------- Billing history — align with list pattern ---------- */
+  .bill-history-card {
+    padding: 0 !important;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .bill-history-card .dash-card-head {
+    padding: 16px 16px 12px;
+    margin-bottom: 0;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+  }
+  .bill-history {
+    padding: 0;
+  }
+  .bill-history-row {
+    padding: 14px 16px;
+    border-top: none;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    gap: 12px;
+  }
+  .bill-history-row:first-child { padding-top: 14px; }
+  .bill-history-row:last-child  { border-bottom: none; }
+
+  /* ---------- Desktop table padding tweaks on very small ---------- */
+  .data-table th { padding: 9px 12px; }
+  .data-table td { padding: 10px 12px; }
+}
+
+/* ============================================================
+   Consistify: page-header-actions and filter-row alignment
+   ============================================================ */
+.page-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+/* Bill history card padding (desktop) */
+.bill-history-card {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+}
+.bill-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(0,0,0,.05);
+}
+.bill-history-row:first-child { border-top: none; padding-top: 4px; }
+
+/* ============================================================
+   Kill legacy rounded-row styles that conflict
+   ============================================================ */
+.data-table tr,
+.mcase-row,
+.bill-history-row,
+.expense-row {
+  border-radius: 0;
+}

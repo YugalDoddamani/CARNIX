@@ -1,180 +1,254 @@
 import { supabase } from '../supabase.js';
 
-export async function renderPriceList() {
+let allItems = [];
+
+// ---------- Load ----------
+async function loadData() {
   const { data, error } = await supabase
     .from('price_list')
     .select('id, case_type, label, price, active')
     .order('case_type', { ascending: true });
-
   if (error) throw error;
+  allItems = data ?? [];
+}
 
-  const rows = (data ?? []).map(item => `
-    <tr data-id="${item.id}">
-      <td data-label="Case Type">${escapeHtml(item.case_type)}</td>
-      <td data-label="Label">${escapeHtml(item.label)}</td>
-      <td data-label="Price">₹${Number(item.price).toFixed(2)}</td>
-      <td data-label="Active">${item.active ? 'Yes' : 'No'}</td>
-      <td data-label="Actions" class="row-actions">
-        <button class="btn-ghost" data-action="edit" data-id="${item.id}">Edit</button>
-        <button class="btn-ghost danger" data-action="delete" data-id="${item.id}">Delete</button>
+// ---------- Utils ----------
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+const escapeAttr = escapeHtml;
+
+// ---------- Rows ----------
+function renderRows(list) {
+  if (!list.length) {
+    return `<tr><td colspan="5" class="empty-row">No items yet</td></tr>`;
+  }
+  return list.map(it => `
+    <tr data-id="${it.id}" class="price-row">
+      <td data-label="Case Type"><b>${escapeHtml(it.case_type)}</b></td>
+      <td data-label="Label">${escapeHtml(it.label)}</td>
+      <td data-label="Price" class="num">₹${Number(it.price).toFixed(2)}</td>
+      <td data-label="Active">
+        <span class="badge ${it.active ? 'badge-success' : 'badge-neutral'}">
+          ${it.active ? 'Active' : 'Inactive'}
+        </span>
+      </td>
+      <td data-label="" class="row-actions">
+        <button class="kebab-btn" data-action="menu" data-id="${it.id}" aria-label="Actions">⋯</button>
       </td>
     </tr>
   `).join('');
+}
+
+function renderMobileRows(list) {
+  if (!list.length) return `<div class="empty-row">No items yet</div>`;
+  return list.map(it => `
+    <div class="mcase-row price-row" data-id="${it.id}">
+      <div class="mcase-head">
+        <b class="mcase-doctor">${escapeHtml(it.case_type)}</b>
+        <span class="badge ${it.active ? 'badge-success' : 'badge-neutral'}">
+          ${it.active ? 'Active' : 'Inactive'}
+        </span>
+      </div>
+      <div class="mcase-type">${escapeHtml(it.label)}</div>
+      <div class="mcase-badges">
+        <span class="badge badge-primary">₹${Number(it.price).toFixed(2)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ---------- Render ----------
+export async function renderPriceList() {
+  await loadData();
 
   return `
-    <div class="page-header">
-      <h3>Master Price List</h3>
+    <div class="page-header-actions">
       <button class="btn-primary" id="add-price">+ Add Item</button>
     </div>
 
-    <div class="table-wrap neu-card">
+    <div class="table-wrap neu-card desktop-only">
       <table class="data-table">
         <thead>
           <tr>
             <th>Case Type</th>
             <th>Label</th>
-            <th>Price</th>
-            <th>Active</th>
+            <th class="num">Price</th>
+            <th>Status</th>
             <th></th>
           </tr>
         </thead>
-        <tbody id="price-rows">
-          ${rows || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">No items yet</td></tr>'}
-        </tbody>
+        <tbody id="price-rows">${renderRows(allItems)}</tbody>
       </table>
     </div>
 
-    <!-- Modal -->
-    <div class="modal-backdrop" id="price-modal" hidden>
-      <div class="modal neu-card">
-        <h3 id="modal-title">Add Price Item</h3>
-        <form id="price-form">
-          <input type="hidden" id="item-id" />
+    <div class="mobile-cases mobile-only" id="price-rows-mobile">
+      ${renderMobileRows(allItems)}
+    </div>
 
-          <label class="field">
-            <span>Case Type</span>
-            <input type="text" id="case-type" required />
-          </label>
-          <label class="field">
-            <span>Label</span>
-            <input type="text" id="label" placeholder="Arch / Unit / etc." required />
-          </label>
-          <label class="field">
-            <span>Price (₹)</span>
-            <input type="number" step="0.01" min="0" id="price" required />
-          </label>
-          <label class="field" style="flex-direction:row;align-items:center;gap:8px">
-            <input type="checkbox" id="active" checked />
-            <span>Active</span>
-          </label>
+    <div id="modal-root"></div>
+  `;
+}
 
-          <div class="modal-actions">
-            <button type="button" class="btn-ghost" id="cancel-btn">Cancel</button>
-            <button type="submit" class="btn-primary" id="save-btn">Save</button>
+// ---------- Wiring ----------
+export function wirePriceList() {
+  document.getElementById('add-price')?.addEventListener('click', () => openForm());
+
+  const appRoot = document.getElementById('app');
+  appRoot.addEventListener('click', (e) => {
+    const kebab = e.target.closest('button[data-action="menu"]');
+    if (kebab) {
+      e.stopPropagation();
+      const item = allItems.find(x => x.id === kebab.dataset.id);
+      if (item) openActions(item);
+      return;
+    }
+    const row = e.target.closest('tr[data-id], .mcase-row[data-id]');
+    if (row) {
+      const item = allItems.find(x => x.id === row.dataset.id);
+      if (item) openForm(item);
+    }
+  });
+}
+
+// ---------- Actions menu ----------
+function openActions(item) {
+  document.getElementById('kebab-menu-root')?.remove();
+  const menu = document.createElement('div');
+  menu.id = 'kebab-menu-root';
+  menu.className = 'kebab-menu-root';
+  menu.innerHTML = `
+    <div class="kebab-backdrop"></div>
+    <div class="kebab-sheet">
+      <button class="kebab-action" data-action="edit">Edit item</button>
+      <button class="kebab-action danger" data-action="delete">Delete</button>
+    </div>
+  `;
+  document.body.appendChild(menu);
+  const close = () => menu.remove();
+  menu.querySelector('.kebab-backdrop').addEventListener('click', close);
+
+  menu.querySelector('[data-action="edit"]').onclick = () => { close(); openForm(item); };
+
+  menu.querySelector('[data-action="delete"]').onclick = async () => {
+    close();
+    if (!confirm(`Delete "${item.case_type}"? This cannot be undone.`)) return;
+    const { error } = await supabase.from('price_list').delete().eq('id', item.id);
+    if (error) return alert(error.message);
+    await refreshAll();
+  };
+}
+
+// ---------- Form modal ----------
+function renderForm(item = null) {
+  const isEdit = !!item;
+  const it = item ?? { case_type: '', label: '', price: '', active: true };
+
+  return `
+    <div class="case-modal-backdrop" id="price-modal">
+      <div class="case-modal">
+        <div class="case-modal-header">
+          <div>
+            <div class="case-modal-eyebrow">${isEdit ? 'Edit price item' : 'New price item'}</div>
+            <h3>${isEdit ? escapeHtml(it.case_type) : 'Add Price Item'}</h3>
           </div>
-          <p id="modal-msg" class="auth-msg"></p>
+          <button class="modal-close" id="price-close">×</button>
+        </div>
+
+        <form id="price-form">
+          <div class="form-section">
+            <div class="form-grid">
+              <label class="field field-wide">
+                <span>Case Type</span>
+                <input type="text" id="p-case-type" value="${escapeAttr(it.case_type ?? '')}"
+                       placeholder="e.g. Cast pour, Mockup…" required />
+              </label>
+              <label class="field">
+                <span>Label</span>
+                <input type="text" id="p-label" value="${escapeAttr(it.label ?? '')}"
+                       placeholder="Arch / Unit / etc." required />
+              </label>
+              <label class="field">
+                <span>Price (₹)</span>
+                <input type="number" step="0.01" min="0" id="p-price"
+                       value="${it.price ?? ''}" required />
+              </label>
+              <label class="field field-checkbox field-wide">
+                <input type="checkbox" id="p-active" ${it.active ? 'checked' : ''} />
+                <span>Active (visible in case entry)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="case-modal-actions">
+            <button type="button" class="btn-ghost" id="price-cancel">Cancel</button>
+            <button type="submit" class="btn-primary" id="price-save">
+              ${isEdit ? 'Save changes' : 'Add item'}
+            </button>
+          </div>
+          <p class="auth-msg" id="price-msg"></p>
         </form>
       </div>
     </div>
   `;
 }
 
-// ---------- Post-render wiring ----------
-export function wirePriceList() {
-  const modal    = document.getElementById('price-modal');
-  const form     = document.getElementById('price-form');
-  const msg      = document.getElementById('modal-msg');
-  const title    = document.getElementById('modal-title');
-  const saveBtn  = document.getElementById('save-btn');
-  const idField  = document.getElementById('item-id');
-  const typeF    = document.getElementById('case-type');
-  const labelF   = document.getElementById('label');
-  const priceF   = document.getElementById('price');
-  const activeF  = document.getElementById('active');
+function openForm(item = null) {
+  const root = document.getElementById('modal-root');
+  root.innerHTML = renderForm(item);
+  wireForm(item);
+}
 
-  const openModal = (item = null) => {
-    msg.textContent = '';
-    msg.className = 'auth-msg';
-    if (item) {
-      title.textContent = 'Edit Price Item';
-      idField.value = item.id;
-      typeF.value   = item.case_type;
-      labelF.value  = item.label;
-      priceF.value  = item.price;
-      activeF.checked = item.active;
-    } else {
-      title.textContent = 'Add Price Item';
-      form.reset();
-      idField.value = '';
-      activeF.checked = true;
-    }
-    modal.hidden = false;
-  };
-
-  const closeModal = () => { modal.hidden = true; };
-
-  document.getElementById('add-price')?.addEventListener('click', () => openModal());
-  document.getElementById('cancel-btn')?.addEventListener('click', closeModal);
-  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-
-  // Row actions
-  document.getElementById('price-rows')?.addEventListener('click', async e => {
-    const btn = e.target.closest('button[data-action]');
-    if (!btn) return;
-    const { action, id } = btn.dataset;
-
-    if (action === 'edit') {
-      const { data, error } = await supabase
-        .from('price_list').select('*').eq('id', id).single();
-      if (error) return alert(error.message);
-      openModal(data);
-      return;
-    }
-
-    if (action === 'delete') {
-      if (!confirm('Delete this item?')) return;
-      const { error } = await supabase.from('price_list').delete().eq('id', id);
-      if (error) return alert(error.message);
-      location.reload();
-    }
+function wireForm(item) {
+  const root = document.getElementById('modal-root');
+  const close = () => root.innerHTML = '';
+  root.querySelector('#price-close').onclick = close;
+  root.querySelector('#price-cancel').onclick = close;
+  root.querySelector('.case-modal-backdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'price-modal') close();
   });
 
-  // Save (create or update)
-  form?.addEventListener('submit', async e => {
+  // Auto-focus first input
+  setTimeout(() => root.querySelector('#p-case-type')?.focus(), 50);
+
+  root.querySelector('#price-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    msg.textContent = '';
-    msg.className = 'auth-msg';
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
+    const msg = root.querySelector('#price-msg');
+    const btn = root.querySelector('#price-save');
+    msg.textContent = ''; msg.className = 'auth-msg';
+    btn.disabled = true; btn.textContent = 'Saving…';
 
     const payload = {
-      case_type: typeF.value.trim(),
-      label:     labelF.value.trim(),
-      price:     Number(priceF.value),
-      active:    activeF.checked,
+      case_type: root.querySelector('#p-case-type').value.trim(),
+      label:     root.querySelector('#p-label').value.trim(),
+      price:     Number(root.querySelector('#p-price').value),
+      active:    root.querySelector('#p-active').checked,
     };
 
-    const id = idField.value;
-    const { error } = id
-      ? await supabase.from('price_list').update(payload).eq('id', id)
+    const { error } = item
+      ? await supabase.from('price_list').update(payload).eq('id', item.id)
       : await supabase.from('price_list').insert(payload);
 
     if (error) {
       msg.textContent = error.message;
       msg.className = 'auth-msg error';
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Save';
+      btn.disabled = false;
+      btn.textContent = item ? 'Save changes' : 'Add item';
       return;
     }
 
-    closeModal();
-    location.reload();
+    close();
+    await refreshAll();
   });
 }
 
-// ---------- util ----------
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
+// ---------- Refresh ----------
+async function refreshAll() {
+  await loadData();
+  const dt = document.getElementById('price-rows');
+  const mb = document.getElementById('price-rows-mobile');
+  if (dt) dt.innerHTML = renderRows(allItems);
+  if (mb) mb.innerHTML = renderMobileRows(allItems);
 }

@@ -1,18 +1,20 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+export async function onRequest(context) {
+  const response = await context.next();
+  const ct = response.headers.get('content-type') || '';
+  if (!ct.includes('text/html')) return response;
 
-const SUPABASE_URL = window.__ENV__?.SUPABASE_URL;
-const SUPABASE_KEY = window.__ENV__?.SUPABASE_PUBLISHABLE_KEY;
+  const env = context.env || {};
+  const url = env.SUPABASE_URL || '';
+  const key = env.SUPABASE_PUBLISHABLE_KEY || '';
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  throw new Error(
-    'Missing Supabase env. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in Cloudflare Pages env vars.'
-  );
+  if (!url || !key) return response;
+
+  const html = await response.text();
+  const injection =
+    `<script>window.__ENV__={SUPABASE_URL:${JSON.stringify(url)},SUPABASE_PUBLISHABLE_KEY:${JSON.stringify(key)}};</script>`;
+
+  return new Response(html.replace(/<head>/i, `<head>${injection}`), {
+    status: response.status,
+    headers: response.headers,
+  });
 }
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});

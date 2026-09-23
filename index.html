@@ -6,87 +6,172 @@
   <title>CARNIX</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/assets/css/auth.css" />
 </head>
-<body class="mercury-body">
+<body class="login-body">
 
-  <svg class="svg-filter-hidden" aria-hidden="true">
-    <defs>
-      <filter id="gooey">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur" />
-        <feColorMatrix in="blur" mode="matrix"
-          values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
-        <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
-      </filter>
-    </defs>
-  </svg>
+  <canvas id="smoke-canvas" aria-hidden="true"></canvas>
 
-  <div class="stage" id="stage" aria-hidden="true"></div>
+  <main class="login-shell">
+    <div class="login-card">
 
-  <main class="auth-container">
-    <header class="auth-header">
-      <img class="brand-logo" src="/assets/logo.png" alt="Creation Lab" />
-    </header>
+      <header class="login-brand">
+        <img src="/assets/logo.png" alt="Creation Lab" />
+      </header>
 
-    <form id="login-form" autocomplete="off">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" placeholder="you@example.com" required />
-        <div class="input-glow"></div>
-      </div>
+      <form id="login-form" class="login-form" autocomplete="off">
+        <div class="float-field">
+          <input type="email" id="email" placeholder=" " required />
+          <label for="email">Email</label>
+        </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" placeholder="••••••••" required />
-        <div class="input-glow"></div>
-      </div>
+        <div class="float-field">
+          <input type="password" id="password" placeholder=" " required />
+          <label for="password">Password</label>
+        </div>
 
-      <div class="submit-wrap">
-        <div class="mercury-drop"></div>
-        <button type="submit" class="btn-base" id="login-btn">Sign in</button>
-      </div>
+        <button type="submit" class="login-btn" id="login-btn">
+          <span>Sign in</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
 
-      <p id="login-msg" class="auth-msg" role="status"></p>
-    </form>
+        <p id="login-msg" class="login-msg" role="status"></p>
+      </form>
+
+    </div>
   </main>
 
   <script type="module">
     import { supabase } from '/assets/js/supabase.js';
 
-    // Blobs — fewer, smaller, quieter
-    const stage = document.getElementById('stage');
-    const blobs = [];
-    for (let i = 0; i < 4; i++) {
-      const el = document.createElement('div');
-      el.className = 'blob';
-      const size = Math.random() * 100 + 100;
-      el.style.width  = size + 'px';
-      el.style.height = size + 'px';
-      el.style.left   = (Math.random() * 80 + 10) + '%';
-      el.style.top    = (Math.random() * 80 + 10) + '%';
-      el.style.animationDelay    = (Math.random() * -10) + 's';
-      el.style.animationDuration = (Math.random() * 6 + 8) + 's';
-      stage.appendChild(el);
-      blobs.push(el);
-    }
+    // ============================================================
+    // Smokey WebGL background — ported from the React reference
+    // ============================================================
+    (function initSmoke() {
+      const canvas = document.getElementById('smoke-canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) return; // fallback: solid body background from CSS
 
-    // Parallax
-    document.addEventListener('mousemove', (e) => {
-      const x = e.clientX / window.innerWidth;
-      const y = e.clientY / window.innerHeight;
-      blobs.forEach((b, i) => {
-        const speed = (i + 1) * 15;
-        b.style.marginLeft = (x * speed) + 'px';
-        b.style.marginTop  = (y * speed) + 'px';
+      const VERT = `
+        attribute vec4 a_position;
+        void main() { gl_Position = a_position; }
+      `;
+
+      const FRAG = `
+        precision mediump float;
+        uniform vec2  iResolution;
+        uniform float iTime;
+        uniform vec2  iMouse;
+        uniform vec3  u_color;
+
+        void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+          vec2 centeredUV = (2.0 * fragCoord - iResolution.xy) / min(iResolution.x, iResolution.y);
+          float time = iTime * 0.5;
+
+          vec2 mouse = iMouse / iResolution;
+          vec2 rippleCenter = 2.0 * mouse - 1.0;
+
+          vec2 distortion = centeredUV;
+          for (float i = 1.0; i < 8.0; i++) {
+            distortion.x += 0.5 / i * cos(i * 2.0 * distortion.y + time + rippleCenter.x * 3.1415);
+            distortion.y += 0.5 / i * cos(i * 2.0 * distortion.x + time + rippleCenter.y * 3.1415);
+          }
+
+          float wave = abs(sin(distortion.x + distortion.y + time));
+          float glow = smoothstep(0.9, 0.2, wave);
+
+          fragColor = vec4(u_color * glow, 1.0);
+        }
+
+        void main() { mainImage(gl_FragColor, gl_FragCoord.xy); }
+      `;
+
+      function compile(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+          console.error('Shader error:', gl.getShaderInfoLog(s));
+          return null;
+        }
+        return s;
+      }
+
+      const vs = compile(gl.VERTEX_SHADER, VERT);
+      const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+      if (!vs || !fs) return;
+
+      const program = gl.createProgram();
+      gl.attachShader(program, vs);
+      gl.attachShader(program, fs);
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+      gl.useProgram(program);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER,
+        new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]),
+        gl.STATIC_DRAW);
+
+      const posLoc = gl.getAttribLocation(program, 'a_position');
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+      const resLoc   = gl.getUniformLocation(program, 'iResolution');
+      const timeLoc  = gl.getUniformLocation(program, 'iTime');
+      const mouseLoc = gl.getUniformLocation(program, 'iMouse');
+      const colorLoc = gl.getUniformLocation(program, 'u_color');
+
+      // Brand navy — from --primary
+      gl.uniform3f(colorLoc, 0.122, 0.227, 0.576); // #1F3A93
+
+      const mouse = { x: 0, y: 0, hovering: false };
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        mouse.hovering = true;
       });
-    });
 
-    // Already signed in?
+      const start = performance.now();
+
+      function resize() {
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+          gl.viewport(0, 0, w, h);
+        }
+      }
+
+      function frame() {
+        resize();
+        const t = (performance.now() - start) / 1000;
+        gl.uniform2f(resLoc, canvas.width, canvas.height);
+        gl.uniform1f(timeLoc, t);
+        gl.uniform2f(mouseLoc,
+          mouse.hovering ? mouse.x : canvas.width / 2,
+          mouse.hovering ? canvas.height - mouse.y : canvas.height / 2
+        );
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        requestAnimationFrame(frame);
+      }
+
+      frame();
+    })();
+
+    // ============================================================
+    // Supabase auth
+    // ============================================================
     const { data: { session } } = await supabase.auth.getSession();
     if (session) window.location.replace('/app.html');
 
-    // Login
     const form = document.getElementById('login-form');
     const btn  = document.getElementById('login-btn');
     const msg  = document.getElementById('login-msg');
@@ -94,9 +179,9 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       msg.textContent = '';
-      msg.className = 'auth-msg';
+      msg.className = 'login-msg';
       btn.disabled = true;
-      btn.textContent = 'Signing in…';
+      btn.querySelector('span').textContent = 'Signing in…';
 
       const email    = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
@@ -105,9 +190,9 @@
 
       if (error) {
         msg.textContent = error.message;
-        msg.className = 'auth-msg error';
+        msg.className = 'login-msg error';
         btn.disabled = false;
-        btn.textContent = 'Sign in';
+        btn.querySelector('span').textContent = 'Sign in';
         return;
       }
 

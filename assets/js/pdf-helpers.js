@@ -46,7 +46,7 @@ const FALLBACK_SETTINGS = {
   },
   upi: {
     id: '',
-    qrUrl: '/assets/upi-qr.png',
+    qrUrl: '/assets/upi-qr.webp',
   },
   contact: {
     phone: '',

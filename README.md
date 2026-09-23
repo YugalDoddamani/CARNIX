@@ -98,3 +98,145 @@ All settings flow into invoice PDFs via the `settings` table.
 ---
 
 ## File structure
+CARNIX/
+├── index.html Login page
+├── app.html App shell (sidebar + topbar + bottom nav)
+├── README.md
+├── SUMMARY.md
+├── memory.md
+├── .gitignore
+├── .env.example
+├── _headers Cloudflare security + caching
+├── _redirects
+├── functions/
+│ └── _middleware.js Injects window.ENV from Cloudflare vars
+├── assets/
+│ ├── logo.png
+│ ├── bill-logo.png Used in invoice PDFs
+│ ├── upi-qr.png Optional
+│ ├── css/
+│ │ ├── variables.css Design tokens
+│ │ ├── auth.css Login screen
+│ │ ├── app.css Shell + components
+│ │ └── skeleton.css Loading skeletons
+│ └── js/
+│ ├── supabase.js Client init
+│ ├── app.js Auth guard + router + skeletons
+│ ├── pdf-helpers.js Image loader + settings loader
+│ └── pages/
+│ ├── dashboard.js
+│ ├── cases.js
+│ ├── billing.js
+│ ├── expenses.js
+│ ├── pl.js
+│ ├── inventory.js
+│ ├── price-list.js
+│ └── control-panel.js
+└── sql/
+├── 001_schema.sql Base schema
+├── 002_seed_price_list.sql 65-item price list
+├── 003_case_stages.sql Multi-stage model
+├── 004_invoice_numbering.sql Sequence + function
+├── 005_rls_fixes.sql
+├── 006_expenses_extended.sql
+├── 007_control_panel.sql Settings table + RPCs
+├── 008_branding_bucket.sql Storage bucket + quota column
+└── 009_harden_signup_trigger.sql
+
+text
+
+---
+
+## Database
+
+| Table | Purpose |
+|---|---|
+| `users` | Mirrors `auth.users`, adds `name` + `role` |
+| `cases` | Case header (doctor, patient, dates, status, payment flag) |
+| `case_stages` | Line items per case (case_type, qty, unit_price) |
+| `price_list` | Master case type catalog |
+| `expenses` | Expense log |
+| `inventory` | Lab materials + min thresholds |
+| `invoices` | Generated invoices with sequential numbers |
+| `invoice_items` | Line items per invoice |
+| `settings` | Single-row config for bank/UPI/contact/invoice |
+
+Row Level Security is enabled on every table. Admin-only tables (`expenses`, `invoices`, `settings`) are gated by `public.is_admin()`. Cases and stages are readable/writable by any authenticated user; deletes are admin-only.
+
+RPCs:
+- `next_invoice_number(year)` — sequential numbering
+- `get_storage_stats()` — storage bytes + file counts by bucket
+- `get_database_stats()` — DB size, table sizes, row counts
+- `get_activity_stats()` — business totals
+
+---
+
+## Environment setup
+
+The app reads Supabase credentials from `window.__ENV__`, injected at runtime by
+`functions/_middleware.js` from Cloudflare Pages environment variables.
+
+### Cloudflare Pages env vars
+
+Set in **Pages → carnix → Settings → Environment variables** for both Production and Preview:
+SUPABASE_URL = https://YOUR_PROJECT.supabase.co
+SUPABASE_PUBLISHABLE_KEY = sb_publishable_...
+
+text
+
+### Local development
+
+Serve the repo root with any static server (`npx serve`, `python -m http.server`, etc.).
+Set `window.__ENV__` manually in dev tools or add a local `functions/` override if you
+want to avoid committing real credentials.
+
+**Do not commit real Supabase keys.** `.env.example` contains placeholders only.
+
+---
+
+## Deploy
+
+Push to `main` on GitHub. Cloudflare Pages builds and deploys automatically within ~30 seconds.
+
+Check deployment: **Cloudflare → Pages → carnix → Deployments**.
+
+Force a rebuild without code changes: **⋯ on the latest deployment → Retry deployment**.
+
+---
+
+## Setup from scratch
+
+1. Create a Supabase project
+2. Run `sql/001_schema.sql` and the subsequent migrations in order in the SQL Editor
+3. Seed `price_list` with `sql/002_seed_price_list.sql`
+4. Create your first admin user in **Authentication → Users**
+5. Manually set `role = 'admin'` for that user in the `users` table
+6. Create a Cloudflare Pages project connected to the repo (build command empty, output `/`)
+7. Set `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` env vars
+8. Deploy
+
+---
+
+## Roadmap
+
+- [ ] Historical import from `BILL IO` (586 rows from the legacy Excel)
+- [ ] Pagination for large datasets (currently `.limit(500)` on most queries)
+- [ ] Server-side search
+- [ ] Offline support via service worker
+- [ ] Design polish pass on mobile
+- [ ] CSS cleanup — consolidate the accumulated patches into a single maintainable file
+
+---
+
+## Notes
+
+- **Price snapshots**: `case_stages.unit_price` is copied at case creation. Changing the price list later never modifies existing cases or invoices.
+- **Invoice numbering**: sequential per year via Postgres sequence. `CARNIX-2026-0001`, `0002`, etc.
+- **PDF output**: uses `html2pdf`-style rendering with jsPDF + autotable. Bank details and UPI QR come from the `settings` table via the Control Panel.
+- **No build step**: files are served as-is from Cloudflare Pages. Vanilla JS modules load from CDN for Supabase, Chart.js, and jsPDF.
+
+---
+
+## License
+
+Private. Not for redistribution.

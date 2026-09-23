@@ -170,25 +170,25 @@ export async function renderPL() {
               </thead>
               <tbody>
                 ${months.map(m => {
-                  const active = m.income > 0 || m.expenses > 0;
-                  if (!active) return '';
-                  return `
-                    <tr>
-                      <td><b>${m.label}</b></td>
-                      <td class="num">${inr(m.income)}</td>
-                      <td class="num">${inr(m.expenses)}</td>
-                      <td class="num ${m.net < 0 ? 'cell-overdue' : ''}"><b>${inr(m.net)}</b></td>
-                      <td class="num">${m.income ? m.margin.toFixed(0) + '%' : '—'}</td>
-                    </tr>
-                  `;
-                }).join('')}
-                <tr class="pl-total-row">
-                  <td><b>Total</b></td>
-                  <td class="num"><b>${inr(income)}</b></td>
-                  <td class="num"><b>${inr(expenseTotal)}</b></td>
-                  <td class="num ${net < 0 ? 'cell-overdue' : ''}"><b>${inr(net)}</b></td>
-                  <td class="num"><b>${margin.toFixed(1)}%</b></td>
-                </tr>
+  const active = m.income > 0 || m.expenses > 0;
+  if (!active) return '';
+  return `
+    <tr>
+      <td data-label="Month"><b>${m.label}</b></td>
+      <td data-label="Income" class="num">${inr(m.income)}</td>
+      <td data-label="Expenses" class="num">${inr(m.expenses)}</td>
+      <td data-label="Net" class="num ${m.net < 0 ? 'cell-overdue' : ''}"><b>${inr(m.net)}</b></td>
+      <td data-label="Margin" class="num">${m.income ? m.margin.toFixed(0) + '%' : '—'}</td>
+    </tr>
+  `;
+}).join('')}
+               <tr class="pl-total-row">
+  <td data-label="Month"><b>Total</b></td>
+  <td data-label="Income" class="num"><b>${inr(income)}</b></td>
+  <td data-label="Expenses" class="num"><b>${inr(expenseTotal)}</b></td>
+  <td data-label="Net" class="num ${net < 0 ? 'cell-overdue' : ''}"><b>${inr(net)}</b></td>
+  <td data-label="Margin" class="num"><b>${margin.toFixed(1)}%</b></td>
+</tr>
               </tbody>
             </table>
           </div>

@@ -187,14 +187,14 @@ export async function renderDashboard(user) {
                           : c.status === 'delivered' ? 'success'
                           : 'primary';
                 return `
-                  <tr>
-                    <td>${fmtShort(c.received_date)}</td>
-                    <td><b>${escapeHtml(c.doctor_name)}</b></td>
-                    <td>${escapeHtml(c.case_stages?.[0]?.case_type ?? '—')}</td>
-                    <td class="${overdue ? 'cell-overdue' : ''}">${fmtShort(c.delivery_date)}</td>
-                    <td>₹${caseTotal(c).toFixed(0)}</td>
-                    <td><span class="badge badge-${cls}">${status}</span></td>
-                  </tr>
+                 <tr>
+  <td data-label="Received">${fmtShort(c.received_date)}</td>
+  <td data-label="Doctor"><b>${escapeHtml(c.doctor_name)}</b></td>
+  <td data-label="Case">${escapeHtml(c.case_stages?.[0]?.case_type ?? '—')}</td>
+  <td data-label="Delivery" class="${overdue ? 'cell-overdue' : ''}">${fmtShort(c.delivery_date)}</td>
+  <td data-label="Total">₹${caseTotal(c).toFixed(0)}</td>
+  <td data-label="Status"><span class="badge badge-${cls}">${status}</span></td>
+</tr>
                 `;
               }).join('')}
             </tbody>

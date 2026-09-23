@@ -3321,3 +3321,61 @@ body {
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+/* ============================================================
+   MOBILE — summary tables as flat lists, not cards
+   ============================================================ */
+@media (max-width: 860px) {
+
+  /* Dashboard "Recent cases" + P&L "Monthly breakdown" */
+  .dash-table tr,
+  .pl-table tr {
+    padding: 12px 0 !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+  .dash-table tr:last-child,
+  .pl-table tr:last-child {
+    border-bottom: none !important;
+  }
+  .dash-table tr:active,
+  .pl-table tr:active {
+    background: transparent !important;
+  }
+
+  /* The wrapper card: flat container, thin outer border only */
+  .dash-section .table-wrap,
+  .pl-section .table-wrap {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Row cells: label left, value right, aligned */
+  .dash-table td,
+  .pl-table td {
+    padding: 3px 0 !important;
+    border: none !important;
+    font-size: .86rem;
+  }
+  .dash-table td::before,
+  .pl-table td::before {
+    color: var(--text-muted, #8a909e);
+    font-weight: 500;
+    font-size: .68rem;
+  }
+
+  /* Rows in Due next 7 days / Overdue already use dash-list — keep them flat */
+  .dash-list .dash-row {
+    padding: 12px 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  .dash-list .dash-row:last-child {
+    border-bottom: none !important;
+  }
+}

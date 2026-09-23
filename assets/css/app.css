@@ -2032,3 +2032,99 @@ body {
     display: flex !important;
   }
 }
+
+/* ============================================================
+   FORCE — Control Panel + Billing payment block
+   ============================================================ */
+
+.cp-tabs {
+  display: inline-flex !important;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-soft, #1e2128) !important;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.cp-tab {
+  padding: 9px 18px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-muted, #8a909e) !important;
+  font-size: .85rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.cp-tab.active {
+  background: var(--surface, #16181d) !important;
+  color: var(--text, #f0f2f5) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0,0,0,.2) !important;
+}
+
+.cp-snapshot {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px;
+}
+.cp-snapshot > div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px;
+  align-items: flex-start !important;
+}
+.cp-snapshot > div > span {
+  font-size: .7rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: .1em !important;
+  color: var(--text-muted, #8a909e) !important;
+  font-weight: 600 !important;
+  display: block !important;
+}
+.cp-snapshot > div > b {
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  color: var(--text, #f0f2f5) !important;
+}
+
+.bill-filter-grid {
+  display: grid !important;
+  grid-template-columns: 1.4fr 1fr 1fr auto !important;
+  gap: 16px;
+  align-items: end;
+}
+.bill-payment-bank {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px 20px !important;
+}
+.bill-payment-bank > div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px;
+  align-items: flex-start !important;
+}
+.bill-payment-bank > div > span {
+  font-size: .68rem !important;
+  color: var(--text-muted, #8a909e) !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+  display: block !important;
+}
+.bill-payment-bank > div > b {
+  color: var(--text, #f0f2f5) !important;
+  font-weight: 500 !important;
+}
+
+@media (max-width: 860px) {
+  .bill-filter-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .bill-payment-bank {
+    grid-template-columns: 1fr !important;
+  }
+}

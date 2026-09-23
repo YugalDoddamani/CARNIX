@@ -1617,7 +1617,7 @@ a.btn-ghost {
     top: auto !important;
     z-index: 100 !important;
   }
-  html, body { overscroll-behavior-y: none; }
+  html, body { overscroll-behavior-y: auto; }
 }
 
 
@@ -1868,6 +1868,140 @@ body {
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
+    z-index: 100;
+  }
+}
+
+
+/* ============================================================
+   SHELL — the only layout block. Do not add another.
+   ============================================================ */
+
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  touch-action: pan-y;
+}
+
+/* Wide children never force page overflow */
+.table-wrap, .chart-wrap, .kpi-row, .stats-row, .dash-main,
+.dash-two-col, .pl-grid, .cp-grid, .bill-filter-grid,
+.bill-payment-grid, .form-grid, .dash-chart-card, .dash-section,
+.bill-filters, .bill-preview-card, .bill-history-card, .cp-section,
+.pl-chart-card, .pl-section, .mobile-cases {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.chart-wrap canvas {
+  max-width: 100%;
+}
+
+/* ============ DESKTOP ============ */
+@media (min-width: 861px) {
+  body.app-body,
+  .app-body {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-w);
+    overflow-y: auto;
+  }
+
+  .main-col,
+  .main-wrapper {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    margin-left: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .content,
+  .content-area {
+    padding: 24px;
+  }
+
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* ============ MOBILE ============ */
+@media (max-width: 860px) {
+  html,
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: auto;
+    min-height: 100%;
+    touch-action: pan-y;
+    overscroll-behavior-y: auto;
+  }
+
+  body.app-body,
+  .app-body {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main-col,
+  .main-wrapper {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .content,
+  .content-area {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 16px 16px calc(
+      96px + env(safe-area-inset-bottom, 0px)
+    );
+    overflow: visible;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     z-index: 100;
   }
 }

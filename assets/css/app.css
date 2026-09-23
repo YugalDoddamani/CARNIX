@@ -3295,3 +3295,29 @@ body {
     z-index: 100 !important;
   }
 }
+
+/* ============================================================
+   iPhone safe-area fix — bottom nav
+   ============================================================ */
+@media (max-width: 860px) {
+  .bottom-nav {
+    /* Total height = content height + safe area
+       Prevents icons/labels from being clipped by the home indicator */
+    height: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    padding-top: 6px !important;
+    box-sizing: border-box !important;
+    align-items: flex-start !important;
+  }
+
+  .bottom-nav-item {
+    padding-top: 6px !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Content padding-bottom must match the new nav height */
+  .content,
+  .content-area {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

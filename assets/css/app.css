@@ -1,5 +1,7 @@
 /* Layout Shell */
 .app-body {
+  display: flex;
+  min-height: 100vh;
   background: var(--bg);
 }
 
@@ -64,6 +66,7 @@
 
 /* Main Content Wrapper Offset */
 .main-col {
+  margin-left: var(--sidebar-w);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -518,7 +521,7 @@ a.btn-ghost {
     inset -2px -2px 6px rgba(255,255,255,.7);
   outline: none;
   transition: border-color .15s, box-shadow .15s;
-  color-scheme: dark;
+  color-scheme: light;
 }
 .field input:focus,
 .field select:focus,
@@ -1604,22 +1607,6 @@ a.btn-ghost {
 }
 
 
-/* Desktop logout: show icon + username, hide on very small screens if needed */
-.logout-label { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-
-@media (max-width: 860px) {
-  .bottom-nav {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    top: auto !important;
-    z-index: 100 !important;
-  }
-  html, body { overscroll-behavior-y: auto; }
-}
-
 
 /* ============ Desktop-only / mobile-only visibility ============ */
 .desktop-only { display: block; }
@@ -1769,263 +1756,889 @@ a.btn-ghost {
   to   { transform: translateY(0); opacity: 1; }
 }
 
-/* ============================================================
-   SHELL — the only layout block. Do not add another.
-   ============================================================ */
-
-html {
-  overflow-x: hidden;
-  overflow-y: auto;
-  height: auto;
-}
-
-body {
-  overflow-x: hidden;
-  overflow-y: visible;
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-}
-
-/* Wide children never force page overflow */
-.table-wrap, .chart-wrap, .kpi-row, .stats-row, .dash-main,
-.dash-two-col, .pl-grid, .cp-grid, .bill-filter-grid,
-.bill-payment-grid, .form-grid, .dash-chart-card, .dash-section,
-.bill-filters, .bill-preview-card, .bill-history-card, .cp-section,
-.pl-chart-card, .pl-section, .mobile-cases {
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.chart-wrap canvas { max-width: 100%; }
-
-/* ============ DESKTOP ============ */
-@media (min-width: 861px) {
-  body.app-body,
-  .app-body {
-    display: grid;
-    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
-    min-height: 100vh;
-  }
-
-  .sidebar {
-    grid-column: 1 / 2;
-    grid-row: 1 / 2;
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    width: var(--sidebar-w);
-    overflow-y: auto;
-  }
-
-  .main-col,
-  .main-wrapper {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
-    margin-left: 0;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .content,
-  .content-area {
-    padding: 24px;
-  }
-
-  .bottom-nav { display: none; }
-}
-
-/* ============ MOBILE ============ */
-@media (max-width: 860px) {
-  body.app-body,
-  .app-body {
-    display: block;
-  }
-
-  .sidebar { display: none; }
-
-  .main-col,
-  .main-wrapper {
-    display: block;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-  }
-
-  .content,
-  .content-area {
-    padding: 16px 16px calc(96px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
-
-  .bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    z-index: 100;
-  }
-}
-
 
 /* ============================================================
-   SHELL — the only layout block. Do not add another.
+   LAYOUT CONTAINMENT — FINAL
+   Paste at the very bottom of app.css
    ============================================================ */
 
-html {
-  overflow-x: hidden;
-  overflow-y: auto;
-  height: auto;
+/* Prevent page-level horizontal scroll */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+  width: 100%;
 }
 
-body {
-  overflow-x: hidden;
-  overflow-y: auto;
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-  touch-action: pan-y;
+/* Grid: sidebar fixed + main column can shrink */
+body.app-body,
+.app-body {
+  display: grid !important;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
 }
 
-/* Wide children never force page overflow */
-.table-wrap, .chart-wrap, .kpi-row, .stats-row, .dash-main,
-.dash-two-col, .pl-grid, .cp-grid, .bill-filter-grid,
-.bill-payment-grid, .form-grid, .dash-chart-card, .dash-section,
-.bill-filters, .bill-preview-card, .bill-history-card, .cp-section,
-.pl-chart-card, .pl-section, .mobile-cases {
-  min-width: 0;
-  max-width: 100%;
+/* Every grid child: never bigger than its track */
+.sidebar,
+.main-col,
+.content,
+.dash-main > *,
+.dash-two-col > *,
+.kpi-row > *,
+.stats-row > *,
+.form-grid > *,
+.dash-chart-card,
+.dash-section,
+.table-wrap {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Main column must not push past the viewport */
+.main-col {
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Content area: padding inside, no overflow out */
+.content {
+  padding: 24px;
+  width: 100%;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
+/* Chart canvas obeys its container */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  min-width: 0;
+}
 .chart-wrap canvas {
-  max-width: 100%;
+  max-width: 100% !important;
+  height: auto !important;
 }
 
-/* ============ DESKTOP ============ */
-@media (min-width: 861px) {
-  body.app-body,
-  .app-body {
-    display: grid;
-    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
-    min-height: 100vh;
-  }
+/* Tables: scroll inside their own box, never the page */
+.table-wrap {
+  overflow-x: auto;
+}
 
-  .sidebar {
-    grid-column: 1 / 2;
-    grid-row: 1 / 2;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: var(--sidebar-w);
-    overflow-y: auto;
-  }
+/* Greeting must wrap, not push */
+.dash-header h2 {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
 
-  .main-col,
-  .main-wrapper {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
-    margin-left: 0;
-    min-width: 0;
+/* Mobile */
+@media (max-width: 860px) {
+  .content { padding: 16px 16px calc(var(--bottom-nav-h) + 24px); }
+  .chart-wrap { height: 180px; }
+}
+
+/* ============================================================
+   MOBILE CASE ROWS — intentional layout
+   ============================================================ */
+@media (max-width: 860px) {
+
+  .mobile-cases {
     display: flex;
     flex-direction: column;
-  }
-
-  .content,
-  .content-area {
-    padding: 24px;
-  }
-
-  .bottom-nav {
-    display: none;
-  }
-}
-
-/* ============ MOBILE ============ */
-@media (max-width: 860px) {
-  html,
-  body {
-    overflow-x: hidden;
-    overflow-y: auto;
-    height: auto;
-    min-height: 100%;
-    touch-action: pan-y;
-    overscroll-behavior-y: auto;
-  }
-
-  body.app-body,
-  .app-body {
-    display: block;
-    width: 100%;
-    min-height: 100vh;
-  }
-
-  .sidebar {
-    display: none;
-  }
-
-  .main-col,
-  .main-wrapper {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    margin: 0;
+    gap: 10px;
     padding: 0;
   }
 
-  .content,
-  .content-area {
+  .mcase-row {
     display: block;
-    width: 100%;
-    min-width: 0;
-    padding: 16px 16px calc(
-      96px + env(safe-area-inset-bottom, 0px)
-    );
-    overflow: visible;
+    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid rgba(0, 0, 0, .06);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform .12s ease;
+  }
+  .mcase-row:active {
+    transform: scale(.99);
+    background: var(--surface-soft);
   }
 
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
-
-  .bottom-nav {
+  /* Line 1: doctor name + kebab on the same line */
+  .mcase-head {
     display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
   }
+  .mcase-doctor {
+    font-size: .98rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .mcase-row .kebab-btn {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
+  }
+
+  /* Line 2: case type */
+  .mcase-type {
+    font-size: .82rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 6px;
+  }
+
+  /* Line 3: dates */
+  .mcase-dates {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .74rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 10px;
+  }
+  .mcase-arrow { opacity: .45; }
+
+  /* Line 4: badges */
+  .mcase-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Kill the old zigzag CSS if it's still present */
+  .mcase-main,
+  .mcase-line-1,
+  .mcase-line-2,
+  .mcase-line-3 { all: unset; display: block; }
+
+  /* Page action button full width on mobile */
+  .page-header-actions {
+    display: block;
+    margin-bottom: 16px;
+  }
+  .page-header-actions .btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 18px;
+  }
+
+  /* Hide the redundant page-level h3 on mobile — topbar already shows it */
+  .content h3:first-child { display: none; }
 }
 
 
 /* ============================================================
-   Visibility precedence — wins by being last
+   SCROLL FIX + CUSTOM SCROLLBAR
+   ============================================================ */
+
+/* Restore vertical scroll — containment block previously clipped it */
+.main-col {
+  overflow: visible !important;
+}
+.content {
+  overflow: visible !important;
+}
+html, body {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 100%;
+}
+
+/* ============ Custom scrollbar — Webkit (Chrome, Edge, Safari) ============ */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(31, 58, 147, 0.28);
+  border-radius: 999px;
+  border: 3px solid var(--bg);
+  background-clip: padding-box;
+  transition: background .15s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(31, 58, 147, 0.55);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:active {
+  background: var(--primary);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ============ Custom scrollbar — Firefox ============ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 58, 147, 0.35) transparent;
+}
+
+/* ============ Inner scroll areas (tables, modals, chips) ============ */
+.table-wrap::-webkit-scrollbar,
+.case-modal::-webkit-scrollbar,
+.chips::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.table-wrap::-webkit-scrollbar-thumb,
+.case-modal::-webkit-scrollbar-thumb,
+.chips::-webkit-scrollbar-thumb {
+  border-width: 2px;
+}
+
+/* ============ Mobile — hide scrollbar (native touch scroll) ============ */
+@media (max-width: 860px) {
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  * { scrollbar-width: none; }
+}
+
+
+
+/* ============================================================
+   BILLING
+   ============================================================ */
+
+.bill-filters {
+  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+  margin-bottom: 16px;
+}
+.bill-filter-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr auto;
+  gap: 16px;
+  align-items: end;
+}
+.bill-filter-grid .field { margin: 0; }
+.field-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.field-checkbox input { margin: 0; width: 16px; height: 16px; accent-color: var(--primary); }
+.field-checkbox span { text-transform: none; letter-spacing: 0; font-size: .85rem; color: var(--text); }
+
+@media (max-width: 860px) {
+  .bill-filter-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Preview */
+.bill-preview-card {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+  margin-bottom: 16px;
+}
+.bill-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.bill-preview-head h4 { font-size: .95rem; font-weight: 600; }
+.bill-preview-sub { font-size: .76rem; color: var(--text-muted); display: block; margin-top: 2px; }
+.bill-preview-total {
+  text-align: right;
+}
+.bill-preview-total span {
+  display: block;
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.bill-preview-total b {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.01em;
+}
+.bill-preview-body { min-height: 60px; }
+
+.bill-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+.bill-table th,
+.bill-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+.bill-table th {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.bill-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.bill-table .bill-label {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+.bill-table tbody tr:last-child td { border-bottom: none; }
+
+.bill-preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0,0,0,.05);
+}
+.bill-preview-actions .btn-primary,
+.bill-preview-actions .btn-ghost { padding: 12px 20px; }
+
+/* History */
+.bill-history-card {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+}
+.bill-history { display: flex; flex-direction: column; }
+.bill-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(0,0,0,.05);
+}
+.bill-history-row:first-child { border-top: none; padding-top: 4px; }
+.bill-history-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bill-history-num {
+  font-family: 'SF Mono', ui-monospace, monospace;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.bill-history-sub {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+.bill-history-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bill-history-right > b {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.bill-history-actions { display: flex; gap: 4px; }
+
+@media (max-width: 860px) {
+  .bill-filters { padding: 16px; }
+  .bill-preview-card { padding: 18px 16px; }
+  .bill-history-card { padding: 18px 16px; }
+  .bill-filter-grid { grid-template-columns: 1fr; }
+  .bill-table { font-size: .82rem; }
+  .bill-table th, .bill-table td { padding: 8px 8px; }
+  .bill-preview-actions { flex-direction: column-reverse; }
+  .bill-preview-actions > * { width: 100%; justify-content: center; }
+  .bill-history-top { flex-wrap: wrap; }
+}
+
+
+/* Billing preview — payment block */
+.bill-payment-preview {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px dashed rgba(0,0,0,.1);
+}
+.bill-payment-label {
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.bill-payment-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  align-items: start;
+}
+.bill-payment-bank {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 20px;
+  font-size: .8rem;
+}
+.bill-payment-bank > div { display: flex; flex-direction: column; gap: 2px; }
+.bill-payment-bank span { font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+.bill-payment-bank b { color: var(--text); font-weight: 500; }
+.bill-payment-qr {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: .7rem;
+}
+.qr-placeholder {
+  width: 72px;
+  height: 72px;
+  border: 1px dashed rgba(0,0,0,.2);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: .78rem;
+  margin-bottom: 4px;
+}
+@media (max-width: 560px) {
+  .bill-payment-bank { grid-template-columns: 1fr; }
+  .bill-payment-grid { grid-template-columns: 1fr; }
+  .bill-payment-qr { justify-self: start; }
+}
+
+/* ============ Expenses ============ */
+.filter-row-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-row-right .search-input {
+  max-width: 200px;
+}
+@media (max-width: 860px) {
+  .filter-row-right { width: 100%; }
+  .filter-row-right .search-input { max-width: 100%; flex: 1; min-width: 0; }
+}
+
+.badge-neutral {
+  background: var(--surface-soft);
+  color: var(--text-muted);
+}
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.expense-row { cursor: pointer; }
+.expense-row:hover { background: rgba(31, 58, 147, .03); }
+
+.field-checkbox.field-wide {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+
+/* ============================================================
+   P&L
+   ============================================================ */
+
+.pl-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.pl-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.pl-header p {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.pl-year {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pl-year span {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.pl-year select {
+  padding: 10px 14px;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: .9rem;
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+}
+.pl-year select:focus { border-color: var(--primary); }
+
+.pl-chart-card {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+  margin-bottom: 16px;
+}
+.pl-chart { height: 320px; }
+
+.pl-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 960px) {
+  .pl-grid { grid-template-columns: 1fr; }
+}
+
+.pl-section {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+}
+
+.pl-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.pl-table .pl-total-row td {
+  border-top: 2px solid rgba(0,0,0,.08);
+  padding-top: 12px;
+}
+
+.pl-cats { display: flex; flex-direction: column; gap: 14px; }
+.pl-cat { display: flex; flex-direction: column; gap: 6px; }
+.pl-cat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .85rem;
+}
+.pl-cat-head span { color: var(--text); }
+.pl-cat-head b { font-variant-numeric: tabular-nums; color: var(--text); }
+.pl-cat-bar {
+  height: 6px;
+  background: var(--surface-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pl-cat-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+.pl-cat-pct {
+  font-size: .7rem;
+  color: var(--text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 860px) {
+  .pl-header h2 { font-size: 1.2rem; }
+  .pl-chart-card { padding: 18px 16px; }
+  .pl-chart { height: 220px; }
+  .pl-section { padding: 18px 16px; }
+  .pl-year select { padding: 8px 12px; }
+}
+
+
+/* ============================================================
+   TABLE LANGUAGE — Notion / Supabase style
+   Overrides all previous table + mobile-row styling.
+   ============================================================ */
+
+/* ---------- Desktop table container ---------- */
+.table-wrap {
+  padding: 0 !important;
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* ---------- Desktop table ---------- */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.data-table th {
+  padding: 11px 16px;
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  background: transparent;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+  font-size: .87rem;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.data-table tbody tr {
+  background: transparent;
+  transition: background .1s ease;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(0,0,0,.02);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keep row-actions light */
+.row-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* ============================================================
+   MOBILE — flat list, not cards
+   ============================================================ */
+@media (max-width: 860px) {
+
+  .table-wrap {
+    padding: 0 !important;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,.06);
+  }
+
+  .data-table { min-width: 0; }
+  .data-table thead { display: none; }
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* Each row is a flat list item, not a card */
+  .data-table tr {
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    cursor: pointer;
+  }
+  .data-table tr:last-child { border-bottom: none; }
+  .data-table tr:active { background: rgba(0,0,0,.03); }
+  .data-table tr:hover { background: transparent; }
+
+  .data-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 3px 0;
+    border: none !important;
+    font-size: .85rem;
+  }
+
+  .data-table td::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .data-table td:first-child { padding-top: 0; }
+  .data-table td:last-child  { padding-bottom: 0; }
+
+  .row-actions {
+    justify-content: flex-end;
+    padding-top: 8px !important;
+    margin-top: 4px;
+    border-top: 1px solid rgba(0,0,0,.04) !important;
+  }
+  .row-actions::before { content: ''; display: none; }
+
+  /* ---------- Mobile case list (mcase-row) — same flat treatment ---------- */
+  .mobile-cases {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .mcase-row {
+    display: block;
+    padding: 14px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    border-radius: 0;
+    box-shadow: none;
+    cursor: pointer;
+    transition: background .1s ease;
+    transform: none;
+  }
+  .mcase-row:last-child { border-bottom: none; }
+  .mcase-row:active { transform: none; background: rgba(0,0,0,.03); }
+
+  /* ---------- Billing history — align with list pattern ---------- */
+  .bill-history-card {
+    padding: 0 !important;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .bill-history-card .dash-card-head {
+    padding: 16px 16px 12px;
+    margin-bottom: 0;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+  }
+  .bill-history {
+    padding: 0;
+  }
+  .bill-history-row {
+    padding: 14px 16px;
+    border-top: none;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    gap: 12px;
+  }
+  .bill-history-row:first-child { padding-top: 14px; }
+  .bill-history-row:last-child  { border-bottom: none; }
+
+  /* ---------- Desktop table padding tweaks on very small ---------- */
+  .data-table th { padding: 9px 12px; }
+  .data-table td { padding: 10px 12px; }
+}
+
+/* ============================================================
+   Consistify: page-header-actions and filter-row alignment
+   ============================================================ */
+.page-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+/* Bill history card padding (desktop) */
+.bill-history-card {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+}
+.bill-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(0,0,0,.05);
+}
+.bill-history-row:first-child { border-top: none; padding-top: 4px; }
+
+/* ============================================================
+   Kill legacy rounded-row styles that conflict
+   ============================================================ */
+.data-table tr,
+.mcase-row,
+.bill-history-row,
+.expense-row {
+  border-radius: 0;
+}
+
+
+/* ============================================================
+   Fix: desktop-only / mobile-only visibility
+   These override anything earlier — no more double render.
    ============================================================ */
 .desktop-only {
-  display: block;
+  display: block !important;
 }
-
 .mobile-only,
-.mobile-cases.mobile-only,
-.bill-history-card.mobile-only {
-  display: none;
+.mobile-cases.mobile-only {
+  display: none !important;
 }
 
 @media (max-width: 860px) {
   .desktop-only {
     display: none !important;
   }
-  .mobile-only,
-  .bill-history-card.mobile-only {
+  .mobile-only {
     display: block !important;
   }
   .mobile-cases.mobile-only {
@@ -2033,98 +2646,588 @@ body {
   }
 }
 
+.expense-row,
+.mobile-cases .mcase-row {
+  cursor: pointer;
+}
+.expense-row:hover {
+  background: rgba(0, 0, 0, .02);
+}
+
+
 /* ============================================================
-   FORCE — Control Panel + Billing payment block
+   INVENTORY
+   ============================================================ */
+
+/* Stock cell — inline +/- controls */
+.stock-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all .1s ease;
+  font-family: inherit;
+}
+.stock-btn:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.stock-btn:active {
+  transform: scale(.92);
+}
+
+.stock-value {
+  min-width: 34px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: .95rem;
+}
+.stock-value.stock-low { color: var(--warning); }
+.stock-value.stock-out { color: var(--danger); }
+
+.stock-unit {
+  font-size: .74rem;
+  color: var(--text-muted);
+}
+
+.inv-row { cursor: pointer; }
+.inv-row:hover { background: rgba(0, 0, 0, .02); }
+
+/* Mobile stock control */
+.inv-mobile-stock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0,0,0,.05);
+}
+.inv-qty {
+  flex: 1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   CONTROL PANEL
    ============================================================ */
 
 .cp-tabs {
-  display: inline-flex !important;
+  display: flex;
   gap: 4px;
   padding: 4px;
-  background: var(--surface-soft, #1e2128) !important;
+  background: var(--surface-soft);
   border-radius: 10px;
   margin-bottom: 20px;
+  width: fit-content;
 }
 .cp-tab {
-  padding: 9px 18px !important;
-  border: none !important;
-  background: transparent !important;
-  color: var(--text-muted, #8a909e) !important;
+  padding: 9px 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
   font-size: .85rem;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: none !important;
-  -webkit-appearance: none;
-  appearance: none;
+  transition: all .15s;
 }
+.cp-tab:hover { color: var(--text); }
 .cp-tab.active {
-  background: var(--surface, #16181d) !important;
-  color: var(--text, #f0f2f5) !important;
+  background: var(--surface);
+  color: var(--text);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0,0,0,.2) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+
+.cp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 900px) {
+  .cp-grid { grid-template-columns: 1fr; }
+}
+
+.cp-section {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(0,0,0,.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,20,40,.04);
+  margin-bottom: 16px;
+}
+
+.cp-list { display: flex; flex-direction: column; }
+.cp-list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid rgba(0,0,0,.05);
+  gap: 12px;
+}
+.cp-list-row:first-child { border-top: none; padding-top: 0; }
+.cp-list-row b { font-size: .88rem; font-weight: 600; }
+.cp-list-row div span {
+  display: block;
+  font-size: .74rem;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .cp-snapshot {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
 }
+@media (max-width: 900px) {
+  .cp-snapshot { grid-template-columns: 1fr 1fr; }
+}
 .cp-snapshot > div {
-  display: flex !important;
-  flex-direction: column !important;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
-  align-items: flex-start !important;
 }
-.cp-snapshot > div > span {
-  font-size: .7rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: .1em !important;
-  color: var(--text-muted, #8a909e) !important;
-  font-weight: 600 !important;
-  display: block !important;
+.cp-snapshot span {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-muted);
+  font-weight: 600;
 }
-.cp-snapshot > div > b {
-  font-size: 1.15rem !important;
-  font-weight: 700 !important;
-  color: var(--text, #f0f2f5) !important;
+.cp-snapshot b {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
 }
 
-.bill-filter-grid {
-  display: grid !important;
-  grid-template-columns: 1.4fr 1fr 1fr auto !important;
-  gap: 16px;
-  align-items: end;
+/* User rows */
+.role-select {
+  padding: 6px 10px;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 6px;
+  background: var(--surface);
+  font-family: inherit;
+  font-size: .82rem;
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
 }
-.bill-payment-bank {
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 10px 20px !important;
+.role-select:focus { border-color: var(--primary); }
+
+.cp-user-row {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(0,0,0,.05);
 }
-.bill-payment-bank > div {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 2px;
-  align-items: flex-start !important;
+.cp-user-row:last-child { border-bottom: none; }
+.cp-user-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
 }
-.bill-payment-bank > div > span {
-  font-size: .68rem !important;
-  color: var(--text-muted, #8a909e) !important;
-  text-transform: uppercase !important;
-  letter-spacing: .08em !important;
-  display: block !important;
+.cp-user-head b { font-size: .92rem; }
+.cp-user-email {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
 }
-.bill-payment-bank > div > b {
-  color: var(--text, #f0f2f5) !important;
-  font-weight: 500 !important;
+.cp-user-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
+.cp-user-controls .role-select { flex: 1; }
 
 @media (max-width: 860px) {
-  .bill-filter-grid {
-    grid-template-columns: 1fr 1fr !important;
+  .cp-section { padding: 18px 16px; }
+  .cp-tabs { width: 100%; }
+  .cp-tab { flex: 1; padding: 10px 12px; font-size: .8rem; }
+}
+
+
+/* ============================================================
+   CONTROL PANEL — quota + QR uploader
+   ============================================================ */
+
+.cp-quota-bar {
+  height: 8px;
+  background: var(--surface-soft);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.cp-quota-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+.cp-quota-fill.warning { background: var(--warning); }
+.cp-quota-fill.danger  { background: var(--danger); }
+
+/* QR uploader */
+.qr-uploader {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0,0,0,.05);
+}
+.qr-preview-wrap {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.qr-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 10px;
+  background: var(--surface-soft);
+  border: 1px solid rgba(0,0,0,.06);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex: none;
+}
+.qr-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.qr-preview span {
+  font-size: .72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.qr-preview-info b {
+  display: block;
+  font-size: .88rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.qr-preview-info span {
+  font-size: .76rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+.qr-uploader-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.qr-uploader-actions .btn-ghost { padding: 9px 16px; font-size: .85rem; }
+
+/* ============================================================
+   MOBILE GRID FIX — collapse to single column
+   ============================================================ */
+@media (max-width: 860px) {
+
+  /* Turn off the desktop 2-column grid entirely on mobile */
+  body.app-body,
+  .app-body,
+  body.app-shell,
+  .app-shell {
+    display: block !important;
+    grid-template-columns: none !important;
   }
-  .bill-payment-bank {
-    grid-template-columns: 1fr !important;
+
+  /* Sidebar is hidden but still in DOM — ensure it doesn't leak */
+  .sidebar {
+    display: none !important;
+    position: static !important;
   }
+
+  /* Main column takes full width, no grid tricks */
+  .main-col,
+  .main-wrapper {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    grid-column: auto !important;
+  }
+
+  /* Content area gets its proper padding, plus safe-area for bottom nav */
+  .content,
+  .content-area {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 16px 16px calc(var(--bottom-nav-h) + 32px + env(safe-area-inset-bottom)) !important;
+    overflow: visible !important;
+  }
+
+  /* Bottom nav stays fixed */
+  .bottom-nav {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    z-index: 100 !important;
+  }
+}
+
+
+/* ============================================================
+   OVERFLOW — final, using clip (no scroll containers created)
+   ============================================================ */
+
+/* Page: clip X, let the viewport scroll Y */
+html {
+  overflow-x: clip;
+  overflow-y: visible;
+  height: auto;
+}
+
+body {
+  overflow-x: clip;
+  overflow-y: visible;
+  height: auto;
+  min-height: 100vh;
+}
+
+/* Wrappers: no clipping, no scroll containers */
+.app-body,
+.app-shell,
+.main-col,
+.main-wrapper,
+.content,
+.content-area {
+  overflow-x: clip;
+  overflow-y: visible;
+  height: auto;
+  max-height: none;
+}
+
+/* Children that MUST scroll internally (wide tables) */
+.table-wrap,
+.case-modal,
+.bill-preview-body {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+.table-wrap { -webkit-overflow-scrolling: touch; }
+
+/* Mobile — no change needed here now; clip handles it */
+@media (max-width: 860px) {
+  html, body {
+    overflow-x: clip;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100vw;
+  }
+  .main-col,
+  .main-wrapper,
+  .content,
+  .content-area {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+  .content {
+    padding: 16px 16px calc(var(--bottom-nav-h) + 32px + env(safe-area-inset-bottom));
+  }
+}
+
+
+/* ============================================================
+   DEFINITIVE SHELL OVERRIDE — final word on layout
+   Place at the VERY END of app.css
+   ============================================================ */
+
+/* ---- Base document: allow page scrolling ---- */
+html {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 100% !important;
+  max-width: 100vw !important;
+}
+body {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 100% !important;
+  max-width: 100vw !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ============================================================
+   DESKTOP (>860px) — sidebar column + main column
+   ============================================================ */
+@media (min-width: 861px) {
+
+  body.app-body,
+  .app-body {
+    display: grid !important;
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr) !important;
+    grid-template-rows: auto !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+  }
+
+  /* Sidebar pinned left — does not occupy a grid track */
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: var(--sidebar-w) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    z-index: 100 !important;
+  }
+
+  /* Main column placed in the SECOND grid track explicitly.
+     No margin-left — the grid already reserves space. */
+  .main-col,
+  .main-wrapper {
+    grid-column: 2 / 3 !important;
+    grid-row: 1 / 2 !important;
+    margin-left: 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .content,
+  .content-area {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    padding: 24px !important;
+    box-sizing: border-box !important;
+  }
+
+  .bottom-nav { display: none !important; }
+}
+
+/* ============================================================
+   MOBILE (≤860px) — single column, sidebar hidden
+   ============================================================ */
+@media (max-width: 860px) {
+
+  body.app-body,
+  .app-body {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+  }
+
+  .sidebar { display: none !important; }
+
+  .main-col,
+  .main-wrapper {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+  }
+
+  .content,
+  .content-area {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 16px 16px calc(var(--bottom-nav-h) + 32px + env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+  }
+
+  .topbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+    background: var(--bg) !important;
+  }
+
+  .bottom-nav {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    height: var(--bottom-nav-h) !important;
+    z-index: 100 !important;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ============================================================
+   Children can never push their container wider than viewport
+   ============================================================ */
+.kpi-row,
+.stats-row,
+.dash-main,
+.dash-two-col,
+.pl-grid,
+.cp-grid,
+.dash-grid,
+.bill-filter-grid,
+.bill-payment-grid,
+.form-grid,
+.chart-wrap,
+.pl-chart,
+.dash-chart-card,
+.dash-section,
+.bill-filters,
+.bill-preview-card,
+.bill-history-card,
+.cp-section,
+.pl-chart-card,
+.pl-section,
+.table-wrap,
+.mobile-cases {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.chart-wrap canvas,
+.pl-chart canvas {
+  max-width: 100% !important;
 }

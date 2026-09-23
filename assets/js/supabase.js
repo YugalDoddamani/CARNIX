@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
+// Env injected at runtime by functions/_middleware.js from Cloudflare Pages
+// environment variables. No fallback — fail loudly if it's missing.
 const SUPABASE_URL = window.__ENV__?.SUPABASE_URL;
 const SUPABASE_KEY = window.__ENV__?.SUPABASE_PUBLISHABLE_KEY;
 

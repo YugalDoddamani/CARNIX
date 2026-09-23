@@ -61,7 +61,7 @@
 }
 
 .sk-card {
-  background: var(--surface, #16181d);
+  background: var(--surface, #17161A);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 20px;
@@ -86,7 +86,7 @@
   gap: 14px;
 }
 .sk-kpi {
-  background: var(--surface, #16181d);
+  background: var(--surface, #17161A);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 14px;
   padding: 18px;
@@ -103,7 +103,7 @@
   gap: 16px;
 }
 .sk-chart-box {
-  background: var(--surface, #16181d);
+  background: var(--surface, #17161A);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 20px;
@@ -121,7 +121,7 @@
   gap: 10px;
 }
 .sk-snapshot-item {
-  background: var(--surface, #16181d);
+  background: var(--surface, #17161A);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   padding: 14px 16px;
@@ -141,7 +141,7 @@
 
 /* ============ List / table mimics ============ */
 .sk-table {
-  background: var(--surface, #16181d);
+  background: var(--surface, #17161A);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 14px;
   padding: 8px 16px;
@@ -164,7 +164,7 @@
 .sk-table-row:last-child { border-bottom: none; }
 
 .sk-list {
-  background: var(--surface, #16181d);
+  background: var(--surface, #17161A);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 14px;
   padding: 4px 16px;

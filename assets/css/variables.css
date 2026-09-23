@@ -3,8 +3,8 @@
   /* Surfaces */
   --bg: #F8F9FA;
   /* Dark Surfaces */
-  --bg: #0D0E11;              /* Base app canvas */
-  --surface: #16181D;         /* Cards and containers */
+  --bg: #0E0D0C;              /* Base app canvas */
+  --surface: #17161A;         /* Cards and containers */
   --surface-hover: #1E2128;   /* Interactive hover states */
   --surface-soft: #232730;    /* Inputs and inset containers */
 
@@ -15,7 +15,7 @@
   /* Text */
   --text: #F0F2F5;            /* Crisp primary text */
   --text-muted: #8A909E;      /* Secondary text */
-  --text-inverse: #0D0E11;
+  --text-inverse: #0E0D0C;
 
   /* Brand Accents (Deep Navy → Vibrant Dark Slate/Indigo for contrast) */
   --primary: #3B66F5;         /* Accessible accent for dark mode */

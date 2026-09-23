@@ -250,8 +250,8 @@ export function wirePL() {
       const months = buildMonthly(cases, expenses);
 
       const styles = getComputedStyle(document.documentElement);
-      const primary = styles.getPropertyValue('--primary').trim() || '#1F3A93';
-      const danger  = styles.getPropertyValue('--danger').trim()  || '#8B1E3F';
+      const primary = styles.getPropertyValue('--primary').trim() || '#1E3F73';
+      const danger  = styles.getPropertyValue('--danger').trim()  || '#8C2F2A';
       const textColor = styles.getPropertyValue('--text-muted').trim() || '#6B7280';
 
       chartInstance = new Chart(canvas, {

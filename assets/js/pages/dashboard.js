@@ -274,7 +274,7 @@ export function wireDashboard() {
       const daily = buildDailyCounts(cases);
 
       const styles = getComputedStyle(document.documentElement);
-      const primary = styles.getPropertyValue('--primary').trim() || '#1F3A93';
+      const primary = styles.getPropertyValue('--primary').trim() || '#1E3F73';
       const gridColor = 'rgba(0,0,0,.06)';
       const textColor = styles.getPropertyValue('--text-muted').trim() || '#6B7280';
 

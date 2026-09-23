@@ -518,7 +518,7 @@ a.btn-ghost {
     inset -2px -2px 6px rgba(255,255,255,.7);
   outline: none;
   transition: border-color .15s, box-shadow .15s;
-  color-scheme: light;
+  color-scheme: dark;
 }
 .field input:focus,
 .field select:focus,
@@ -2003,5 +2003,32 @@ body {
     left: 0;
     right: 0;
     z-index: 100;
+  }
+}
+
+
+/* ============================================================
+   Visibility precedence — wins by being last
+   ============================================================ */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only,
+.mobile-cases.mobile-only,
+.bill-history-card.mobile-only {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only,
+  .bill-history-card.mobile-only {
+    display: block !important;
+  }
+  .mobile-cases.mobile-only {
+    display: flex !important;
   }
 }

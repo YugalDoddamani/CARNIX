@@ -8,6 +8,235 @@ import { renderPL, wirePL } from './pages/pl.js';
 import { renderInventory, wireInventory } from './pages/inventory.js';
 import { renderControlPanel, wireControlPanel } from './pages/control-panel.js';
 
+// ============================================================
+// Skeleton loaders — one per route
+// ============================================================
+function repeat(n, html) {
+  return Array.from({ length: n }, () => html).join('');
+}
+
+function skeletonFor(key) {
+  // Shared page header
+  const header = `
+    <div class="sk-page-header">
+      <div class="sk sk-line-lg sk-w-25"></div>
+      <div class="sk sk-pill"></div>
+    </div>
+  `;
+
+  const kpiRow = `
+    <div class="sk-kpi-row">
+      ${repeat(4, `
+        <div class="sk-kpi">
+          <div class="sk sk-line-sm"></div>
+          <div class="sk sk-line-lg"></div>
+          <div class="sk sk-line-sm sk-w-40"></div>
+        </div>
+      `)}
+    </div>
+  `;
+
+  const tableRows = (cols = 5, rows = 6) => `
+    <div class="sk-table">
+      <div class="sk-table-head">
+        ${repeat(cols, '<div class="sk sk-line-sm"></div>')}
+        <div></div>
+      </div>
+      ${repeat(rows, `
+        <div class="sk-table-row">
+          ${repeat(cols, '<div class="sk sk-line"></div>')}
+          <div class="sk sk-circle" style="width:20px;height:20px"></div>
+        </div>
+      `)}
+    </div>
+  `;
+
+  const listRows = (rows = 5) => `
+    <div class="sk-list">
+      ${repeat(rows, `
+        <div class="sk-list-row">
+          <div class="sk-list-left">
+            <div class="sk sk-line-sm"></div>
+            <div class="sk sk-line"></div>
+          </div>
+          <div class="sk sk-pill" style="width:80px"></div>
+        </div>
+      `)}
+    </div>
+  `;
+
+  // ---- Per-route layout ----
+  switch (key) {
+    case '':
+      return `
+        <div class="sk-page">
+          ${header}
+          ${kpiRow}
+          <div class="sk-dash-main">
+            <div class="sk-chart-box">
+              <div class="sk sk-line" style="width:120px"></div>
+              <div class="sk sk-box sk-chart-area"></div>
+            </div>
+            <div class="sk-snapshot-col">
+              ${repeat(4, `
+                <div class="sk-snapshot-item">
+                  <div class="sk sk-line-sm"></div>
+                  <div class="sk sk-line-lg"></div>
+                </div>
+              `)}
+            </div>
+          </div>
+          ${listRows(4)}
+          <div class="sk-two-col">
+            <div class="sk-card sk-stack">
+              <div class="sk sk-line" style="width:140px"></div>
+              ${repeat(3, '<div class="sk sk-line sk-w-75"></div>')}
+            </div>
+            <div class="sk-card sk-stack">
+              <div class="sk sk-line" style="width:100px"></div>
+              ${repeat(3, '<div class="sk sk-line sk-w-75"></div>')}
+            </div>
+          </div>
+        </div>
+      `;
+
+    case 'cases':
+      return `
+        <div class="sk-page">
+          ${header}
+          ${kpiRow}
+          <div class="sk-toolbar">
+            ${repeat(5, '<div class="sk sk-pill"></div>')}
+            <div class="sk sk-pill wide" style="margin-left:auto"></div>
+          </div>
+          ${tableRows(6, 8)}
+        </div>
+      `;
+
+    case 'cases/new':
+      return `
+        <div class="sk-page">
+          ${header}
+          <div class="sk-card sk-stack">
+            <div class="sk sk-line" style="width:120px"></div>
+            <div class="sk sk-box" style="height:56px"></div>
+            <div class="sk sk-box" style="height:56px"></div>
+            <div class="sk sk-box" style="height:56px"></div>
+          </div>
+          <div class="sk-card sk-stack">
+            <div class="sk sk-line" style="width:80px"></div>
+            <div class="sk sk-box" style="height:120px"></div>
+          </div>
+        </div>
+      `;
+
+    case 'billing':
+      return `
+        <div class="sk-page">
+          <div class="sk-card">
+            <div class="sk-kpi-row">
+              ${repeat(3, '<div class="sk sk-box" style="height:56px"></div>')}
+              <div class="sk sk-box" style="height:56px"></div>
+            </div>
+          </div>
+          <div class="sk-card sk-stack">
+            <div class="sk sk-line" style="width:100px"></div>
+            ${tableRows(5, 3)}
+          </div>
+          ${listRows(4)}
+        </div>
+      `;
+
+    case 'expenses':
+      return `
+        <div class="sk-page">
+          ${header}
+          ${kpiRow}
+          <div class="sk-toolbar">
+            ${repeat(6, '<div class="sk sk-pill"></div>')}
+            <div class="sk sk-pill wide" style="margin-left:auto"></div>
+          </div>
+          ${tableRows(6, 6)}
+        </div>
+      `;
+
+    case 'pl':
+      return `
+        <div class="sk-page">
+          ${header}
+          ${kpiRow}
+          <div class="sk-chart-box">
+            <div class="sk sk-line" style="width:160px"></div>
+            <div class="sk sk-box" style="height:260px"></div>
+          </div>
+          <div class="sk-two-col">
+            <div class="sk-card sk-stack">
+              <div class="sk sk-line" style="width:140px"></div>
+              ${repeat(6, '<div class="sk sk-line"></div>')}
+            </div>
+            <div class="sk-card sk-stack">
+              <div class="sk sk-line" style="width:120px"></div>
+              ${repeat(4, '<div class="sk sk-line sk-w-75"></div>')}
+            </div>
+          </div>
+        </div>
+      `;
+
+    case 'inventory':
+      return `
+        <div class="sk-page">
+          ${header}
+          ${kpiRow}
+          <div class="sk-toolbar">
+            ${repeat(3, '<div class="sk sk-pill"></div>')}
+            <div class="sk sk-pill wide" style="margin-left:auto"></div>
+          </div>
+          ${tableRows(6, 7)}
+        </div>
+      `;
+
+    case 'price-list':
+      return `
+        <div class="sk-page">
+          ${header}
+          ${tableRows(5, 9)}
+        </div>
+      `;
+
+    case 'control-panel':
+      return `
+        <div class="sk-page">
+          <div class="sk-toolbar">
+            ${repeat(3, '<div class="sk sk-pill"></div>')}
+          </div>
+          ${kpiRow}
+          <div class="sk-card sk-stack">
+            <div class="sk sk-line" style="width:120px"></div>
+            <div class="sk sk-line sk-w-50"></div>
+          </div>
+          <div class="sk-two-col">
+            <div class="sk-card sk-stack">
+              ${repeat(4, '<div class="sk sk-line sk-w-75"></div>')}
+            </div>
+            <div class="sk-card sk-stack">
+              ${repeat(4, '<div class="sk sk-line sk-w-75"></div>')}
+            </div>
+          </div>
+        </div>
+      `;
+
+    default:
+      return `
+        <div class="sk-page">
+          ${header}
+          ${kpiRow}
+          ${tableRows(5, 5)}
+        </div>
+      `;
+  }
+}
+
+
 // ---------- Auth guard ----------
 const { data: { session } } = await supabase.auth.getSession();
 if (!session) {
@@ -99,7 +328,7 @@ async function navigate() {
   });
 
   progressStart();
-  main.innerHTML = '<div class="page-loading"><span class="loader"></span></div>';
+  main.innerHTML = skeletonFor(key);
 
   try {
     const html = await route.render(user);

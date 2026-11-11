@@ -1,0 +1,11 @@
+{
+  "name": "lab-tour",
+  "private": true,
+  "type": "module",
+  "description": "Interactive 3D tour of the dental lab. Static site: no build step and no runtime dependencies (three.js is vendored).",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "import-assets": "node tools/import-asset-library.mjs",
+    "check": "node tools/check.mjs"
+  }
+}

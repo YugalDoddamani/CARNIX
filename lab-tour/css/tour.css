@@ -1,0 +1,819 @@
+/* Lab Tour — a light, airy look of its own (the CARNIX dashboard is dark).
+   System fonts only: nothing is fetched from another site. */
+
+:root {
+  --bg-top: #f6f9fe;
+  --bg-bottom: #dfe8f5;
+  --ink: #14213d;
+  --ink-soft: #586581;
+  --line: #dde4ef;
+  --card: rgba(255, 255, 255, 0.94);
+  --accent: #2f6bff;
+  --accent-ink: #1d4fd8;
+  --accent-soft: #e9f0ff;
+  --planned: #6f7f9b;
+  --planned-soft: #eef1f6;
+  --danger: #b42318;
+  --radius: 16px;
+  --shadow: 0 12px 32px rgba(20, 33, 61, 0.12), 0 2px 6px rgba(20, 33, 61, 0.06);
+  --shadow-small: 0 4px 14px rgba(20, 33, 61, 0.12), 0 1px 3px rgba(20, 33, 61, 0.08);
+  --gap: 16px;
+  font-family: Inter, 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--ink);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+  font-size: 15px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── Frame ─────────────────────────────────────────────────────────────── */
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 10px 20px;
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 12px;
+}
+
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.brand__name {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.brand__tagline {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.topbar__status {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.topbar__status.is-error {
+  color: var(--danger);
+  border-color: currentColor;
+}
+
+/* ── Stage: canvas, labels, floating controls ──────────────────────────── */
+
+.stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Stacking inside the stage: canvas 0 · labels 1 · controls 2 · panel 3 */
+.label-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  transition: opacity 0.25s ease, visibility 0s;
+}
+
+.label.is-hidden,
+.label.is-offscreen {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0s 0.2s;
+}
+
+/* Room name floating above each room */
+.room-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px 7px 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-small);
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+}
+
+.room-pill::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 11px;
+  height: 11px;
+  margin-left: -5.5px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+
+.room-pill__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.room-pill__text strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.room-pill__text small {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.room-pill:hover,
+.room-pill.is-hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.18), var(--shadow-small);
+}
+
+/* Numbered marker above each machine */
+.hotspot {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.hotspot__dot {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.22), var(--shadow-small);
+}
+
+.hotspot--planned .hotspot__dot {
+  background: #fff;
+  border-color: var(--planned);
+  border-style: dashed;
+  color: var(--planned);
+  box-shadow: var(--shadow-small);
+}
+
+.hotspot__name {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.hotspot:hover,
+.hotspot.is-hover,
+.hotspot:focus-visible {
+  z-index: 2;
+}
+
+.hotspot:hover .hotspot__name,
+.hotspot.is-hover .hotspot__name,
+.hotspot:focus-visible .hotspot__name {
+  opacity: 1;
+}
+
+.hotspot:hover .hotspot__dot,
+.hotspot.is-hover .hotspot__dot {
+  transform: scale(1.15);
+}
+
+.stage__controls {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow-small);
+  overflow: hidden;
+}
+
+.stage__controls button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.stage__controls button + button {
+  border-top: 1px solid var(--line);
+}
+
+.stage__controls button:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.legend {
+  position: absolute;
+  left: 76px;
+  bottom: 20px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow-small);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend .legend__built {
+  background: var(--accent);
+}
+
+.legend .legend__planned {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1.5px solid var(--accent);
+}
+
+.fatal {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  padding: 24px;
+  text-align: center;
+}
+
+.fatal p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* ── Panel ─────────────────────────────────────────────────────────────── */
+
+.panel {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  z-index: 3;
+  width: 340px;
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  overscroll-behavior: contain;
+}
+
+.panel:focus {
+  outline: none; /* focused by script after navigating, never by Tab */
+}
+
+/* Nothing to show yet (still starting) or at all (the tour could not start):
+   no empty card, and no controls that would do nothing. */
+.panel:empty,
+[data-tour='failed'] .stage__controls,
+[data-tour='failed'] .legend {
+  display: none;
+}
+
+.panel__header h1 {
+  margin: 2px 0 6px;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.panel__header p {
+  margin: 0;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+.muted {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: -6px 0 12px -8px;
+  padding: 6px 12px 6px 4px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.back:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.list {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--accent-soft);
+  border-color: rgba(47, 107, 255, 0.25);
+}
+
+.row__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.row__number {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.row__number--planned {
+  background: #fff;
+  border: 2px dashed var(--planned);
+  color: var(--planned);
+}
+
+.row__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.row__text strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.row__text small {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.row__meta {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.chip {
+  display: inline-block;
+  flex: none;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.chip--built {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.chip--planned {
+  background: var(--planned-soft);
+  color: var(--planned);
+}
+
+.facts {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.facts dt {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.note {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--planned-soft);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.note--error {
+  background: #fef3f2;
+  color: var(--danger);
+}
+
+.slider {
+  display: block;
+  margin: 16px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.slider__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.slider output {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.slider input {
+  width: 100%;
+  height: 28px;
+  margin: 6px 0 0;
+  accent-color: var(--accent);
+}
+
+/* ── Phones and narrow windows: the panel becomes a sheet under the lab ── */
+
+@media (max-width: 899.98px) {
+  .topbar {
+    padding: 8px 12px;
+  }
+
+  .brand__tagline {
+    display: none;
+  }
+
+  .panel {
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: auto;
+    max-height: 42%;
+    padding: 14px 14px 12px;
+  }
+
+  .panel__header h1 {
+    font-size: 18px;
+  }
+
+  .list {
+    margin-top: 10px;
+  }
+
+  /* Overview: all six rooms at a glance, as tiles, instead of a list that hides
+     two of them below the fold. */
+  .list--rooms {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .list--rooms li {
+    display: grid; /* tiles in one row share a height */
+  }
+
+  .list--rooms .row {
+    gap: 9px;
+    min-height: 48px;
+    padding: 6px 8px;
+    background: rgba(47, 107, 255, 0.05);
+  }
+
+  .list--rooms .row__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+
+  .list--rooms .row__meta {
+    display: none;
+  }
+
+  .list--rooms .row__text strong[data-short] {
+    font-size: 0; /* the full name stays in the document for screen readers */
+  }
+
+  .list--rooms .row__text strong[data-short]::after {
+    content: attr(data-short);
+    font-size: 14.5px;
+  }
+
+  .stage__controls {
+    left: auto;
+    right: 8px;
+    top: 8px;
+    bottom: auto;
+  }
+
+  .legend {
+    left: 8px;
+    top: 8px;
+    bottom: auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 6px 10px;
+  }
+}
+
+/* Phone width: two tiles per row, names only (each room's subtitle is shown
+   again as soon as it is opened). */
+@media (max-width: 599.98px) {
+  .list--rooms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .list--rooms .row {
+    min-height: 46px;
+  }
+
+  .list--rooms .row__text strong,
+  .list--rooms .row__text strong[data-short]::after {
+    font-size: 14px;
+  }
+
+  .list--rooms .row__text small {
+    display: none;
+  }
+}
+
+/* Short screens (small phones, phones held sideways): drop the summary line so
+   the room tiles fit without scrolling. */
+@media (max-width: 899.98px) and (max-height: 700px) {
+  .panel[data-mode='overview'] .panel__header .muted {
+    display: none;
+  }
+}
+
+/* Six full-size room name cards do not fit across a narrow stage: icon + short
+   name instead. main.js sets .is-compact from the width actually free. */
+.is-compact .room-pill {
+  gap: 6px;
+  padding: 4px 9px 4px 4px;
+  border-radius: 11px;
+}
+
+.is-compact .room-pill__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.is-compact .room-pill__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.is-compact .room-pill__text strong {
+  font-size: 11.5px;
+}
+
+.is-compact .room-pill__text strong[data-short] {
+  font-size: 0;
+}
+
+.is-compact .room-pill__text strong[data-short]::after {
+  content: attr(data-short);
+  font-size: 11.5px;
+}
+
+.is-compact .room-pill__text small {
+  display: none;
+}
+
+/* Phone width: the icon alone. The name stays available to screen readers. */
+.is-tiny .room-pill {
+  gap: 0;
+  padding: 4px;
+}
+
+.is-tiny .room-pill__text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Fingers need more room than a mouse pointer. The markers stay the same size
+   to look at (neighbouring machines can be 35 px apart); only the area that
+   responds grows. The machine under a marker and its row in the panel are
+   tappable too. */
+@media (pointer: coarse) {
+  .hotspot::before,
+  .is-tiny .room-pill::before {
+    content: '';
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+  }
+
+  .back {
+    min-height: 40px;
+    margin-bottom: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

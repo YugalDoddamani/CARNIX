@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Lab Tour — Dental Lab</title>
+    <meta name="description" content="Walk through our digital dental lab in 3D: six rooms, from CAD design to the finished prosthesis.">
+    <meta name="theme-color" content="#f6f9fe">
+    <link rel="stylesheet" href="./css/tour.css">
+
+    <!-- three.js is served from this site (vendor/), not from a CDN. The import
+         map lets every module write `import … from 'three'`. It must stay above
+         the first module script. All paths are relative, so the tour works from
+         any folder it is deployed to. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three-r160/three.module.min.js",
+          "three/addons/": "./vendor/three-r160/addons/"
+        }
+      }
+    </script>
+    <link rel="modulepreload" href="./vendor/three-r160/three.module.min.js">
+    <script type="module" src="./js/main.js"></script>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <a class="brand" id="brand" href="#/" aria-label="Dental Lab — back to the lab overview">
+          <span class="brand__mark">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M7.5 3.5 C5.2 3.5 3.5 5.4 3.5 8 C3.5 10 4.3 11.2 4.8 13 C5.3 14.9 5.4 20.5 7.5 20.5 C9.3 20.5 9 15.5 12 15.5 C15 15.5 14.7 20.5 16.5 20.5 C18.6 20.5 18.7 14.9 19.2 13 C19.7 11.2 20.5 10 20.5 8 C20.5 5.4 18.8 3.5 16.5 3.5 C14.8 3.5 13.5 4.5 12 4.5 C10.5 4.5 9.2 3.5 7.5 3.5 Z"/>
+            </svg>
+          </span>
+          <span>
+            <span class="brand__name">Dental Lab</span>
+            <span class="brand__tagline">Digital. Precise. Reliable.</span>
+          </span>
+        </a>
+        <p class="topbar__status" id="loading" role="status" hidden></p>
+      </header>
+
+      <main class="stage" id="stage">
+        <!-- main.js adds the 3D canvas and the labels here -->
+        <div class="stage__controls" role="group" aria-label="View">
+          <button type="button" id="zoom-in" aria-label="Zoom in" title="Zoom in">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5 V19 M5 12 H19"/></svg>
+          </button>
+          <button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12 H19"/></svg>
+          </button>
+          <button type="button" id="go-home" aria-label="Whole lab" title="Whole lab">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11 L12 4 L20 11 M6 9.5 V20 H18 V9.5"/></svg>
+          </button>
+        </div>
+        <div class="legend" aria-label="Legend">
+          <span><i class="legend__built"></i>3D model</span>
+          <span><i class="legend__planned"></i>Planned</span>
+        </div>
+        <aside class="panel" id="panel" aria-label="Lab information" tabindex="-1"></aside>
+      </main>
+    </div>
+
+    <p class="visually-hidden" id="announcer" aria-live="polite"></p>
+    <noscript>This 3D tour needs JavaScript.</noscript>
+
+    <!-- Safety net for what main.js cannot report itself: a browser too old to
+         load it, or a script file that never arrived. By the time the document
+         is ready, main.js has either started (it sets data-tour) or never will. -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var root = document.documentElement;
+        if (root.dataset.tour) return;
+        root.dataset.tour = 'failed';
+        var current = window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap');
+        var box = document.createElement('div');
+        box.className = 'fatal';
+        box.setAttribute('role', 'alert');
+        var title = document.createElement('strong');
+        title.textContent = 'The 3D tour could not start';
+        var detail = document.createElement('p');
+        detail.textContent = current
+          ? 'Part of the page did not load. Check your connection, then reload the page.'
+          : 'This browser is too old for the 3D tour. Please update it, or open the page in a current browser.';
+        box.appendChild(title);
+        box.appendChild(detail);
+        document.getElementById('stage').appendChild(box);
+      });
+    </script>
+  </body>
+</html>

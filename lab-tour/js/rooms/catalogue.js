@@ -5,11 +5,15 @@
 //   status 'planned'  not modelled yet. It appears in the lab as a blue
 //                     placeholder volume so the room can be laid out, and in the
 //                     equipment list so the backlog is visible.
+//       known: true   …but the real machine IS known: `name` and `sizeMm` are
+//                     the maker's, and knowledge.js gives its maker and figures
+//                     with their sources. Only the 3D model is missing. The tour
+//                     says "Model coming" instead of "Planned".
 //
-// ⚠ PLANNED ENTRIES ARE A DRAFT. They are the machines a lab with these six
-// rooms typically runs, with ROUGH envelope sizes for a generic unit — not your
-// real equipment list. Replace each with the actual make/model and its
-// datasheet size (w × d × h, mm) before it is modelled.
+// ⚠ PLANNED ENTRIES WITHOUT `known` ARE A DRAFT. They are the machines a lab
+// with these six rooms typically runs, with ROUGH envelope sizes for a generic
+// unit — not your real equipment list. Replace each with the actual make/model
+// and its datasheet size (w × d × h, mm) before it is modelled.
 //
 // mount: 'bench' sits on a worktop · 'floor' stands on the floor.
 // icon:  a name from js/ui/icons.js, shown beside the machine's name.
@@ -26,6 +30,13 @@ export const EQUIPMENT = {
   'zubler-vario-200': { status: 'built', icon: 'furnace', shortName: 'Vario 200', kind: 'Ceramic furnace' },
   'upcera-a7-plus': { status: 'built', icon: 'furnace', shortName: 'UPCERA A7+', kind: 'Porcelain furnace' },
   'ivoclar-programat-p300': { status: 'built', icon: 'furnace', shortName: 'Programat P300', kind: 'Ceramic furnace' },
+
+  // ── Known, waiting for its 3D model ────────────────────────────────────────
+  // The model exists (Drive: "UniFormation GK3 — Three.js Viewer", and in the
+  // asset library of 11 Nov 2026 under this same id) but has not been imported.
+  // After `npm run import-assets`, this line becomes
+  //   'uniformation-gk3': { status: 'built', icon: 'printer', shortName: 'GK3', kind: 'Resin 3D printer' },
+  'uniformation-gk3': { status: 'planned', known: true, icon: 'printer', name: 'UniFormation GK3', shortName: 'GK3', kind: 'Resin 3D printer', mount: 'bench', sizeMm: { w: 392, d: 332, h: 520 } },
 
   // ── Planned · Printing Room ────────────────────────────────────────────────
   'resin-printer': { status: 'planned', icon: 'printer', name: 'Resin 3D printer', kind: '3D printer', mount: 'bench', sizeMm: { w: 400, d: 400, h: 580 } },

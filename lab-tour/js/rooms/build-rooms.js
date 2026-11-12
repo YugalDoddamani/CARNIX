@@ -96,6 +96,8 @@ export function buildRooms(shell) {
       typeId,
       roomId,
       status: entry.status,
+      /** Not modelled, but the real machine is known (catalogue.js `known`). */
+      known: !built && entry.known === true,
       name: built ? library.name : entry.name,
       shortName: entry.shortName ?? (built ? library.name : entry.name),
       kind: entry.kind,

@@ -131,7 +131,7 @@ function start() {
       button.type = 'button';
       button.className = `hotspot hotspot--${item.status}`;
       button.style.setProperty('--i', index);
-      button.setAttribute('aria-label', `${item.name} (${item.status === 'built' ? '3D model' : 'planned'})`);
+      button.setAttribute('aria-label', `${item.name} (${item.status === 'built' ? '3D model' : item.known ? '3D model coming' : 'planned'})`);
       const dot = document.createElement('span');
       dot.className = 'hotspot__dot';
       dot.textContent = String(index + 1);
@@ -584,7 +584,7 @@ function start() {
     },
     rooms: ROOMS.map((room) => room.id),
     route: route.map((room) => room.id),
-    items: () => [...rooms.items.values()].map(({ id, status, name, modelState, tier, apart }) => ({ id, status, name, modelState, tier, apart: apart ?? 0 })),
+    items: () => [...rooms.items.values()].map(({ id, status, known, name, modelState, tier, apart }) => ({ id, status, known, name, modelState, tier, apart: apart ?? 0 })),
     renderInfo: () => ({ ...stage.renderer.info.render, ...stage.renderer.info.memory, framesDrawn: stage.framesDrawn, quality: stage.quality }),
     stage,
     rig,

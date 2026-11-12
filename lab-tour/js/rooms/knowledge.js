@@ -100,6 +100,18 @@ export const BRANDS = {
       'Ivoclar is one of the large dental manufacturers. It makes materials for dentists and dental technicians, among them the IPS e.max ceramics, and equipment such as the Programat furnaces. It was formerly called Ivoclar Vivadent, the name printed on this furnace.',
     sources: [{ label: 'Ivoclar, company history', url: 'https://www.ivoclar.com/en_li/media-release/2023/a-tour-through-the-company-s-history' }],
   },
+  uniformation: {
+    name: 'UniFormation',
+    place: 'Shenzhen, China',
+    since: 2016,
+    about:
+      'UniFormation develops 3D printers that harden liquid resin with light, and the machines that wash and cure the printed parts afterwards. Its GK series of desktop printers is made for makers and professional users.',
+    sources: [
+      { label: 'UniFormation, own website', url: 'https://uniformation3d.com/' },
+      { label: 'UniFormation, company profile (All3DP, 2026)', url: 'https://all3dp.com/4/from-print-to-dry-uniformation-s10-reimagines-resin-3d-printing-ahead-of-kickstarter-launch/' },
+      { label: 'UniFormation, company profile (MyMiniFactory)', url: 'https://www.myminifactory.com/stories/uniformation-gktwo' },
+    ],
+  },
 };
 
 export const MACHINE_INFO = {
@@ -252,6 +264,33 @@ export const MACHINE_INFO = {
     ],
     sources: [{ label: 'Ivoclar Vivadent, Programat P300 operating instructions', url: 'https://www.prodonsa.com/ivoclarvivadent/pdf/P300-e-BA-0306.pdf' }],
     confirm: "Figures are from the first P300 manual (2006). The later P300/G2 holds more programs. The asset library's note says 'QTK2'; the P300 manual says 'QTK heating muffle'.",
+  },
+
+  // ── Printing Room ──────────────────────────────────────────────────────────
+  'uniformation-gk3': {
+    brand: 'uniformation',
+    summary: 'A resin 3D printer. It builds an object layer by layer from liquid resin that hardens where light hits it. Labs print models, surgical guides, splints and try-ins this way.',
+    how: 'A vat of liquid resin sits on a screen. For each layer the screen works as a mask: light passes only where the part should be solid, and the resin there hardens onto a platform. The platform rises one step per layer and lifts the growing part out of the liquid, upside down.',
+    features: [
+      { label: 'Size of one pixel', value: '14 × 19 µm' },
+      { label: 'Largest print', value: '211 × 118 × 240 mm', note: 'width × depth × height' },
+      { label: 'Pixels on the screen', value: '15,120 × 6,230', note: 'sold as "16K"' },
+      { label: 'Layer thickness', value: '0.03, 0.05, 0.1 mm', note: 'suggested' },
+      { label: 'Light', value: '405 nm', note: 'violet' },
+      { label: 'Resin kept at', value: '25 or 30 °C' },
+      { label: 'Resin cartridge', value: '1.2 kg' },
+    ],
+    featuresNote: 'Light of 405 nm is violet, at the very edge of ultraviolet. UniFormation, like other makers of resin printers, calls it UV.',
+    capabilities: [
+      'Tops up its own resin: a cartridge refills the vat during a print, and sensors keep it from running dry or overflowing.',
+      'Warms the resin by itself, so that it flows and hardens the same way whatever the weather.',
+      'A built-in camera shows the print in progress and can record a time-lapse.',
+      'Takes print files by USB, Wi-Fi or network cable.',
+      'The build platform and the resin vat are quick-release, for fast changes between prints.',
+    ],
+    sources: [{ label: 'UniFormation, GK3 product page', url: 'https://uniformation3d.com/products/uniformation-resin-3d-printer-gk3' }],
+    confirm:
+      "Which version does the lab have: GK3 (T) with a T-type lead screw, GK3 (B) with a ball screw, or GK3 Pro? The figures shown are UniFormation's for the GK3 (T and B are the same in all of them). The GK3 Pro uses 385 nm light instead of 405 nm, and UniFormation's own page points dental work to the Pro. The 3D model in the Drive shows a ball screw and a 405 nm hood, which would be the GK3 (B).",
   },
 
   // ── Not modelled yet: what this kind of machine is for ─────────────────────

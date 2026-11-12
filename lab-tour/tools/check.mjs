@@ -61,9 +61,12 @@ for (const [id, piece] of Object.entries(KIT)) {
 section('Catalogue');
 const libraryIds = new Set(LEGACY_ASSETS.map((asset) => asset.id));
 for (const [id, entry] of Object.entries(EQUIPMENT)) {
+  if (entry.known !== undefined && entry.known !== true) fail(`catalogue "${id}": \`known\` is either true or left out`);
   if (entry.status === 'built') {
     if (!libraryIds.has(id)) fail(`catalogue "${id}" is marked built but is not in the imported asset library`);
+    if (entry.known) fail(`catalogue "${id}": \`known\` is for machines without a 3D model; a built machine does not need it`);
   } else if (entry.status === 'planned') {
+    if (libraryIds.has(id)) warn(`catalogue "${id}" is still marked planned, but its 3D model is in the imported library: set status: 'built'`);
     if (!entry.name || !entry.kind) fail(`catalogue "${id}" needs a name and a kind`);
     if (!entry.sizeMm || !(entry.sizeMm.w > 0 && entry.sizeMm.d > 0 && entry.sizeMm.h > 0)) fail(`catalogue "${id}" needs sizeMm { w, d, h }`);
     if (!['bench', 'floor'].includes(entry.mount)) fail(`catalogue "${id}" needs mount: 'bench' or 'floor'`);
@@ -104,7 +107,8 @@ for (const [roomId, entries] of Object.entries(ROOM_CONTENT)) {
             continue;
           }
           if (type.mount === 'floor') fail(`${roomId}: "${thing.equipment}" is floor-standing but is placed on a bench`);
-          const size = type.sizeMm ?? describeEquipment(thing.equipment).sizeMm;
+          const size = type.sizeMm ?? describeEquipment(thing.equipment)?.sizeMm;
+          if (!size) continue; // no size to check with; the catalogue section has reported it
           width = size.w;
           if (size.d > depth) fail(`${roomId}: "${thing.equipment}" (${size.d} mm deep) is deeper than its bench (${depth} mm)`);
         } else if (KIT[thing.kit]) {
@@ -127,7 +131,9 @@ for (const [roomId, entries] of Object.entries(ROOM_CONTENT)) {
 }
 for (const id of Object.keys(EQUIPMENT)) if (!used.has(id)) warn(`catalogue "${id}" is not placed in any room`);
 const builtCount = Object.values(EQUIPMENT).filter((entry) => entry.status === 'built').length;
+const knownIds = Object.keys(EQUIPMENT).filter((id) => EQUIPMENT[id].status === 'planned' && EQUIPMENT[id].known);
 console.log(`  ${Object.keys(EQUIPMENT).length} machine types: ${builtCount} built, ${Object.keys(EQUIPMENT).length - builtCount} planned`);
+if (knownIds.length) console.log(`  of the planned, known machines waiting for their 3D model: ${knownIds.join(', ')}`);
 
 // ── 3. What the visitor reads ────────────────────────────────────────────────
 section('What the visitor reads');
@@ -215,7 +221,13 @@ for (const [id, entry] of Object.entries(EQUIPMENT)) {
     pills.capabilities++;
   }
   checkSources(info.sources, where);
-  if (entry.status === 'planned' && (info.brand || info.features)) warn(`${where}: a planned machine has a maker or figures; is the real machine known now? Then give it its real name in catalogue.js`);
+  if (entry.status === 'planned' && entry.known) {
+    // "Known" is a claim: this is the lab's real machine. It has to be backed up.
+    if (!info.brand) fail(`${where}: catalogue.js says the real machine is known, so name its maker (\`brand\`)`);
+    if (!info.sources?.length) fail(`${where}: catalogue.js says the real machine is known, so give the source of its name and size`);
+  } else if (entry.status === 'planned' && (info.brand || info.features)) {
+    warn(`${where}: a planned machine has a maker or figures; is the real machine known now? Then give it its real name and size in catalogue.js and mark it \`known: true\``);
+  }
   if (info.confirm !== undefined) {
     needText(info.confirm, `${where} confirm`);
     toConfirm.push([EQUIPMENT[id].shortName ?? EQUIPMENT[id].name ?? id, info.confirm]);

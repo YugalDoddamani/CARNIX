@@ -1,10 +1,11 @@
 // npm run e2e — a visitor's walk through the tour, checked step by step in a
-// real (headless) browser. Four visitors:
+// real (headless) browser. Four visitors, and the way the lab arrives:
 //
 //   desktop   a wide window and a mouse
 //   phone     a 390 × 844 phone and a finger
 //   first     somebody who has never been here (the welcome guide)
 //   reduced   somebody who has asked their device for less motion
+//   entrance  the opening: the lab coming up part by part, a model fading in
 //
 //   node tools/browser/e2e.mjs [--only=desktop,phone] [--base=http://127.0.0.1:4173/]
 //        [--q=low] [--verbose]
@@ -29,6 +30,7 @@ const WELCOMED = { 'lab-tour:welcomed': '1' };
 const MACHINE = flags.machine || 'ceramic/zubler-vario-200'; // modelled, has all four pills
 const NEIGHBOUR = flags.neighbour || 'ceramic/upcera-a7-plus'; // the next machine in the same room
 const PLANNED = flags.planned || 'plaster/model-trimmer'; // not modelled yet
+const PRINTER = flags.printer || 'printing/uniformation-gk3'; // modelled; the last machine to come out of the asset library
 const roomOf = (id) => id.split('/')[0];
 
 // What layout.js asks for, in the terms the checks measure.
@@ -93,6 +95,19 @@ function install() {
   };
   const canvas = () => window.labTour.stage.renderer.domElement;
 
+  // When the "drag to turn" hint came and went, for the message of a check that
+  // misses it. (It hides itself nine seconds of real time after it appears,
+  // whatever the tour's clock is doing. Those seconds once counted from the
+  // moment it was asked for: when the next frame came later than that, as it
+  // twice did here with the picture drawn in software, the hint went as soon
+  // as it had come.)
+  const hintLog = [];
+  {
+    const hint = document.getElementById('gesture-hint');
+    const note = () => hintLog.push(`${hint.hidden ? 'hidden' : hint.classList.contains('is-shown') ? 'shown' : 'on its way'} at ${Math.round(performance.now())}`);
+    new MutationObserver(note).observe(hint, { attributes: true, attributeFilter: ['class', 'hidden'] });
+  }
+
   window.__t = {
     /** The part of the stage that no panel or bar covers. */
     free() {
@@ -139,6 +154,7 @@ function install() {
         guide: tour.guide.isOpen,
         hint: hint.classList.contains('is-shown'),
         hintText: hint.textContent.trim(),
+        hintLog: [...hintLog, `looked at ${Math.round(performance.now())}`].join(', '),
         hintRect: rect(hint),
         focus: describe(document.activeElement),
         calls: tour.renderInfo().calls,
@@ -461,7 +477,7 @@ async function desktop(browser) {
 
   await step('The machine comes forward', async () => {
     const { s } = await checkMachineInView(v, MACHINE);
-    check('the hint says how to turn and zoom with a mouse', s.hint && /drag to turn/i.test(s.hintText) && /scroll to zoom/i.test(s.hintText), `shown ${s.hint}: "${s.hintText}"`);
+    check('the hint says how to turn and zoom with a mouse', s.hint && /drag to turn/i.test(s.hintText) && /scroll to zoom/i.test(s.hintText), `shown ${s.hint}: "${s.hintText}" (${s.hintLog})`);
     check('keyboard focus has moved to the panel', s.focus.startsWith('aside#panel'), s.focus);
     check('the panel names the machine and offers its four pills', s.heading.length > 0 && same(s.tabs, ['overview', 'about', 'features', 'capabilities']), `"${s.heading}" ${s.tabs}`);
     check('the lab camera holds its direction from here on', s.roomHolds && s.lag < 0.01, `holds ${s.roomHolds}, ${round(s.lag, 2)}° apart`);
@@ -801,6 +817,45 @@ async function desktop(browser) {
     });
   }
 
+  // The resin printer stood in the Printing Room as a plain volume until its
+  // model was imported. It must now behave like every other modelled machine.
+  if (facts.items.some((entry) => entry.id === PRINTER && entry.status === 'built')) {
+    await step('The resin printer, a model like the other machines', async () => {
+      await v.go(`#/${roomOf(PRINTER)}`);
+      const chip = await page.$eval(`#panel [data-go-item="${PRINTER}"]`, (element) => element.querySelector('.chip')?.textContent.trim() ?? '');
+      check('the room list has it as a machine, with no "Planned" or "Model coming" beside it', chip === '', `"${chip}"`);
+      await v.press(`#panel [data-go-item="${PRINTER}"]`);
+      await v.rest();
+      await checkMachineInView(v, PRINTER);
+      const panel = await page.evaluate(() => ({
+        note: document.querySelector('#panel .note')?.textContent ?? '',
+        sizeLabel: [...document.querySelectorAll('#panel .facts dt')].map((term) => term.textContent.trim()),
+        tabs: [...document.querySelectorAll('#panel [role="tab"]')].map((tab) => tab.dataset.tab),
+      }));
+      check('the panel no longer says that its model is missing', !/3D model is not in the tour yet|not modelled yet/i.test(panel.note), panel.note.slice(0, 60));
+      check('it gives the size of the model, and still its maker and figures', panel.sizeLabel.includes('Size of the model') && panel.tabs.includes('about') && panel.tabs.includes('features'), `${panel.sizeLabel.join(', ')}; ${panel.tabs.join(' ')}`);
+
+      const before = await v.see();
+      const closed = await v.whereIs(PRINTER);
+      const slider = '#panel [data-explode]';
+      check('it has a "Take it apart" slider at 0', (await page.$eval(slider, (input) => input.value).catch(() => null)) === '0');
+      await page.focus(slider);
+      await page.keyboard.press('End');
+      await v.rest();
+      const apart = await v.see();
+      const open = await v.whereIs(PRINTER);
+      const entry = await v.item(PRINTER);
+      check('taken apart, its hood swings open and its parts come out: it needs more room', entry.apart === 1 && apart.distance > before.distance * 1.05, `apart ${entry.apart}, camera ${round(before.distance)} → ${round(apart.distance)}`);
+      check('and all of it is still in view', inside(open, apart.free, 2), `parts ${box(open)}, free ${box(apart.free)}; closed ${box(closed)}`);
+      await page.keyboard.press('Home');
+      await v.rest();
+      await page.keyboard.press('Escape');
+      await v.rest();
+      const left = await v.see();
+      check('leaving it clears the spotlight', left.place === roomOf(PRINTER) && left.lit === null && left.veil === 0);
+    });
+  }
+
   await step('The guide, opened from the header', async () => {
     await v.go(`#/${room}`);
     await v.press('#open-guide');
@@ -913,7 +968,7 @@ async function phone(browser) {
 
   await step('The machine comes forward', async () => {
     const { s, where } = await checkMachineInView(v, MACHINE);
-    check('the hint speaks of fingers, not of a mouse', s.hint && /pinch to zoom/i.test(s.hintText), `shown ${s.hint}: "${s.hintText}"`);
+    check('the hint speaks of fingers, not of a mouse', s.hint && /pinch to zoom/i.test(s.hintText), `shown ${s.hint}: "${s.hintText}" (${s.hintLog})`);
     check('the hint sits between the machine and the sheet, covering neither', s.hintRect.top >= where.bottom - 1 && s.hintRect.bottom <= s.panelRect.top + 1, `machine ends ${Math.round(where.bottom)}, hint ${Math.round(s.hintRect.top)} → ${Math.round(s.hintRect.bottom)}, sheet starts ${Math.round(s.panelRect.top)}`);
     check('the sheet leaves at least 45% of the stage to the machine', (s.panelRect.top - s.stage.top) / s.stage.height >= 0.45, `${round(((s.panelRect.top - s.stage.top) / s.stage.height) * 100, 0)}%`);
     console.log(`      (machine view: ${s.calls} draw calls)`);
@@ -1141,8 +1196,448 @@ async function reducedMotion(browser) {
   await page.close();
 }
 
+// ── The entrance ─────────────────────────────────────────────────────────────
+// When the tour opens the lab comes up part by part (motion.js). That is the
+// browser fading stills of the picture, on the browser's own clock, so here it
+// is opened standing still at its first moment (?intro=hold) and moved by hand.
+async function entrance(browser) {
+  current = 'entrance';
+  console.log('\nEntrance — the lab coming up when the tour opens');
+  const room = roomOf(MACHINE);
+  const PARTS = ['nothing', 'floor', 'walls', 'glazing', 'furniture']; // what each still shows, top first
+
+  const openHeld = async (options = {}) => {
+    const tour = await openTour(browser, base, { width: 1280, height: 800, storage: WELCOMED, query: `q=${quality}&intro=hold`, until: 'started', ...options });
+    if (/^failed/.test(tour.state)) throw new Error('the tour did not start');
+    await tour.page.evaluate(install);
+    return tour;
+  };
+  /** What stands where in the opening right now. */
+  const look = (page) =>
+    page.evaluate(() => {
+      const tour = window.labTour;
+      const seen = (selector) =>
+        [...document.querySelectorAll(selector)].map((element) => {
+          const style = getComputedStyle(element);
+          return style.visibility === 'hidden' ? 0 : Number(style.opacity);
+        });
+      const stage = document.getElementById('stage').getBoundingClientRect();
+      return {
+        intro: document.documentElement.dataset.intro,
+        motion: tour.motion.state,
+        busy: tour.motion.busy,
+        // Lowest first in the page, so the last one is on top.
+        stills: [...document.querySelectorAll('.reveal__still')].map((still) => {
+          const box = still.getBoundingClientRect();
+          return { shows: still.dataset.still, opacity: Number(getComputedStyle(still).opacity), fills: Math.abs(box.left - stage.left) < 0.5 && Math.abs(box.top - stage.top) < 0.5 && Math.abs(box.width - stage.width) < 0.5 && Math.abs(box.height - stage.height) < 0.5, backed: getComputedStyle(still).backgroundImage !== 'none' };
+        }),
+        names: seen('.room-pill:not(.is-hidden)'),
+        markers: seen('.hotspot:not(.is-hidden)'),
+        panel: seen('#panel')[0],
+        bar: seen('#dock')[0],
+        guide: tour.guide.isOpen,
+        place: tour.state.itemId ?? tour.state.roomId ?? 'lab',
+        tour: document.documentElement.dataset.tour,
+      };
+    });
+  const seek = async (page, ms) => {
+    await page.evaluate((to) => window.labTour.motion.seek(to), ms);
+    await frames(page, 2);
+  };
+  const waitFor = (page, test, timeout = 60000) => page.waitForFunction(test, { timeout, polling: 50 });
+  const over = () => document.documentElement.dataset.intro === 'done' && !window.labTour.motion.busy;
+  const loaded = () => /^ready/.test(document.documentElement.dataset.tour || '');
+
+  // ── A returning visitor, at the whole lab ──
+  const { page, problems } = await openHeld();
+  const v = visitor(page);
+  let patch = null;
+  let afterOpening = null;
+
+  await step('At the first moment', async () => {
+    const s = await look(page);
+    check('the opening is running', s.intro === 'playing' && s.motion.intro === 'held' && s.busy, `${s.intro}, ${s.motion.intro}`);
+    check('the lab is covered by stills of itself: nothing, then one part more each', same(s.motion.stills, PARTS), s.motion.stills.join(' › '));
+    check('each still lies exactly over the stage, on its piece of the page background, and is opaque', s.stills.length === PARTS.length && s.stills.every((still) => still.fills && still.backed && still.opacity === 1), JSON.stringify(s.stills));
+    const added = await page.evaluate(() => {
+      // How many points of the picture differ between one still and the next.
+      const pictures = [...document.querySelectorAll('.reveal__still')].reverse().map((still) => still.querySelector('canvas'));
+      const data = pictures.map((picture) => (picture ? picture.getContext('2d').getImageData(0, 0, picture.width, picture.height).data : null));
+      const counts = [];
+      for (let k = 1; k < data.length; k++) {
+        let differing = 0;
+        for (let i = 0; i < data[k].length; i += 4) {
+          const before = data[k - 1] ? Math.abs(data[k][i] - data[k - 1][i]) + Math.abs(data[k][i + 1] - data[k - 1][i + 1]) + Math.abs(data[k][i + 2] - data[k - 1][i + 2]) + Math.abs(data[k][i + 3] - data[k - 1][i + 3]) : data[k][i + 3];
+          if (before > 24) differing++;
+        }
+        counts.push(differing);
+      }
+      return { counts, blank: pictures[0] === null };
+    });
+    check('the first still is the empty page, and every later one adds to the picture', added.blank && added.counts.length === PARTS.length - 1 && added.counts.every((count) => count > 400), `points added: ${added.counts.join(', ')}`);
+    check('no names over the rooms yet, no panel, no bar', s.names.length === 6 && s.names.every((opacity) => opacity === 0) && s.panel === 0 && s.bar === 0, `names ${s.names.join(',')}, panel ${s.panel}, bar ${s.bar}`);
+    const spot = await page.evaluate((id) => {
+      const point = window.__t.tapPoint(id);
+      return point ? { ...point, top: document.elementFromPoint(point.x, point.y) === window.labTour.stage.renderer.domElement } : null;
+    }, room);
+    check('yet the lab can be tapped already: a still lets everything through', Boolean(spot) && spot.top, JSON.stringify(spot));
+    check('and no welcome guide for a returning visitor', !s.guide);
+  });
+
+  await step('The models load behind it', async () => {
+    await waitFor(page, loaded, 180000);
+    const s = await look(page);
+    const models = await page.evaluate(() => window.labTour.items().filter((entry) => entry.status === 'built'));
+    check('every model has taken its place, unseen', s.tour === 'ready' && models.every((entry) => entry.modelState === 'ready' && entry.tier === 'lite'), `${s.tour}; ${models.filter((entry) => entry.modelState !== 'ready').map((entry) => entry.id).join(', ')}`);
+    check('without ending the opening or starting it again', s.intro === 'playing' && same(s.motion.stills, PARTS) && s.stills.every((still) => still.opacity === 1), `${s.intro}; ${s.motion.stills.join(' › ')}`);
+  });
+
+  await step('Part by part', async () => {
+    const opacity = (s, shows) => s.stills.find((still) => still.shows === shows)?.opacity;
+    await seek(page, 430);
+    let s = await look(page);
+    check('first the floor: the empty page is fading away over it', opacity(s, 'nothing') > 0 && opacity(s, 'nothing') < 1 && opacity(s, 'furniture') === 1, `empty page at ${round(opacity(s, 'nothing'))}`);
+    await seek(page, 1000);
+    s = await look(page);
+    check('then the walls and the glass, and the furniture after them', opacity(s, 'nothing') === 0 && opacity(s, 'floor') === 0 && opacity(s, 'walls') > 0 && opacity(s, 'glazing') > 0 && opacity(s, 'glazing') < 1 && opacity(s, 'furniture') === 1, s.stills.map((still) => `${still.shows} ${round(still.opacity)}`).join(', '));
+    await seek(page, 1425);
+    s = await look(page);
+    check('the machines last: only the still without them is left, and it is going', ['nothing', 'floor', 'walls', 'glazing'].every((shows) => opacity(s, shows) === 0) && opacity(s, 'furniture') > 0 && opacity(s, 'furniture') < 1, s.stills.map((still) => `${still.shows} ${round(still.opacity)}`).join(', '));
+    check('still no names and no panel', s.names.every((value) => value === 0) && s.panel === 0);
+    await seek(page, 1760);
+    s = await look(page);
+    check('the lab is all there; the names come in one after the other', s.stills.every((still) => still.opacity === 0) && s.names.filter((value) => value > 0).length >= 2 && s.names.filter((value) => value < 1).length >= 2, `names ${s.names.map((value) => round(value)).join(', ')}`);
+    check('and the panel and the bar after them', s.panel > 0 && s.panel < 1 && s.bar > 0 && s.bar < 1, `panel ${round(s.panel)}, bar ${round(s.bar)}`);
+  });
+
+  await step('When it is over', async () => {
+    await page.evaluate(() => window.labTour.motion.release());
+    await waitFor(page, over);
+    await frames(page, 3);
+    const s = await look(page);
+    check('nothing of it is left on the page', s.intro === 'done' && s.stills.length === 0 && !s.busy && (await page.evaluate(() => document.querySelector('.reveal').getAnimations({ subtree: true }).length)) === 0, `${s.intro}, ${s.stills.length} stills`);
+    check('every name, the panel and the bar are there', s.names.length === 6 && s.names.every((value) => value === 1) && s.panel === 1 && s.bar === 1, `names ${s.names.join(',')}, panel ${s.panel}, bar ${s.bar}`);
+    const before = await page.evaluate(() => window.labTour.stage.framesDrawn);
+    await sleep(1200);
+    const drawn = (await page.evaluate(() => window.labTour.stage.framesDrawn)) - before;
+    check('and the tour is at rest: no frame is drawn while nothing happens', drawn === 0, `${drawn} frames in 1.2 s`);
+    const free = (await v.see()).free;
+    patch = { left: Math.round(free.left + (free.right - free.left) * 0.25), top: Math.round(free.top + (free.bottom - free.top) * 0.25), right: Math.round(free.left + (free.right - free.left) * 0.75), bottom: Math.round(free.top + (free.bottom - free.top) * 0.75) };
+    afterOpening = await v.pixels(patch);
+    check('the test patch shows the lab', contrast(afterOpening) >= 8, `contrast ${contrast(afterOpening)}`);
+  });
+
+  await step('Something that arrives later', async () => {
+    const before = await v.see();
+    const laid = await page.evaluate(() => {
+      const tour = window.labTour;
+      let ran = false;
+      tour.motion.change(() => {
+        ran = true;
+        tour.stage.invalidate();
+      });
+      const still = document.querySelector('.reveal__still');
+      return { ran, stills: tour.motion.state.stills, pictured: Boolean(still?.querySelector('canvas')?.width) };
+    });
+    check('is put in place at once, under a still of the picture as it was', laid.ran && same(laid.stills, ['before']) && laid.pictured, JSON.stringify(laid));
+    await waitFor(page, () => !window.labTour.motion.busy, 20000);
+    const after = await v.see();
+    const s = await look(page);
+    check('the still fades away and leaves nothing behind', s.stills.length === 0 && !s.busy);
+    check('the camera did not move for it', near(after.azimuth, before.azimuth, 1e-9) && near(after.distance, before.distance, 1e-9) && moved(after.target, before.target) < 1e-9);
+    // While the picture is moving a still would be out of date at once.
+    await page.evaluate(
+      (to) =>
+        new Promise((resolve) => {
+          addEventListener('hashchange', () => resolve(), { once: true }); // the tour hears it first
+          location.hash = to;
+        }),
+      `#/${room}`,
+    );
+    const onTheWay = await page.evaluate(() => {
+      const tour = window.labTour;
+      let ran = false;
+      tour.motion.change(() => {
+        ran = true;
+      });
+      return { ran, busy: tour.busy, stills: tour.motion.state.stills.length };
+    });
+    check('while the camera is on its way it is simply put in place, with no still', onTheWay.ran && onTheWay.busy && onTheWay.stills === 0, JSON.stringify(onTheWay));
+  });
+  noProblems(problems);
+  await page.close();
+
+  // ── The same lab, opened without the opening: the picture must be the same ──
+  const plain = await open(browser, { width: 1280, height: 800, storage: WELCOMED, query: `q=${quality}&intro=off` });
+  await step('It leaves the lab as it would have been without it', async () => {
+    const s = await look(plain.page);
+    check('?intro=off opens the tour without the opening', s.intro === 'done' && s.stills.length === 0);
+    const without = await visitor(plain.page).pixels(patch);
+    check('the picture after the opening is the picture without one, point for point', difference(afterOpening, without) < 0.02, `mean difference ${round(difference(afterOpening, without), 3)}`);
+  });
+  noProblems(plain.problems);
+  await plain.page.close();
+
+  // ── Tapping a room while the lab is still coming up ──
+  const eager = await openHeld();
+  await step('A tap during the opening', async () => {
+    await seek(eager.page, 600);
+    await visitor(eager.page).tapScene(room);
+    const s = await look(eager.page);
+    check('takes the visitor to the room at once', s.place === room, s.place);
+    check('and ends the opening: the lab is simply all there', s.intro === 'done' && s.stills.length === 0 && s.motion.intro === 'none', `${s.intro}, ${s.stills.length} stills`);
+    await frames(eager.page, 3);
+    const later = await look(eager.page);
+    check('with the room\'s markers and the panel in place', later.markers.length > 0 && later.panel === 1, `${later.markers.length} markers, panel ${later.panel}`);
+  });
+  noProblems(eager.problems);
+  await eager.page.close();
+
+  // ── A model that gets ready just while the machines are coming up ──
+  const midway = await openHeld();
+  await step('A model that gets ready while the machines come up', async () => {
+    await seek(midway.page, 1300);
+    const half = await look(midway.page);
+    const shown = Object.fromEntries(half.stills.map((still) => [still.shows, still.opacity]));
+    check('at 1.3 s the machines are half there: only the last still is left, partly faded', shown.nothing === 0 && shown.floor === 0 && shown.walls === 0 && shown.furniture > 0.05 && shown.furniture < 0.95, JSON.stringify(shown));
+    const waiting = await midway.page.evaluate(() => {
+      const tour = window.labTour;
+      window.__late = null;
+      tour.motion.change(() => {
+        window.__late = { stills: [...tour.motion.state.stills] };
+      });
+      return { ran: window.__late !== null, waiting: tour.motion.state.waiting };
+    });
+    check('a model that gets ready now waits: nothing changes in a lab that is half there', !waiting.ran && waiting.waiting >= 1, JSON.stringify(waiting));
+    await midway.page.evaluate(() => window.labTour.motion.release());
+    await waitFor(midway.page, () => window.__late !== null);
+    const late = await midway.page.evaluate(() => window.__late);
+    check('and takes its place once the machines are all there, under a still of its own', same(late.stills, ['before']), JSON.stringify(late));
+    await waitFor(midway.page, over);
+    const s = await look(midway.page);
+    check('after which nothing is left over the picture', s.stills.length === 0 && s.motion.waiting === 0, `${s.stills.length} stills, ${s.motion.waiting} waiting`);
+  });
+  noProblems(midway.problems);
+  await midway.page.close();
+
+  // ── The window changes size while the lab is still coming up ──
+  const resized = await openHeld();
+  await step('The window changes size during the opening', async () => {
+    await seek(resized.page, 600);
+    const during = await look(resized.page);
+    await resized.page.setViewport({ width: 1040, height: 700, deviceScaleFactor: 1 });
+    await resized.page.waitForFunction(() => window.innerWidth === 1040, { timeout: 20000, polling: 50 });
+    await frames(resized.page, 4);
+    const s = await look(resized.page);
+    // (A model that gets ready just now may lay a still of its own, 'before': that one is of the new size.)
+    const stale = s.stills.filter((still) => still.shows !== 'before');
+    check('the stills, made for the old size, are dropped and the lab is simply all there', during.stills.length === PARTS.length && stale.length === 0 && s.intro === 'done' && s.motion.intro === 'none', `${during.stills.length} stills → ${s.stills.map((still) => still.shows).join(', ') || 'none'}; ${s.intro}`);
+    check('whatever lies over the picture now has its new size', s.stills.every((still) => still.fills), `${s.stills.length} stills`);
+    const fit = await resized.page.evaluate(() => {
+      const canvas = document.querySelector('#stage canvas');
+      const stage = document.getElementById('stage').getBoundingClientRect();
+      const box = canvas.getBoundingClientRect();
+      return { fills: Math.abs(box.width - stage.width) < 1 && Math.abs(box.height - stage.height) < 1, picture: `${canvas.width}×${canvas.height}`, stage: `${Math.round(stage.width)}×${Math.round(stage.height)}` };
+    });
+    check('the picture has the new size', fit.fills && fit.picture === fit.stage, `picture ${fit.picture}, stage ${fit.stage}`);
+    await frames(resized.page, 3);
+    const later = await look(resized.page);
+    check('with the room names, the panel and the bar in place', later.names.length === 6 && later.names.every((value) => value === 1) && later.panel === 1 && later.bar === 1, `names ${later.names.join(' ')}, panel ${later.panel}, bar ${later.bar}`);
+  });
+  noProblems(resized.problems);
+  await resized.page.close();
+
+  // ── A link straight to a machine ──
+  const linked = await openHeld({ hash: `#/${MACHINE}` });
+  await step('A link to a machine', async () => {
+    const s = await look(linked.page);
+    check('opens on the machine, and everything comes up as one', s.place === MACHINE && s.intro === 'playing' && same(s.motion.stills, ['nothing']), `${s.place}; ${s.motion.stills.join(' › ')}`);
+    await linked.page.evaluate(() => window.labTour.motion.release());
+    await waitFor(linked.page, over);
+    await waitFor(linked.page, loaded, 180000);
+    const entry = await visitor(linked.page).item(MACHINE);
+    check('its detailed model is the one on show when everything is in', entry.tier === 'hero' && entry.modelState === 'ready', `${entry.tier}, ${entry.modelState}`);
+  });
+  noProblems(linked.problems);
+  await linked.page.close();
+
+  // ── Somebody who has never been here ──
+  const first = await openHeld({ forget: true, storage: null });
+  await step('The welcome guide waits for it', async () => {
+    const during = await look(first.page);
+    check('no guide over the lab while it is coming up', during.intro === 'playing' && !during.guide);
+    await first.page.evaluate(() => window.labTour.motion.release());
+    await waitFor(first.page, over);
+    await frames(first.page, 2);
+    const after = await look(first.page);
+    check('it opens when the lab is there', after.guide && after.place === 'lab');
+  });
+  noProblems(first.problems);
+  await first.page.close();
+
+  // ── Somebody who asked for less motion ──
+  const calm = await openTour(browser, base, { width: 1280, height: 800, reducedMotion: true, forget: true, query: `q=${quality}`, until: 'started' });
+  await step('With reduced motion there is none', async () => {
+    const s = await look(calm.page);
+    check('no opening: the lab, its names and the panel are simply there', s.intro === 'done' && s.stills.length === 0 && !s.busy && s.names.length === 6 && s.names.every((value) => value === 1) && s.panel === 1 && s.bar === 1, `${s.intro}; names ${s.names.join(',')}; panel ${s.panel}`);
+    check('and the guide for a first visit is there at once', s.guide);
+    await waitFor(calm.page, loaded, 180000);
+    const laid = await calm.page.evaluate(() => {
+      const tour = window.labTour;
+      let ran = false;
+      tour.motion.change(() => {
+        ran = true;
+      });
+      return { ran, stills: tour.motion.state.stills.length, everStill: document.querySelectorAll('.reveal__still').length };
+    });
+    check('a model that arrives is simply put in place', laid.ran && laid.stills === 0 && laid.everStill === 0, JSON.stringify(laid));
+  });
+  noProblems(calm.problems);
+  await calm.page.close();
+
+  // ── A picture too large to keep four copies of ──
+  // Above six megapixels (MAX_STILL_PIXELS in motion.js; a large window on a
+  // high-density screen) the lab comes up as one, with no stills of it.
+  const large = await openHeld({ width: 2800, height: 2400 });
+  await step('A very large picture', async () => {
+    const size = await large.page.evaluate(() => {
+      const picture = window.labTour.stage.renderer.domElement;
+      return { pixels: picture.width * picture.height, pictures: document.querySelectorAll('.reveal__still canvas').length };
+    });
+    const s = await look(large.page);
+    check('of more than six megapixels gets one plain fade: the empty page over the lab, and no copy of the picture', size.pixels > 6e6 && s.intro === 'playing' && same(s.motion.stills, ['nothing']) && size.pictures === 0, `${round(size.pixels / 1e6, 2)} megapixels; ${s.motion.stills.join(' › ')}; ${size.pictures} copies`);
+    await seek(large.page, 400);
+    const half = await look(large.page);
+    check('the lab comes up through it as one', half.stills.length === 1 && half.stills[0].opacity > 0 && half.stills[0].opacity < 1, half.stills.map((still) => `${still.shows} ${round(still.opacity)}`).join(', '));
+    await large.page.evaluate(() => window.labTour.motion.release());
+    await waitFor(large.page, over);
+    await frames(large.page, 2);
+    const after = await look(large.page);
+    check('and it ends like any other, with names, panel and bar in place', after.intro === 'done' && after.stills.length === 0 && after.names.every((value) => value === 1) && after.panel === 1 && after.bar === 1, `${after.intro}; names ${after.names.join(' ')}; panel ${after.panel}`);
+  });
+  noProblems(large.problems);
+  await large.page.close();
+
+  // ── The opening must never cost a visitor the tour ──
+  // It runs while the tour is being started. Two browsers in which a still
+  // cannot be had: one that will not hand out a canvas as large as the picture
+  // (a browser short of memory for canvases may answer a request for another
+  // with nothing; Safari has done so), and one in which copying the picture
+  // fails outright, for whatever reason.
+  const whenStillsFail = async (init, query = `q=${quality}`) => {
+    const tour = await open(browser, { width: 1280, height: 800, storage: WELCOMED, query, init });
+    const s = await look(tour.page);
+    const seen = await tour.page.evaluate(() => {
+      const lab = window.labTour;
+      let ran = false;
+      lab.motion.change(() => {
+        ran = true;
+      });
+      return { asked: window.__stillsAsked, models: lab.items().filter((entry) => entry.status === 'built' && entry.modelState !== 'ready').map((entry) => entry.id), ran, stills: lab.motion.state.stills.length };
+    });
+    check('the tour opens all the same, without the opening', tour.state === 'ready' && s.intro === 'done' && s.stills.length === 0 && !s.busy, `${tour.state}; ${s.intro}; ${s.stills.length} stills`);
+    check('with every name, the panel and the bar in place, and every model loaded', s.names.length === 6 && s.names.every((value) => value === 1) && s.panel === 1 && s.bar === 1 && seen.models.length === 0, `names ${s.names.join(' ')}; panel ${s.panel}; bar ${s.bar}; not loaded: ${seen.models.join(', ') || 'none'}`);
+    const picture = await visitor(tour.page).pixels(patch);
+    check('and the whole lab on show: the picture is that of a visit with the opening, point for point', difference(afterOpening, picture) < 0.02, `mean difference ${round(difference(afterOpening, picture), 3)}`);
+    check('it asked for one still, and for no other after that; what arrives later is simply put in place', seen.asked === 1 && seen.ran && seen.stills === 0, `asked ${seen.asked} times; put in place ${seen.ran}; ${seen.stills} stills`);
+    return tour;
+  };
+
+  let tight = null;
+  await step('A browser that cannot spare the memory for stills', async () => {
+    tight = await whenStillsFail(() => {
+      const getContext = HTMLCanvasElement.prototype.getContext;
+      let picture = null;
+      window.__stillsAsked = 0;
+      HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+        if (type === '2d' && picture && this !== picture && this.width === picture.width && this.height === picture.height) {
+          window.__stillsAsked++;
+          return null;
+        }
+        const context = getContext.call(this, type, ...rest);
+        if (context && /^webgl/.test(String(type))) picture = this;
+        return context;
+      };
+    });
+    noProblems(tight.problems);
+  });
+  await tight?.page.close();
+
+  const copyingFails = () => {
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    const drawImage = CanvasRenderingContext2D.prototype.drawImage;
+    let picture = null;
+    window.__stillsAsked = 0;
+    HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+      const context = getContext.call(this, type, ...rest);
+      if (context && /^webgl/.test(String(type))) picture = this;
+      return context;
+    };
+    CanvasRenderingContext2D.prototype.drawImage = function (source, ...rest) {
+      if (picture && source === picture) {
+        window.__stillsAsked++;
+        throw new DOMException('The picture cannot be copied', 'InvalidStateError');
+      }
+      return drawImage.call(this, source, ...rest);
+    };
+  };
+  const saidOnce = (problems) => {
+    const said = problems.filter((problem) => /without fading in/.test(problem));
+    check('it says so once in the console, as a warning, and reports nothing else', said.length === 1 && problems.length === 1 && said[0].startsWith('console.warn'), problems.slice(0, 5).join(' | ') || 'nothing reported');
+  };
+
+  let faulty = null;
+  await step('A browser in which copying the picture fails', async () => {
+    faulty = await whenStillsFail(copyingFails);
+    saidOnce(faulty.problems);
+  });
+  await faulty?.page.close();
+
+  // Without an opening (?intro=off here; a tab opened in the background is the
+  // same) the first still is asked for by the first model that arrives.
+  let later = null;
+  await step('The same, when the first still is for a model that arrives', async () => {
+    later = await whenStillsFail(copyingFails, `q=${quality}&intro=off`);
+    saidOnce(later.problems);
+  });
+  await later?.page.close();
+}
+
+// ── An older browser ─────────────────────────────────────────────────────────
+// The resin printer draws its touch screen with ctx.roundRect(). The tour runs
+// from Chrome 89 and Firefox 108 on; roundRect() came with Chrome 99 and Firefox
+// 112. assets/registry.js fills the gap for the versions between; without that
+// the printer would stay a plain volume there.
+async function olderBrowser(browser) {
+  current = 'older';
+  console.log('\nOlder browser — one that cannot draw rounded rectangles');
+  const { page, problems, state } = await open(browser, {
+    width: 1280,
+    height: 800,
+    storage: WELCOMED,
+    query: `q=${quality}`,
+    hash: `#/${PRINTER}`,
+    init: () => {
+      delete CanvasRenderingContext2D.prototype.roundRect;
+    },
+  });
+  const v = visitor(page);
+  await step('The resin printer still gets its model', async () => {
+    const own = await page.evaluate(() => {
+      const fn = CanvasRenderingContext2D.prototype.roundRect;
+      return { there: typeof fn === 'function', native: typeof fn === 'function' && /\[native code\]/.test(Function.prototype.toString.call(fn)) };
+    });
+    check("the browser's own roundRect() is gone and the tour's stands in", own.there && !own.native, JSON.stringify(own));
+    check('every model loaded', state === 'ready', state);
+    const entry = await v.item(PRINTER);
+    check("the printer's detailed model is the one on show", entry.status === 'built' && entry.tier === 'hero' && entry.modelState === 'ready', `${entry.status}, ${entry.tier}, ${entry.modelState}`);
+  });
+  noProblems(problems);
+  await page.close();
+}
+
 // ── Run ──────────────────────────────────────────────────────────────────────
-const VISITORS = { desktop, phone, first: firstVisit, reduced: reducedMotion };
+const VISITORS = { desktop, phone, first: firstVisit, reduced: reducedMotion, entrance, older: olderBrowser };
 const started = Date.now();
 const browser = await launchBrowser();
 try {

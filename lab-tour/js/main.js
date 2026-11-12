@@ -2,11 +2,16 @@
 // the whole floor ("overview"), one room, one machine. Everything on screen is a
 // function of that location; the address bar (#/room/machine) mirrors it, so the
 // browser's Back button and shared links work.
+//
+// When the tour opens, the lab comes up part by part, then the names over it,
+// then the interface around it; a machine's model fades in when it has loaded
+// (core/motion.js).
 import * as THREE from 'three';
 import { createEquipment, createWorkbench } from './assets/registry.js';
 import { bakeLite } from './core/batch.js';
 import { CATCH_UP, createCameraRig } from './core/camera-rig.js';
 import { preciseBox } from './core/measure.js';
+import { ENTRANCE, ENTRANCE_SHORT, createMotion } from './core/motion.js';
 import { PALETTE } from './core/palette.js';
 import { createPicker } from './core/picking.js';
 import { chooseQuality, createStage } from './core/stage.js';
@@ -91,6 +96,21 @@ function start() {
   // except that it stands still while a spotlit machine is being turned.
   stage.setLabCamera(rig.roomCamera);
 
+  // Things arriving: the lab when the tour opens, a model when it has loaded.
+  // They are faded in from stills of the picture, and a still is only true for
+  // the view it was taken from, so this says what "the view" is.
+  const motion = createMotion({
+    stage,
+    reducedMotion: REDUCED_MOTION,
+    isBusy: () => rig.busy || stage.spotlightState.busy,
+    getView: () => {
+      const pose = rig.pose;
+      const lit = stage.spotlightState;
+      const picture = stage.renderer.domElement;
+      return [pose.target.x, pose.target.y, pose.target.z, pose.azimuth, pose.elevation, pose.distance, pose.fov, pose.shiftX, pose.shiftY, rig.lag, lit.veil, picture.width, picture.height, lit.key];
+    },
+  });
+
   /** Where the visitor is. */
   let state = { mode: null, roomId: null, itemId: null };
   const itemOf = (id) => (id ? rooms.items.get(id) : null);
@@ -109,6 +129,8 @@ function start() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'room-pill';
+    // When the tour opens the names come in one after the other, in tour order.
+    button.style.setProperty('--i', Math.max(0, route.indexOf(def)));
     const icon = document.createElement('span');
     icon.className = 'room-pill__icon';
     icon.innerHTML = ICONS[def.icon] ?? '';
@@ -330,8 +352,14 @@ function start() {
     hintState = 'showing';
     hintElement.querySelector('span').textContent = COARSE_POINTER.matches ? 'Drag to turn · pinch to zoom' : 'Drag to turn · scroll to zoom';
     hintElement.hidden = false;
-    requestAnimationFrame(() => hintElement.classList.add('is-shown'));
-    hintTimer = setTimeout(hideHint, 9000);
+    // The nine seconds count from the frame in which the hint appears, not from
+    // the moment it was asked for: the machine's first frame comes before it,
+    // and on a slow device that frame alone can take longer than that.
+    requestAnimationFrame(() => {
+      if (hintState !== 'showing') return; // already dismissed
+      hintElement.classList.add('is-shown');
+      hintTimer = setTimeout(hideHint, 9000);
+    });
   }
   function hideHint() {
     if (hintState !== 'showing') return;
@@ -384,6 +412,9 @@ function start() {
       showAddress(next, historyMode);
       return;
     }
+
+    // The view is about to change: whatever is still fading in is simply there.
+    if (state.mode) motion.cancel();
 
     const previous = state;
     state = next;
@@ -515,12 +546,34 @@ function start() {
   // ── Go ─────────────────────────────────────────────────────────────────────
   navigate(locationFromHash(), { instant: true, history: 'replace' });
   root.dataset.tour = 'loading';
-  // A first-time visitor who arrives at the front door is shown the guide; one
-  // who followed a link to a room or a machine is left to look at it.
-  if (state.mode === 'overview' && !guide.wasSeen()) guide.open();
 
-  // The furniture and walls are on screen now; the detailed machines follow one
-  // by one so the first view never waits for them.
+  // The lab comes up part by part: what it stands on, its walls, its glass, the
+  // furniture, the machines. A link straight to a machine brings everything up
+  // as one. (?intro=off opens without any of it; ?intro=hold is for the checks.)
+  const introMode = query.get('intro');
+  // The stills are taken now, before the browser has had a chance to report
+  // that the stage changed size while the page around it was being filled in
+  // (on a phone the navigation bar takes its strip from the stage). Fit the
+  // picture first, or the stills would be outdated at the very first frame.
+  stage.resize();
+  const opening =
+    introMode !== 'off' &&
+    motion.playIntro(
+      state.mode === 'item' ? ENTRANCE_SHORT : ENTRANCE,
+      { floor: shell.parts.floor, walls: shell.parts.walls, glazing: shell.parts.glazing, furniture: [rooms.furniture], machines: [rooms.ghosts, rooms.holders] },
+      { hold: introMode === 'hold' },
+    );
+  if (!opening) root.dataset.intro = 'done';
+
+  // A first-time visitor who arrives at the front door is shown the guide, once
+  // the lab has come up behind it; one who followed a link to a room or a
+  // machine, or has already gone on to one, is left to look at it.
+  motion.whenIntroDone(() => {
+    if (state.mode === 'overview' && !guide.wasSeen()) guide.open();
+  });
+
+  // The detailed machines follow one by one, so the first view never waits for
+  // them. Each takes the place of its plain volume with a short fade.
   async function loadModels() {
     const builtItems = [...rooms.items.values()].filter((item) => item.status === 'built');
     const total = builtItems.length + (rooms.stations.length ? 1 : 0);
@@ -532,17 +585,32 @@ function start() {
       loadingElement.textContent =
         done < total ? `Loading 3D models ${done}/${total}` : `${failed} of ${total} 3D models could not be loaded`;
     };
+    // A model is built first and put in place afterwards (see motion.change:
+    // not always at once). Either can go wrong.
+    const arrivals = [];
+    const putInPlace = (place, onFailure) => {
+      arrivals.push(
+        motion.change(place).catch((error) => {
+          failed++;
+          onFailure(error);
+        }),
+      );
+    };
     report();
     await nextFrame();
 
     if (rooms.stations.length) {
+      const benchFailed = (error) => console.error('Could not build the library workbench', error);
       try {
         const bench = await createWorkbench();
-        for (const station of rooms.stations) station.holder.add(bakeLite(bench.tables[station.tableKey]));
-        stage.shadowsDirty();
+        const tables = rooms.stations.map((station) => [station.holder, bakeLite(bench.tables[station.tableKey])]);
+        putInPlace(() => {
+          for (const [holder, table] of tables) holder.add(table);
+          stage.shadowsDirty();
+        }, benchFailed);
       } catch (error) {
         failed++;
-        console.error('Could not build the library workbench', error);
+        benchFailed(error);
       }
       done++;
       report();
@@ -550,24 +618,33 @@ function start() {
     }
 
     for (const item of builtItems) {
-      try {
-        const asset = await createEquipment(item.typeId);
-        item.asset = { ...asset, hero: asset.root, lite: bakeLite(asset.root) };
-        item.modelState = 'ready';
-        item.holder.remove(item.holder.getObjectByName('loading-volume'));
-        item.tier = state.itemId === item.id ? 'hero' : 'lite';
-        item.holder.add(item.asset[item.tier]);
-        stage.shadowsDirty();
-      } catch (error) {
-        failed++;
+      const itemFailed = (error) => {
         item.modelState = 'failed';
         console.error(`Could not build "${item.typeId}"`, error);
+        if (state.itemId === item.id) renderPanel();
+      };
+      try {
+        const asset = await createEquipment(item.typeId);
+        const model = { ...asset, hero: asset.root, lite: bakeLite(asset.root) };
+        putInPlace(() => {
+          item.asset = model;
+          item.modelState = 'ready';
+          item.holder.remove(item.holder.getObjectByName('loading-volume'));
+          item.tier = state.itemId === item.id ? 'hero' : 'lite';
+          item.holder.add(item.asset[item.tier]);
+          stage.shadowsDirty();
+          if (state.itemId === item.id) renderPanel();
+        }, itemFailed);
+      } catch (error) {
+        failed++;
+        itemFailed(error);
       }
-      if (state.itemId === item.id) renderPanel();
       done++;
       report();
       await nextFrame();
     }
+    await Promise.all(arrivals);
+    report();
     root.dataset.tour = failed ? 'ready-with-errors' : 'ready';
   }
   loadModels();
@@ -578,7 +655,7 @@ function start() {
     get state() {
       return { ...state };
     },
-    /** Is anything still moving (camera on its way, surroundings fading)? */
+    /** Is anything still moving on the tour's own clock (camera on its way, surroundings fading)? Things fading in are `motion.busy`. */
     get busy() {
       return rig.busy || stage.spotlightState.busy;
     },
@@ -588,6 +665,7 @@ function start() {
     renderInfo: () => ({ ...stage.renderer.info.render, ...stage.renderer.info.memory, framesDrawn: stage.framesDrawn, quality: stage.quality }),
     stage,
     rig,
+    motion,
     panel,
     guide,
     dock,

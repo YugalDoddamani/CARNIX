@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // GENERATED FILE — do not edit. Re-create with: npm run import-assets -- <library.html>
 //
-// Source    : Dental_Lab_Equipment_Asset_Library (2).html
+// Source    : Dental_Lab_Equipment_Asset_Library (2) + GK3 component.html
 // Component : <script id="component-6-asset-workstation-pc">
 // sha256    : b6b17f4a9ff9f9c3b7d92ff9384fb3423c467b22d9442f1979a7c723960384fc
 //

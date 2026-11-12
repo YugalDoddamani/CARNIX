@@ -16,6 +16,9 @@
 //     battery), and
 //   · the shadow map is rendered once and reused; it is re-rendered only when
 //     something in the scene changes.
+// The same thrift applies to things arriving on screen: the lab is not redrawn
+// every frame to fade something in. `snapshot` hands out a still of the picture
+// and the browser does the fading (motion.js).
 //
 // The stage can also put ONE thing in the spotlight (see `spotlight` below):
 // that thing is drawn as it is, everything around it is faded.
@@ -405,6 +408,31 @@ export function createStage(container, qualityName) {
     for (const callback of afterRender) callback();
   }
 
+  /**
+   * Draw the scene as it is this instant and hand back a copy of the picture:
+   * an ordinary 2D canvas the size of the drawing buffer, see-through wherever
+   * the lab is not. Things that arrive are faded in with such stills rather
+   * than by animating the lab itself (see motion.js). Null if there is no copy
+   * to be had: the browser has taken the graphics context away, or it will not
+   * hand out a canvas of that size. (A browser may answer getContext() with
+   * nothing when it is short of memory for canvases; Safari has done so.)
+   */
+  function snapshot() {
+    if (renderer.getContext().isContextLost()) return null;
+    draw();
+    frames++;
+    needsRender = true; // whatever is current is drawn again at the next frame
+    const copy = document.createElement('canvas');
+    copy.width = renderer.domElement.width;
+    copy.height = renderer.domElement.height;
+    const context = copy.getContext('2d');
+    if (!context) return null;
+    // In the same task as the draw: once the browser has shown the frame it is
+    // free to wipe the drawing buffer.
+    context.drawImage(renderer.domElement, 0, 0);
+    return copy;
+  }
+
   let paused = false;
   function frame(now) {
     requestAnimationFrame(frame);
@@ -438,6 +466,14 @@ export function createStage(container, qualityName) {
     invalidate,
     /** Request a redraw including the shadow map (call after adding/moving objects). */
     shadowsDirty,
+    /** Draw now and return a copy of the picture (a 2D canvas), or null. See `snapshot` above. */
+    snapshot,
+    /**
+     * Fit the picture to the container as it is right now. That happens by
+     * itself whenever the container changes size, but only once the browser
+     * gets round to saying so; call this when the size must be right at once.
+     */
+    resize,
     fitShadowTo,
     /** The camera that draws the lab, when it is not `camera` itself (the camera rig's `roomCamera`). */
     setLabCamera(other) {

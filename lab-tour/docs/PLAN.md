@@ -48,9 +48,10 @@ The tour is meant for education and awareness, so it now explains itself:
   the machine about its own middle and nothing else; it can be taken apart.
 - **A page per machine** with up to four pills: the machine, About (its
   maker), Features (key figures, with links to their sources) and Capabilities.
-  The six real machines have all four (one of them, the UniFormation GK3, is
-  still waiting for its 3D model); the two workstation PCs have a description
-  and capabilities; placeholders have a description of their kind.
+  The six real machines have all four; the two workstation PCs have a
+  description and capabilities; placeholders have a description of their kind.
+- **An opening** (added later): when the page opens, the lab comes up part by
+  part in about two seconds. See "The opening" under phase 5.
 
 How it is checked: `npm run e2e` walks through all of this in a headless
 browser as a desktop visitor, a phone visitor, a first-time visitor and one who
@@ -108,10 +109,10 @@ in it has a maker, figures and sources.
 Suggested order:
 
 1. **Printing Room** — the room sits in the middle of the picture. Its first
-   printer is known: a **UniFormation GK3**. Its 3D model exists (see "The
-   GK3's 3D model" below) and only has to be imported. Open: are the other two
-   printer places also GK3s, other printers, or empty? And what are the wash
-   and curing units?
+   printer, a **UniFormation GK3**, is in as a 3D model (see "The GK3's 3D
+   model" below for how it got there and what is left to confirm). Open: are
+   the other two printer places also GK3s, other printers, or empty? And what
+   are the wash and curing units?
 2. **Ceramic Room** — its three furnaces are done; four small bench units
    finish the room.
 3. **Plaster Room** — five machines, all simple shapes.
@@ -141,6 +142,46 @@ Technicians, the skyline behind the clinic windows, surface textures, glowing
 ring markers. Deliberately last: these make the picture richer but do not
 change what the tour can do, and people in particular are costly to do well.
 
+#### The opening
+
+Built, in its basic form: when the page opens, the lab comes up part by part —
+the floor, the walls, the glass, the furniture, the machines, then the room
+names and the controls — in 2.2 seconds. A link straight to a machine brings
+everything up as one, in under a second. A tap or a resize during it ends it at
+once; a device that asks for reduced motion gets the finished lab without it.
+A model that finishes loading afterwards fades into its place instead of
+popping in.
+
+How it is done: before anything is shown the lab is drawn four times, each time
+with more of it switched on, and each picture is kept. The pictures lie over
+the live one and the browser fades them away in turn. Nothing in the scene is
+moved or made see-through for it (the walls of all six rooms are one mesh and
+the furniture shares eleven materials, so fading the real thing would show
+every piece's inside).
+
+It cannot cost a visitor the tour. The opening runs while the tour is being
+started, so everything in it is fenced in: if the browser will not hand out a
+picture of the lab (each is as large as the picture on screen, and a browser
+short of memory may refuse), or anything else in it fails, the lab is simply
+there and no further pictures are asked for on that visit. On a picture of
+more than six megapixels no copies are kept at all: the lab comes up in one
+plain fade.
+
+It follows the timetable of the animation brief
+(`lab-tour-interaction-animation-spec.md`, section 3) in its plain form: the
+walls come up as one group and the furniture as one, where the brief staggers
+them by kind of wall and by room, and nothing moves into place — the brief's
+settling movements of 8–15 mm would be half a pixel on a desktop screen and
+less on a phone.
+
+Not built: everything in the brief outside the first load. The opening was
+asked for on its own ("a basic in animation for all"). The brief's proposals
+for moving between places (its section 5), for hovering over and selecting
+machines (6), for the panel and the controls (7), for loading and failure
+states (8) and for stepping the quality down on slow devices (11) were not
+started. Where the tour already did something there — the camera journeys, the
+spotlight, the take-apart slider — it does what it did before.
+
 ### Phase 6 — launch
 
 A link from wherever the tour should be reached, the real name in the header,
@@ -150,9 +191,8 @@ header rules described in the README.
 
 ## Inventory
 
-30 machines are placed: **7 are 3D models, 1 is a known machine waiting for its
-3D model, 22 are placeholders** (19 different types still to identify and
-model). Sizes are width × depth × height in mm.
+30 machines are placed: **8 are 3D models, 22 are placeholders** (19 different
+types still to identify and model). Sizes are width × depth × height in mm.
 
 ### Design Room — CAD Design & Planning · 5.2 × 4.0 m
 
@@ -170,7 +210,7 @@ eight chairs, wall display, shelf rack, plant.
 
 | Machine | State | Size |
 |---|---|---|
-| UniFormation GK3 | ◼ known · 3D model not imported yet | 392 × 332 × 520 (maker) |
+| UniFormation GK3 | ✅ 3D model | 400 × 363 × 522 (maker: 392 × 332 × 520) |
 | Resin 3D printer × 2 | ◻ placeholder | 400 × 400 × 580 (draft) |
 | Print wash station | ◻ placeholder | 270 × 300 × 360 (draft) |
 | UV post-curing unit | ◻ placeholder | 270 × 270 × 350 (draft) |
@@ -179,27 +219,62 @@ Furniture: 3.0 m and 1.8 m benches, island bench, shelf rack.
 
 #### The GK3's 3D model
 
-The model is finished and lies in Google Drive, twice:
+The model lies in Google Drive, twice:
 
 - `UniFormation GK3 — Three.js Viewer / UniFormation_GK3_Viewer.html` — the
   printer on its own (178 meshes, 23,184 triangles by its README);
 - `Dental Lab Equipment — 3D Asset Library / Dental_Lab_Equipment_Asset_Library.html`,
   the version of 11 Nov 2026, 18:58 — the whole library, now with three tables
-  and the printer as asset `uniformation-gk3`. **This is the file the tour
-  imports from.**
+  and the printer as asset `uniformation-gk3` (component 6B).
 
-It is not in the tour yet for one reason: the importer needs the file itself,
-and the connection to Drive that this was built with can read out part of a
-file's text (a long file comes back with its middle left out) but cannot copy
-a file into the project. The printer's code is about 50 KB in the middle of
-either file. Typing it across by hand would cost far more than it is worth and
-could not be proven identical.
+**It is in the tour, but it was copied across, not imported from the file.**
+The importer needs the file itself, and the connection to Drive this was built
+with cannot copy a file into the project: it reads out a file's text, and of a
+long file only the start and the last 3,400 or so characters before a chosen
+cut.
+So the printer's component (47 KB in the middle of the library file) was read
+in fifteen such windows, each overlapping the one before, typed across and put
+together. It was then set into the library file the tour already used
+(`Dental_Lab_Equipment_Asset_Library (2).html`), where the newer library has
+it, and that combined file was imported. The seven older machines and the two
+benches are therefore exactly what they were.
 
-To finish: attach the library file to the chat (or put it anywhere on disk),
-run `npm run import-assets -- <that file>`, and change the GK3's line in
-`catalogue.js` to `status: 'built'` (the line to use is written next to it).
-The new library has three tables instead of two, so the two library benches
-the tour already uses have to be checked after that import.
+What was checked:
+
+- every window agrees with the one before it where they overlap, and each has
+  the length its place in the file requires (a dropped or added character
+  would have shown);
+- the 1.8 KB that follow the component in the newer file were typed across the
+  same way; they are the same in the older library file, which is on disk, and
+  the typed copy is identical to it;
+- the component is valid code, builds, and gives 178 meshes, 23,176 triangles
+  and 4.99 × 4.53 × 6.52 units, that is 400 × 363 × 522 mm (width × depth ×
+  height), with the library's own three.js as well as the tour's. The viewer's
+  README gives the same 178 meshes and the same three lengths; the library's
+  README gives 718 meshes for all eight machines, which is what the eight
+  imported ones add up to;
+- it was looked at in the tour from eight sides and from above, closed and
+  taken apart: nothing is out of place.
+
+What was not:
+
+- **It is not proven identical to the file.** A slip that keeps the length,
+  such as one wrong digit, would not show in any of the checks above unless it
+  moved something visibly.
+- **One figure does not agree.** The viewer's README gives 23,184 triangles;
+  the tour's copy has 23,176, eight fewer. Why is not known. The README
+  belongs to the stand-alone viewer, whose model may differ a little from the
+  library's copy; or one number that sets how finely a round part is divided
+  is wrong in the copy (on a single cylinder, 24 where the file says 26 would
+  do it).
+- **Whatever else the newer library changed is not in.** It has three tables
+  instead of two, and its other machines may have changed too.
+
+To settle all three: attach the library file to the chat (or put it anywhere on
+disk) and run `npm run import-assets -- <that file>`. The importer writes a
+`sha256` of each component at the top of its module; if the one in
+`js/assets/legacy/uniformation-gk3.js` is unchanged after that import, the copy
+was exact. The two library benches the tour uses have to be checked after it.
 
 ### Clinic Reception — Patient Care · 4.6 × 4.0 m
 
@@ -251,8 +326,9 @@ Furniture: 3.4 m bench, technicians' benches with chairs.
 
 ## What was found in the asset library
 
-The seven machines and the workbench were imported unchanged; the importer
-measures each one. Three things worth knowing:
+The first seven machines and the workbench were imported unchanged; the
+importer measures each one. (The eighth, the UniFormation GK3, came later: see
+"The GK3's 3D model" above.) Three things worth knowing:
 
 1. **DS-EX Pro is about twice as wide and deep as stated.** The library gives
    the real machine as 260 × 270 × 420 mm; the model measures 470 × 627 × 429 mm,
@@ -266,6 +342,14 @@ measures each one. Three things worth knowing:
 3. **The lighting differs slightly from the library viewer.** The main light
    comes more from the side, so that walls and furniture cast visible shadows
    across the floor. Machine fronts are lit a little more softly as a result.
+4. **The GK3 is the costliest model to show on its own.** It is 178 separate
+   parts, where the README asks for under 100 per machine (the 3Shape E4, the
+   next, has 114). In the lab it is baked down to 22 like the others; in its
+   own view a frame that redoes the shadows takes 384 draw calls, against
+   156–330 for the other seven. Its triangle count (23,176) is within the aim.
+   The picture its touch screen shows is drawn with a canvas call that browsers
+   older than Chrome 99 and Firefox 112 lack; `js/assets/registry.js` supplies
+   it there.
 
 ## Open decisions
 
@@ -284,7 +368,8 @@ measures each one. Three things worth knowing:
 6. **Who the reader is.** The texts are written for somebody with no dental
    training (a student, a patient, a visitor). If the audience is dentists or
    technicians, they should say more and explain less.
-7. **The printers.** One UniFormation GK3 stands in the Printing Room. Which
-   version is it (GK3 T, GK3 B or GK3 Pro), and what stands in the other two
-   printer places? Its 3D model still has to be imported: see "The GK3's 3D
-   model" in the inventory.
+7. **The printers.** One UniFormation GK3 stands in the Printing Room, as a
+   3D model. Which version is it (GK3 T, GK3 B or GK3 Pro), and what stands in
+   the other two printer places? The model was copied out of the library file
+   rather than imported from it: see "The GK3's 3D model" in the inventory for
+   how to confirm it.

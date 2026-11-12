@@ -17,6 +17,25 @@ import * as THREE from 'three';
 import { UNIT_MM } from '../core/units.js';
 import { LEGACY_ASSETS, LEGACY_WORKBENCH } from './legacy/manifest.js';
 
+// The GK3's touch-screen picture is drawn with ctx.roundRect(). The tour runs
+// from Chrome 89 and Firefox 108 on, but roundRect() only came with Chrome 99
+// and Firefox 112: in the versions between, the component would throw and the
+// printer would stay a plain volume. Give those a simple version of it: one
+// radius for all four corners, which is all the library uses.
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function roundRect(x, y, w, h, radii = 0) {
+    const first = Array.isArray(radii) ? radii[0] : radii;
+    const wanted = typeof first === 'number' ? first : first?.x ?? 0;
+    const r = Math.max(0, Math.min(wanted, Math.abs(w) / 2, Math.abs(h) / 2));
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+  };
+}
+
 const legacyById = new Map(LEGACY_ASSETS.map((entry) => [entry.id, entry]));
 const moduleUrl = (relative) => new URL(relative, new URL('./legacy/', import.meta.url)).href;
 

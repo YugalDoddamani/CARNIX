@@ -7,16 +7,20 @@ explanation at every step.
 It is one static page. There is no build step, nothing to install and no CDN:
 three.js is served from `vendor/`, and everything else is plain ES modules.
 
-**Status:** the building, six furnished rooms, the 7 machines from the asset
-library, one more real machine whose 3D model is still to be imported (the
-UniFormation GK3), and 22 placeholders for machines that are not modelled yet;
-on top of that a guided route through the rooms and a page that explains each
-machine, with sourced figures for the six real ones.
+**Status:** the building, six furnished rooms, the 8 machines from the asset
+library (the latest is the UniFormation GK3 resin printer), and 22 placeholders
+for machines that are not modelled yet; on top of that a guided route through
+the rooms, a page that explains each machine, with sourced figures for the six
+real ones, and an opening in which the lab comes up part by part.
 What comes next, and why it is built in this order, is in
 [`docs/PLAN.md`](docs/PLAN.md).
 
 ## What a visitor gets
 
+- **An opening** — when the page opens, the lab comes up part by part in about
+  two seconds: the floor, the walls, the glass, the furniture, the machines,
+  then the room names and the controls. A tap during it goes straight on.
+  A device set to "reduce motion" gets the finished lab at once.
 - **A bar to move around with** — the whole lab, then one stop per room in tour
   order. It floats over the lab on wide screens and is a tab bar on phones.
 - **A guided route** — every room is "Stop n of 6" with a paragraph on what
@@ -49,6 +53,7 @@ Useful addresses while working:
 | `#/ceramic` | opens a room directly |
 | `#/ceramic/zubler-vario-200` | opens a machine directly (these are shareable links) |
 | `?q=low` · `?q=medium` · `?q=high` | forces a quality tier (normally chosen per device) |
+| `?intro=off` | opens without the opening (the lab is simply there) |
 
 ## The four files you will edit
 
@@ -120,7 +125,8 @@ leaving a generic placeholder:
    sheet, and `known: true`:
    `'uniformation-gk3': { status: 'planned', known: true, icon: 'printer', name: 'UniFormation GK3', shortName: 'GK3', kind: 'Resin 3D printer', mount: 'bench', sizeMm: { w: 392, d: 332, h: 520 } }`.
    Use the id the model will have in the asset library, so nothing has to be
-   renamed later.
+   renamed later. (This is how the UniFormation GK3 was listed until its model
+   was imported; no machine is in this state at the moment.)
 2. Place it in `content.js`, and write its page in `knowledge.js` (below). A
    known machine must name its maker and its sources; `npm run check` insists.
 
@@ -130,7 +136,7 @@ says "Model coming" instead of "Planned" and shows its maker and figures.
 ### Replace a placeholder with a real model
 
 1. Model the machine in the asset library, following the same contract as the
-   existing seven (below).
+   existing eight (below).
 2. Re-import the library:
    `npm run import-assets -- "path/to/Dental_Lab_Equipment_Asset_Library.html"`
    The importer reads a file on disk. A library that lives in Google Drive has
@@ -231,7 +237,7 @@ flying around a room, and both are easy to break:
 ## How it stays fast
 
 - **Two forms per machine.** Seen from afar, a machine is a baked "lite" copy
-  (same geometry, merged by material: 11–24 draw calls instead of 49–114). Only
+  (same geometry, merged by material: 11–24 draw calls instead of 49–178). Only
   the machine being inspected is swapped to its full "hero" form with separate,
   explodable parts.
 - **Furniture is merged per room**, placeholders into a single mesh.
@@ -240,13 +246,23 @@ flying around a room, and both are easy to break:
   the scene changes.
 - **Machine code is loaded lazily**, after the building is on screen.
 - **Budget:** 400 draw calls and 450,000 triangles for the overview, enforced
-  by `npm run check`. Current use: 175 draw calls, 218,000 triangles.
-- **A machine view** draws the picture in three passes. Measured for the seven
-  models: 84–219 draw calls per frame while a machine is turned, 150–323 on the
+  by `npm run check`. Current use: 197 draw calls, 241,000 triangles.
+- **A machine view** draws the picture in three passes. Measured for the eight
+  models: 90–226 draw calls per frame while a machine is turned, 156–385 on the
   frames that also redo the shadows (arriving, and each step of the take-apart
-  slider).
-- **Download:** about 320 KB compressed in total (three.js 178 KB, machine
-  models 66 KB, tour code and texts 77 KB). No images, no fonts.
+  slider). The resin printer is the costliest on those frames: its model has
+  178 separate parts.
+- **The opening costs four extra frames, once.** Before anything is shown the
+  lab is drawn four times with more and more of it switched on, and each
+  picture is kept; the browser then fades those pictures away over the live
+  one ([`js/core/motion.js`](js/core/motion.js)). Nothing is drawn per frame
+  for it, and the pictures are thrown away when it ends. Each is as large as the
+  picture on screen: a few megabytes in an ordinary window, never more than
+  24 MB (above six megapixels the lab comes up in one plain fade, with no
+  pictures kept). If the browser will not hand one out, or anything else in
+  the opening fails, the tour opens without it.
+- **Download:** about 344 KB compressed in total (three.js 178 KB, machine
+  models 78 KB, tour code and texts 88 KB). No images, no fonts.
 
 ## Folder map
 
@@ -259,7 +275,8 @@ js/rooms/               catalogue.js, content.js, knowledge.js (DATA) · build-r
 js/assets/registry.js   one contract over all machine models
 js/assets/legacy/       GENERATED from the asset library — do not edit
 js/assets/kit/          furniture: bench, shelves, chair, sofa, monitor, display, desk, plant
-js/core/                units, stage (renderer, lights, spotlight), camera, picking, baking, palette
+js/core/                units, stage (renderer, lights, spotlight), camera, picking, baking, palette,
+                        motion (the opening; a model fading in when it is ready)
 js/ui/                  panel (rooms, machines, pills) · dock (the bar) · guide · labels · icons
 tools/                  serve.mjs · check.mjs · import-asset-library.mjs
 tools/browser/          e2e.mjs (the walk-through test) · shots.mjs · film.mjs · lib.mjs
@@ -270,14 +287,19 @@ vendor/three-r160/      three.js 0.160.0, unmodified (see its README for why thi
 
 `npm run check` needs nothing and is quick; run it after every edit.
 
-`npm run e2e` walks through the tour the way four visitors would — on a desktop
-with a mouse, on a 390 × 844 phone with a finger, on a first visit, and with
-"reduce motion" switched on — with real clicks, taps, drags and key presses,
-and checks what happens (about 270 checks, 6–7 minutes). Among them: a drag
-turns the machine about its own middle and leaves the lab behind it unchanged,
-pixel for pixel; a machine fits the area the panel leaves free, in a wide
-window, a small one and on a phone; leaving a machine clears the spotlight;
-Back, Forward, Escape and shared links work.
+`npm run e2e` walks through the tour the way six visitors would — on a desktop
+with a mouse, on a 390 × 844 phone with a finger, on a first visit, with
+"reduce motion" switched on, one who watches the opening, and one with a
+browser from 2021–22 — with real clicks, taps, drags and key presses, and
+checks what happens (361 checks, about 9 minutes; `--only=entrance,older` runs
+some of them). Among them: a drag turns the machine about its own middle and
+leaves the lab behind it unchanged, pixel for pixel; a machine fits the area
+the panel leaves free, in a wide window, a small one and on a phone; leaving a
+machine clears the spotlight; Back, Forward, Escape and shared links work; the
+opening shows the lab's parts in order, ends at once on a tap or a resize,
+leaves the same picture as opening without it, and never costs a visitor the
+tour: in a browser that cannot supply the pictures it is made of, the tour
+opens without it.
 
 It needs the tour running (`npm run serve`) and a headless Chromium, which is
 not part of the repository. Install it once, anywhere outside the repo:
@@ -298,8 +320,11 @@ npm run film -- /tmp/tour-film --from='#/ceramic/zubler-vario-200' --to='#/ceram
 ```
 
 The headless browser draws 3D in software, so the tests stop the tour's clock
-and move it by hand (`labTour.stage.clock`). They prove behaviour; they say
-nothing about speed on a real device.
+and move it by hand (`labTour.stage.clock`). The opening runs on the browser's
+own clock instead, so for the tests it is held with `?intro=hold` and moved
+with `labTour.motion.seek(ms)` and `labTour.motion.release()`. The tests prove
+behaviour; they say nothing about speed, or about how smooth the opening is,
+on a real device.
 
 ## Deploying with CARNIX
 
@@ -350,4 +375,10 @@ Things to know — none of the existing CARNIX files have been changed:
   visitor in a private window sees it every time.
 - A machine that is not modelled yet shows a description of its kind only: no
   maker, no figures.
+- The resin printer's model was copied out of the asset library in Google
+  Drive by hand, because the file itself could not be fetched. It builds, has
+  the size and the number of parts its own description gives, and was looked
+  at from every side; it is not proven to be identical to the file, character
+  for character. `docs/PLAN.md` ("The GK3's 3D model") says how to settle that.
+- The opening plays on every visit, not only the first.
 - See `docs/PLAN.md` for everything in the concept image that is not built yet.

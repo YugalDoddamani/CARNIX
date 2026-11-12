@@ -6,7 +6,8 @@
      2. Frame               7. Navigation bar
      3. Stage               8. Welcome guide
      4. Labels in the lab   9. Phones and narrow windows
-     5. Panel: shell       10. Touch, motion                                 */
+     5. Panel: shell       10. Arriving (the opening)
+                           11. Touch, motion                                 */
 
 /* ── 1. Tokens ─────────────────────────────────────────────────────────── */
 
@@ -30,6 +31,9 @@
   --shadow-small: 0 4px 14px rgba(20, 33, 61, 0.12), 0 1px 3px rgba(20, 33, 61, 0.08);
   --gap: 16px;
   --panel-w: clamp(372px, 31vw, 430px);
+  /* The page behind everything. It has a name because the stills that bring the
+     lab in (section 10) carry the slice of it that lies behind the stage. */
+  --page-background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
 
   /* Motion. One "settle" curve for things that arrive, one with a little
      overshoot for things that are picked (the highlight under a tab). */
@@ -54,7 +58,7 @@ body {
 
 body {
   overflow: hidden;
-  background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+  background: var(--page-background);
   font-size: 15px;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
@@ -106,6 +110,7 @@ dl {
   padding: 10px 20px;
   padding-left: max(20px, env(safe-area-inset-left));
   padding-right: max(20px, env(safe-area-inset-right));
+  animation: fade-in 0.3s var(--settle) both; /* the page's own entrance; the lab's is section 10 */
 }
 
 .brand {
@@ -223,7 +228,8 @@ dl {
   cursor: grabbing;
 }
 
-/* Stacking inside the stage: canvas 0 · labels 1 · controls 2 · panel 3 */
+/* Stacking inside the stage: canvas 0 · stills of the canvas 0 (they come after
+   it, so they lie over it) · labels 1 · controls 2 · panel 3 */
 .stage__controls {
   position: absolute;
   left: 20px;
@@ -1856,7 +1862,75 @@ dl {
   white-space: nowrap;
 }
 
-/* ── 10. Touch, motion ─────────────────────────────────────────────────── */
+/* ── 10. Arriving ──────────────────────────────────────────────────────── */
+/* When the tour opens the lab comes up part by part, then the names over it,
+   then the interface around it. motion.js does the lab, with stills of the
+   picture laid over the live one and faded away one after the other; it sets
+   html[data-intro='playing'] meanwhile, and the rest happens here.
+
+   Every rule below only says how something arrives. Take the attribute away
+   (or let the animation run out, which it does by itself) and the thing is
+   simply there: nothing waits for a script to be shown. */
+
+.reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none; /* a still is a picture: every tap goes through to the lab */
+}
+
+/* One still: the lab at some stage, on the slice of the page's background that
+   lies behind the stage (motion.js measures where that is). It is opaque, so
+   what is under it stays hidden until it fades. */
+.reveal__still {
+  position: absolute;
+  inset: 0;
+  background: var(--page-background) 0 var(--reveal-y, 0px) / 100% var(--reveal-h, 100%) no-repeat;
+}
+
+[data-intro='playing'] .label:not(.is-hidden) {
+  animation: intro-arrive 0.28s var(--settle) calc(var(--intro-labels, 1.55s) + var(--i, 0) * 0.06s) both;
+}
+
+[data-intro='playing'] :is(.stage__controls, .legend, .hint) {
+  animation: intro-arrive 0.32s var(--settle) var(--intro-interface, 1.7s) both;
+}
+
+/* The panel and the navigation bar only fade: the camera frames the lab clear
+   of them by measuring where they are, and must not catch them on the move. */
+[data-intro='playing'] :is(.panel, .dock) {
+  animation: intro-appear 0.32s var(--settle) var(--intro-interface, 1.7s) both;
+}
+
+/* For the checks: an opening that stands still until it is released. (Both
+   attributes, so that this outweighs the `animation` shorthands above, which
+   would otherwise set the play state back to running.) */
+[data-intro-hold][data-intro='playing'] :is(.label, .stage__controls, .legend, .hint, .panel, .dock) {
+  animation-play-state: paused;
+}
+
+/* `visibility` as well as `opacity`: what cannot be seen yet cannot be tapped
+   or reached with the keyboard either. */
+@keyframes intro-appear {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* `translate`, not `transform`: a label's transform is its place over the lab.
+   (A browser that does not know `translate` yet, Chrome before 104, skips the
+   small rise and fades them in where they are.) */
+@keyframes intro-arrive {
+  from {
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 6px;
+  }
+}
+
+/* ── 11. Touch, motion ─────────────────────────────────────────────────── */
 
 /* Fingers need more room than a mouse pointer. The markers stay the same size
    to look at (neighbouring machines can be 35 px apart); only the area that

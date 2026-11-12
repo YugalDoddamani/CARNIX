@@ -761,6 +761,46 @@ async function desktop(browser) {
     check('leaving it clears the spotlight', left.place === roomOf(PLANNED) && left.lit === null && left.veil === 0);
   });
 
+  // One of the lab's real machines whose 3D model has not been imported yet
+  // (catalogue.js `known: true`). There may be none; then there is nothing to check.
+  const known = facts.items.find((entry) => entry.known);
+  if (known) {
+    await step('A known machine whose 3D model is still to come', async () => {
+      await v.go(`#/${roomOf(known.id)}`);
+      const chip = await page.$eval(`#panel [data-go-item="${known.id}"] .chip`, (element) => element.textContent.trim()).catch(() => '');
+      check('the room list says its model is coming, not that the machine is planned', chip === 'Model coming', `"${chip}"`);
+      await v.press(`#panel [data-go-item="${known.id}"]`);
+      await v.rest();
+      await checkMachineInView(v, known.id);
+      const overview = await page.evaluate(() => ({
+        note: document.querySelector('#panel .note')?.textContent ?? '',
+        lead: document.querySelector('#panel .lead')?.textContent.trim() ?? '',
+        slider: Boolean(document.querySelector('#panel [data-explode]')),
+        sizeLabel: [...document.querySelectorAll('#panel .facts dt')].map((term) => term.textContent.trim()),
+        tabs: [...document.querySelectorAll('#panel [role="tab"]')].map((tab) => tab.dataset.tab),
+      }));
+      check('the panel says what it is, and that only its 3D model is missing', overview.lead.length > 30 && /3D model is not in the tour yet/i.test(overview.note) && !/not modelled yet/i.test(overview.note), overview.note.slice(0, 70));
+      check('its size is given as its size, not as a rough one', overview.sizeLabel.includes('Size') && !overview.sizeLabel.includes('Rough size'), overview.sizeLabel.join(', '));
+      check('there is nothing to take apart yet', !overview.slider);
+      check('it has its maker and its figures all the same', overview.tabs.includes('about') && overview.tabs.includes('features'), overview.tabs.join(' '));
+      await v.press('#panel [data-tab="features"]');
+      await frames(page, 2);
+      const features = await page.evaluate(() => ({
+        cards: document.querySelectorAll('#panel [data-panel="features"] .spec').length,
+        links: [...document.querySelectorAll('#panel [data-panel="features"] .sources a')].map((link) => link.href),
+      }));
+      check('the figures are there, with a link to where they come from', features.cards >= 3 && features.links.length > 0 && features.links.every((href) => /^https?:\/\//.test(href)), `${features.cards} cards, ${features.links.length} links`);
+      await v.press('#panel [data-tab="about"]');
+      await frames(page, 2);
+      const maker = await page.$eval('#panel [data-panel="about"] .brand-card__name', (element) => element.textContent.trim()).catch(() => '');
+      check('"About" names the maker', maker.length > 1, `"${maker}"`);
+      await page.keyboard.press('Escape');
+      await v.rest();
+      const left = await v.see();
+      check('leaving it clears the spotlight', left.place === roomOf(known.id) && left.lit === null && left.veil === 0);
+    });
+  }
+
   await step('The guide, opened from the header', async () => {
     await v.go(`#/${room}`);
     await v.press('#open-guide');

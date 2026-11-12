@@ -39,7 +39,7 @@ export const ROOM_CONTENT = {
       at: [1.65, 0.43],
       params: { length: 3000, height: 900, pedestals: 'both' },
       on: [
-        { equipment: 'resin-printer', x: -950 },
+        { equipment: 'uniformation-gk3', x: -950 },
         { equipment: 'resin-printer', x: 0 },
         { equipment: 'resin-printer', x: 950 },
       ],

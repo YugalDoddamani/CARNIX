@@ -8,9 +8,10 @@ It is one static page. There is no build step, nothing to install and no CDN:
 three.js is served from `vendor/`, and everything else is plain ES modules.
 
 **Status:** the building, six furnished rooms, the 7 machines from the asset
-library, and 23 placeholders for machines that are not modelled yet; on top of
-that a guided route through the rooms and a page that explains each machine,
-with sourced figures for the five real ones.
+library, one more real machine whose 3D model is still to be imported (the
+UniFormation GK3), and 22 placeholders for machines that are not modelled yet;
+on top of that a guided route through the rooms and a page that explains each
+machine, with sourced figures for the six real ones.
 What comes next, and why it is built in this order, is in
 [`docs/PLAN.md`](docs/PLAN.md).
 
@@ -68,12 +69,12 @@ drawing budget — and any machine without a description, figure without a
 source, or icon that does not exist. It ends with the list of things that
 still need the lab's confirmation.
 
-> ⚠ **Drafts.** The floor-plan dimensions and all 19 "planned" machine types
-> (read off the concept image and typical for these rooms), the order of the
-> tour and the paragraph about each room are drafts. They are marked as such in
-> the files and are meant to be replaced with the real plan, the real equipment
-> list and the lab's own words. The figures for the five real machines are
-> taken from their makers' documents; what is still uncertain about them is
+> ⚠ **Drafts.** The floor-plan dimensions and the 19 generic "planned" machine
+> types (read off the concept image and typical for these rooms), the order of
+> the tour and the paragraph about each room are drafts. They are marked as such
+> in the files and are meant to be replaced with the real plan, the real
+> equipment list and the lab's own words. The figures for the six real machines
+> are taken from their makers' documents; what is still uncertain about them is
 > listed by `npm run check` and in `docs/PLAN.md`.
 
 ## Recipes
@@ -110,14 +111,34 @@ datasheet size, then place it in `content.js`. It appears as a blue volume of
 exactly that size, with a marker and an entry in the panel — so the room can be
 laid out, and the backlog stays visible, before any modelling is done.
 
+### Add a real machine whose 3D model is not ready yet
+
+When the lab's actual machine is known but not modelled, say so instead of
+leaving a generic placeholder:
+
+1. In `catalogue.js`, give it its real name, its size from the maker's data
+   sheet, and `known: true`:
+   `'uniformation-gk3': { status: 'planned', known: true, icon: 'printer', name: 'UniFormation GK3', shortName: 'GK3', kind: 'Resin 3D printer', mount: 'bench', sizeMm: { w: 392, d: 332, h: 520 } }`.
+   Use the id the model will have in the asset library, so nothing has to be
+   renamed later.
+2. Place it in `content.js`, and write its page in `knowledge.js` (below). A
+   known machine must name its maker and its sources; `npm run check` insists.
+
+It still stands in the lab as a blue volume, now at its real size, but the tour
+says "Model coming" instead of "Planned" and shows its maker and figures.
+
 ### Replace a placeholder with a real model
 
 1. Model the machine in the asset library, following the same contract as the
    existing seven (below).
 2. Re-import the library:
    `npm run import-assets -- "path/to/Dental_Lab_Equipment_Asset_Library.html"`
+   The importer reads a file on disk. A library that lives in Google Drive has
+   to be downloaded (or attached to the chat) first.
 3. In `catalogue.js`, change the entry to
-   `'<asset id>': { status: 'built', shortName: '…', kind: '…' }`.
+   `'<asset id>': { status: 'built', icon: '…', shortName: '…', kind: '…' }`
+   (drop `name`, `sizeMm`, `mount` and `known`: a built machine takes its name
+   and size from the library).
    If the id changed, use the new id where the machine is placed in `content.js`.
 4. `npm run check`, then look at it in the browser.
 

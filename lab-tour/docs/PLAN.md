@@ -48,8 +48,9 @@ The tour is meant for education and awareness, so it now explains itself:
   the machine about its own middle and nothing else; it can be taken apart.
 - **A page per machine** with up to four pills: the machine, About (its
   maker), Features (key figures, with links to their sources) and Capabilities.
-  The five real machines have all four; the two workstation PCs have a
-  description and capabilities; placeholders have a description of their kind.
+  The six real machines have all four (one of them, the UniFormation GK3, is
+  still waiting for its 3D model); the two workstation PCs have a description
+  and capabilities; placeholders have a description of their kind.
 
 How it is checked: `npm run e2e` walks through all of this in a headless
 browser as a desktop visitor, a phone visitor, a first-time visitor and one who
@@ -86,6 +87,7 @@ What could not be settled from documents alone:
 | Zubler VARIO 200 | Zubler's operating instructions and product table | **VARIO 200 or VARIO 200ZR?** Controlled cooling (TTC) belongs to the ZR only; the panel says so. Also: the asset library calls it a "pressing & ceramic furnace", Zubler's manual says it fires ceramics only (the press furnace is the VARIO PRESS 300), so the tour calls it a ceramic furnace. |
 | UPCERA A7+ | UPCERA's product page | Its heating rate is printed without a unit of time (read as per minute); dealers quote a slightly different vacuum figure. |
 | Ivoclar Programat P300 | Ivoclar's operating instructions, 2006 | The later P300/G2 holds more programs. Which one is in the lab? |
+| UniFormation GK3 | UniFormation's GK3 product page | **GK3 (T), GK3 (B) or GK3 Pro?** T and B differ only in the screw that lifts the platform, and the figures shown hold for both. The GK3 Pro uses 385 nm light instead of 405 nm, and UniFormation's own page points dental work to the Pro. The 3D model shows a ball screw and a 405 nm hood, which would be the GK3 (B). |
 
 `npm run check` prints these notes every time it runs, from the `confirm`
 fields in `knowledge.js`; they are never shown to visitors.
@@ -105,8 +107,11 @@ in it has a maker, figures and sources.
 
 Suggested order:
 
-1. **Printing Room** — one printer model fills three places, and the room sits
-   in the middle of the picture. Best result for the least modelling.
+1. **Printing Room** — the room sits in the middle of the picture. Its first
+   printer is known: a **UniFormation GK3**. Its 3D model exists (see "The
+   GK3's 3D model" below) and only has to be imported. Open: are the other two
+   printer places also GK3s, other printers, or empty? And what are the wash
+   and curing units?
 2. **Ceramic Room** — its three furnaces are done; four small bench units
    finish the room.
 3. **Plaster Room** — five machines, all simple shapes.
@@ -145,8 +150,9 @@ header rules described in the README.
 
 ## Inventory
 
-30 machines are placed: **7 are 3D models, 23 are placeholders** (19 different
-types to model). Sizes are width × depth × height in mm.
+30 machines are placed: **7 are 3D models, 1 is a known machine waiting for its
+3D model, 22 are placeholders** (19 different types still to identify and
+model). Sizes are width × depth × height in mm.
 
 ### Design Room — CAD Design & Planning · 5.2 × 4.0 m
 
@@ -162,13 +168,38 @@ eight chairs, wall display, shelf rack, plant.
 
 ### Printing Room — 3D Printing · 4.0 × 4.0 m
 
-| Machine | State | Size (draft) |
+| Machine | State | Size |
 |---|---|---|
-| Resin 3D printer × 3 | ◻ placeholder | 400 × 400 × 580 |
-| Print wash station | ◻ placeholder | 270 × 300 × 360 |
-| UV post-curing unit | ◻ placeholder | 270 × 270 × 350 |
+| UniFormation GK3 | ◼ known · 3D model not imported yet | 392 × 332 × 520 (maker) |
+| Resin 3D printer × 2 | ◻ placeholder | 400 × 400 × 580 (draft) |
+| Print wash station | ◻ placeholder | 270 × 300 × 360 (draft) |
+| UV post-curing unit | ◻ placeholder | 270 × 270 × 350 (draft) |
 
 Furniture: 3.0 m and 1.8 m benches, island bench, shelf rack.
+
+#### The GK3's 3D model
+
+The model is finished and lies in Google Drive, twice:
+
+- `UniFormation GK3 — Three.js Viewer / UniFormation_GK3_Viewer.html` — the
+  printer on its own (178 meshes, 23,184 triangles by its README);
+- `Dental Lab Equipment — 3D Asset Library / Dental_Lab_Equipment_Asset_Library.html`,
+  the version of 11 Nov 2026, 18:58 — the whole library, now with three tables
+  and the printer as asset `uniformation-gk3`. **This is the file the tour
+  imports from.**
+
+It is not in the tour yet for one reason: the importer needs the file itself,
+and the connection to Drive that this was built with can read out part of a
+file's text (a long file comes back with its middle left out) but cannot copy
+a file into the project. The printer's code is about 50 KB in the middle of
+either file. Typing it across by hand would cost far more than it is worth and
+could not be proven identical.
+
+To finish: attach the library file to the chat (or put it anywhere on disk),
+run `npm run import-assets -- <that file>`, and change the GK3's line in
+`catalogue.js` to `status: 'built'` (the line to use is written next to it).
+The new library has three tables instead of two, so the two library benches
+the tour already uses have to be checked after that import.
 
 ### Clinic Reception — Patient Care · 4.6 × 4.0 m
 
@@ -253,3 +284,7 @@ measures each one. Three things worth knowing:
 6. **Who the reader is.** The texts are written for somebody with no dental
    training (a student, a patient, a visitor). If the audience is dentists or
    technicians, they should say more and explain less.
+7. **The printers.** One UniFormation GK3 stands in the Printing Room. Which
+   version is it (GK3 T, GK3 B or GK3 Pro), and what stands in the other two
+   printer places? Its 3D model still has to be imported: see "The GK3's 3D
+   model" in the inventory.

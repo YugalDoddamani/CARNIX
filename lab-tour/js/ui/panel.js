@@ -77,7 +77,7 @@ function roomView({ room, about, items, stop }) {
             <button type="button" class="row" data-go-item="${esc(item.id)}">
               <span class="row__number row__number--${item.status}" aria-hidden="true">${index + 1}</span>
               <span class="row__text"><strong>${name(item.name)}</strong><small>${esc(item.kind)}</small></span>
-              ${item.status === 'planned' ? '<span class="chip chip--planned">Planned</span>' : ''}
+              ${item.status === 'planned' ? `<span class="chip chip--planned">${item.known ? 'Model coming' : 'Planned'}</span>` : ''}
               <span class="row__chevron" aria-hidden="true">${UI.chevron}</span>
             </button>
           </li>`,
@@ -93,7 +93,9 @@ function roomView({ room, about, items, stop }) {
 function overviewTab({ item, room, info, modelState }) {
   const built = item.status === 'built';
   let model = '';
-  if (!built) {
+  if (item.known) {
+    model = `<p class="note">Its 3D model is not in the tour yet. Until it is, the blue shape stands in for it, at the machine's real size.</p>`;
+  } else if (!built) {
     model = `<p class="note">Not modelled yet. The blue shape marks where this machine stands and roughly how big it is; its maker, figures and the 3D model follow.</p>`;
   } else if (modelState === 'failed') {
     model = `<p class="note note--error">The 3D model could not be loaded. Reload the page to try again.</p>`;
@@ -113,7 +115,7 @@ function overviewTab({ item, room, info, modelState }) {
     ${model}
     <dl class="facts">
       <div><dt>Where</dt><dd>${esc(room.name)}</dd></div>
-      <div><dt>${built ? 'Size of the model' : 'Rough size'}</dt><dd>${sizeText(item.sizeMm)}</dd></div>
+      <div><dt>${built ? 'Size of the model' : item.known ? 'Size' : 'Rough size'}</dt><dd>${sizeText(item.sizeMm)}</dd></div>
     </dl>`;
 }
 

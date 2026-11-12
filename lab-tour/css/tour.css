@@ -1,23 +1,41 @@
 /* Lab Tour — a light, airy look of its own (the CARNIX dashboard is dark).
-   System fonts only: nothing is fetched from another site. */
+   System fonts only: nothing is fetched from another site.
+
+   Contents
+     1. Tokens              6. Panel: the three views
+     2. Frame               7. Navigation bar
+     3. Stage               8. Welcome guide
+     4. Labels in the lab   9. Phones and narrow windows
+     5. Panel: shell       10. Touch, motion                                 */
+
+/* ── 1. Tokens ─────────────────────────────────────────────────────────── */
 
 :root {
   --bg-top: #f6f9fe;
   --bg-bottom: #dfe8f5;
   --ink: #14213d;
   --ink-soft: #586581;
+  --ink-faint: #8a94a9;
   --line: #dde4ef;
-  --card: rgba(255, 255, 255, 0.94);
+  --card: rgba(255, 255, 255, 0.93);
+  --surface: #f0f3f9;
   --accent: #2f6bff;
   --accent-ink: #1d4fd8;
   --accent-soft: #e9f0ff;
   --planned: #6f7f9b;
   --planned-soft: #eef1f6;
   --danger: #b42318;
-  --radius: 16px;
-  --shadow: 0 12px 32px rgba(20, 33, 61, 0.12), 0 2px 6px rgba(20, 33, 61, 0.06);
+  --radius: 18px;
+  --shadow: 0 14px 36px rgba(20, 33, 61, 0.13), 0 2px 6px rgba(20, 33, 61, 0.06);
   --shadow-small: 0 4px 14px rgba(20, 33, 61, 0.12), 0 1px 3px rgba(20, 33, 61, 0.08);
   --gap: 16px;
+  --panel-w: clamp(372px, 31vw, 430px);
+
+  /* Motion. One "settle" curve for things that arrive, one with a little
+     overshoot for things that are picked (the highlight under a tab). */
+  --settle: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.42, 0.64, 1);
+
   font-family: Inter, 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
   color: var(--ink);
 }
@@ -45,6 +63,16 @@ body {
 button {
   font: inherit;
   color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+p,
+ol,
+ul,
+dl {
+  margin: 0;
 }
 
 :focus-visible {
@@ -61,19 +89,20 @@ button {
   white-space: nowrap;
 }
 
-/* ── Frame ─────────────────────────────────────────────────────────────── */
+/* ── 2. Frame ──────────────────────────────────────────────────────────── */
 
 .app {
+  position: relative;
   height: 100vh;
   height: 100dvh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto; /* top bar · lab · navigation bar (phones) */
 }
 
 .topbar {
   display: flex;
   align-items: center;
-  gap: var(--gap);
+  gap: 10px;
   padding: 10px 20px;
   padding-left: max(20px, env(safe-area-inset-left));
   padding-right: max(20px, env(safe-area-inset-right));
@@ -83,6 +112,7 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-right: auto;
   color: inherit;
   text-decoration: none;
   border-radius: 12px;
@@ -96,6 +126,11 @@ button {
   border-radius: 11px;
   background: var(--accent);
   color: #fff;
+  transition: transform 0.4s var(--spring);
+}
+
+.brand:hover .brand__mark {
+  transform: rotate(-8deg) scale(1.06);
 }
 
 .brand__name {
@@ -112,13 +147,13 @@ button {
 }
 
 .topbar__status {
-  margin-left: auto;
   padding: 6px 12px;
   border-radius: 999px;
   background: var(--card);
   border: 1px solid var(--line);
   font-size: 12.5px;
   color: var(--ink-soft);
+  white-space: nowrap;
 }
 
 .topbar__status.is-error {
@@ -126,12 +161,46 @@ button {
   border-color: currentColor;
 }
 
-/* ── Stage: canvas, labels, floating controls ──────────────────────────── */
+.topbar__guide {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 13.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, transform 0.16s var(--settle);
+}
+
+.topbar__guide:hover {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.topbar__guide:active {
+  transform: scale(0.96);
+}
+
+.topbar__guide svg {
+  transition: transform 0.5s var(--spring);
+}
+
+.topbar__guide:hover svg {
+  transform: rotate(14deg);
+}
+
+/* ── 3. Stage: canvas, labels, floating controls ───────────────────────── */
 
 .stage {
   position: relative;
   min-height: 0;
   overflow: hidden;
+  --free-right: 0px;
+  --free-bottom: 0px;
 }
 
 .stage canvas {
@@ -145,156 +214,16 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* A machine on its own is there to be turned. */
+[data-mode='item'] .stage canvas {
+  cursor: grab;
+}
+
+[data-mode='item'] .stage canvas:active {
+  cursor: grabbing;
+}
+
 /* Stacking inside the stage: canvas 0 · labels 1 · controls 2 · panel 3 */
-.label-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.label {
-  position: absolute;
-  left: 0;
-  top: 0;
-  pointer-events: auto;
-  transition: opacity 0.25s ease, visibility 0s;
-}
-
-.label.is-hidden,
-.label.is-offscreen {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.2s ease, visibility 0s 0.2s;
-}
-
-/* Room name floating above each room */
-.room-pill {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 14px 7px 7px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: var(--shadow-small);
-  white-space: nowrap;
-  text-align: left;
-  cursor: pointer;
-}
-
-.room-pill::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -6px;
-  width: 11px;
-  height: 11px;
-  margin-left: -5.5px;
-  background: #fff;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  transform: rotate(45deg);
-}
-
-.room-pill__icon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
-}
-
-.room-pill__text strong {
-  display: block;
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.2;
-}
-
-.room-pill__text small {
-  display: block;
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-.room-pill:hover,
-.room-pill.is-hover {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.18), var(--shadow-small);
-}
-
-/* Numbered marker above each machine */
-.hotspot {
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-}
-
-.hotspot__dot {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  background: var(--accent);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.22), var(--shadow-small);
-}
-
-.hotspot--planned .hotspot__dot {
-  background: #fff;
-  border-color: var(--planned);
-  border-style: dashed;
-  color: var(--planned);
-  box-shadow: var(--shadow-small);
-}
-
-.hotspot__name {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 6px);
-  transform: translateX(-50%);
-  padding: 3px 9px;
-  border-radius: 8px;
-  background: var(--ink);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-.hotspot:hover,
-.hotspot.is-hover,
-.hotspot:focus-visible {
-  z-index: 2;
-}
-
-.hotspot:hover .hotspot__name,
-.hotspot.is-hover .hotspot__name,
-.hotspot:focus-visible .hotspot__name {
-  opacity: 1;
-}
-
-.hotspot:hover .hotspot__dot,
-.hotspot.is-hover .hotspot__dot {
-  transform: scale(1.15);
-}
-
 .stage__controls {
   position: absolute;
   left: 20px;
@@ -317,6 +246,7 @@ button {
   border: 0;
   background: none;
   cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
 
 .stage__controls button + button {
@@ -328,21 +258,37 @@ button {
   color: var(--accent-ink);
 }
 
+.stage__controls button:active svg {
+  transform: scale(0.82);
+}
+
+.stage__controls svg {
+  transition: transform 0.16s var(--settle);
+}
+
 .legend {
   position: absolute;
-  left: 76px;
-  bottom: 20px;
+  left: 20px;
+  top: 8px;
   z-index: 2;
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 8px 12px;
+  padding: 7px 12px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--card);
   box-shadow: var(--shadow-small);
   font-size: 12.5px;
   color: var(--ink-soft);
+  transition: opacity 0.3s, visibility 0s;
+}
+
+/* With one machine on stage there is nothing left for the legend to explain. */
+[data-mode='item'] .legend {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0s 0.3s;
 }
 
 .legend span {
@@ -366,6 +312,42 @@ button {
   border: 1.5px solid var(--accent);
 }
 
+/* "Drag to turn": centred under the machine, in the part of the stage that is
+   not covered by the panel or the navigation bar. */
+.hint {
+  position: absolute;
+  left: calc((100% - var(--free-right)) / 2);
+  bottom: calc(var(--free-bottom) + 14px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 11px;
+  border-radius: 999px;
+  background: rgba(20, 33, 61, 0.86);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 10px);
+  transition: opacity 0.35s, transform 0.5s var(--settle);
+}
+
+.hint[hidden] {
+  display: none;
+}
+
+.hint.is-shown {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.hint svg {
+  animation: turn 2.8s var(--settle) infinite;
+}
+
 .fatal {
   position: absolute;
   inset: 0;
@@ -378,28 +360,227 @@ button {
 }
 
 .fatal p {
-  margin: 0;
   color: var(--ink-soft);
 }
 
-/* ── Panel ─────────────────────────────────────────────────────────────── */
+/* ── 4. Labels pinned to the lab ───────────────────────────────────────── */
+
+.label-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  /* --label-delay: main.js sets it when labels are asked for while the lab is
+     still faded (coming back from a machine); they wait until it has returned. */
+  transition: opacity 0.35s ease var(--label-delay, 0s), visibility 0s var(--label-delay, 0s);
+}
+
+.label.is-hidden,
+.label.is-offscreen {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0s 0.2s;
+}
+
+/* Room name floating above each room */
+.room-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px 7px 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-small);
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.35s ease var(--label-delay, 0s), visibility 0s var(--label-delay, 0s), border-color 0.2s, box-shadow 0.2s;
+}
+
+.room-pill::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 11px;
+  height: 11px;
+  margin-left: -5.5px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
+  transition: border-color 0.2s;
+}
+
+.room-pill__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  transition: transform 0.4s var(--spring);
+}
+
+.room-pill__text strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.room-pill__text small {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.room-pill:hover,
+.room-pill.is-hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.18), var(--shadow-small);
+}
+
+.room-pill:hover::after,
+.room-pill.is-hover::after {
+  border-color: var(--accent);
+}
+
+.room-pill:hover .room-pill__icon,
+.room-pill.is-hover .room-pill__icon {
+  transform: scale(1.1) rotate(-6deg);
+}
+
+.room-pill:active .room-pill__icon {
+  transform: scale(0.94);
+}
+
+/* Numbered marker above each machine */
+.hotspot {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.hotspot__dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: var(--shadow-small);
+  transition: transform 0.35s var(--spring);
+}
+
+/* A ring that keeps widening and fading: "this can be tapped". */
+.hotspot--built .hotspot__dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  animation: ping 2.6s var(--settle) infinite;
+  animation-delay: calc(var(--i, 0) * 0.3s);
+}
+
+.hotspot--planned .hotspot__dot {
+  background: #fff;
+  border-color: var(--planned);
+  border-style: dashed;
+  color: var(--planned);
+}
+
+/* Markers pop in one after the other when a room opens. */
+.label.is-hidden .hotspot__dot {
+  transform: scale(0.3);
+}
+
+.hotspot:not(.is-hidden) .hotspot__dot {
+  transition-delay: calc(var(--label-delay, 0s) + 0.25s + var(--i, 0) * 0.05s);
+}
+
+.hotspot__name {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.25s var(--settle);
+}
+
+.hotspot:hover,
+.hotspot.is-hover,
+.hotspot:focus-visible {
+  z-index: 2;
+}
+
+.hotspot:hover .hotspot__name,
+.hotspot.is-hover .hotspot__name,
+.hotspot:focus-visible .hotspot__name {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.hotspot:hover .hotspot__dot,
+.hotspot.is-hover .hotspot__dot {
+  transform: scale(1.18);
+  transition-delay: 0s;
+}
+
+.hotspot:active .hotspot__dot {
+  transform: scale(0.92);
+  transition-delay: 0s;
+}
+
+/* ── 5. Panel: the shell ───────────────────────────────────────────────── */
 
 .panel {
   position: absolute;
-  top: 12px;
+  top: 8px;
   right: 20px;
   z-index: 3;
-  width: 340px;
-  max-height: calc(100% - 32px);
+  width: var(--panel-w);
+  max-height: calc(100% - 28px);
   overflow: auto;
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--card);
   box-shadow: var(--shadow);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .panel:focus {
@@ -410,63 +591,198 @@ button {
    no empty card, and no controls that would do nothing. */
 .panel:empty,
 [data-tour='failed'] .stage__controls,
-[data-tour='failed'] .legend {
+[data-tour='failed'] .legend,
+[data-tour='failed'] .dock,
+[data-tour='failed'] .hint,
+[data-tour='failed'] .topbar__guide {
   display: none;
 }
 
+/* Each time the panel describes a new place, its parts rise in one by one. */
+.panel.is-entering > * {
+  animation: rise 0.5s var(--settle) both;
+}
+
+.panel.is-entering > :nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.panel.is-entering > :nth-child(3) {
+  animation-delay: 0.08s;
+}
+
+.panel.is-entering > :nth-child(4) {
+  animation-delay: 0.12s;
+}
+
+.panel.is-entering > :nth-child(n + 5) {
+  animation-delay: 0.16s;
+}
+
+/* The sticky "next room" bar must not ride up with the rest. */
+.panel.is-entering > .route-nav {
+  animation-name: fade-in;
+}
+
 .panel__header h1 {
-  margin: 2px 0 6px;
+  margin: 2px 0 0;
   font-size: 21px;
   line-height: 1.2;
   letter-spacing: -0.015em;
 }
 
-.panel__header p {
-  margin: 0;
+.panel__header--tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(140deg, var(--accent), #5a8bff);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(47, 107, 255, 0.28);
+}
+
+.panel.is-entering .tile {
+  animation: pop 0.55s var(--spring) 0.08s both;
+}
+
+.tile svg {
+  width: 24px;
+  height: 24px;
 }
 
 .eyebrow {
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 11.5px;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent-ink);
 }
 
-.muted {
-  font-size: 13.5px;
+.lead {
+  margin-top: 12px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.body {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--ink-soft);
 }
 
-.back {
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.count {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 11.5px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.button {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  margin: -6px 0 12px -8px;
-  padding: 6px 12px 6px 4px;
-  border: 0;
-  border-radius: 10px;
-  background: none;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--ink-soft);
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
   cursor: pointer;
+  transition: transform 0.16s var(--settle), box-shadow 0.2s, background 0.2s, border-color 0.2s, color 0.2s;
 }
 
-.back:hover {
-  background: var(--accent-soft);
+.button:hover {
+  border-color: var(--accent);
   color: var(--accent-ink);
 }
 
-.back svg {
-  width: 18px;
-  height: 18px;
+.button:active {
+  transform: scale(0.97);
 }
 
+.button svg {
+  flex: none;
+  transition: transform 0.3s var(--settle);
+}
+
+.button--primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.28);
+}
+
+.button--primary:hover {
+  border-color: var(--accent-ink);
+  background: var(--accent-ink);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(47, 107, 255, 0.36);
+}
+
+.button--primary:hover svg {
+  transform: translateX(3px);
+}
+
+.button--quiet {
+  padding: 0 12px 0 6px;
+  border-color: transparent;
+  background: none;
+  color: var(--ink-soft);
+}
+
+.button--quiet:hover {
+  border-color: transparent;
+  background: var(--accent-soft);
+}
+
+.button--quiet:hover svg {
+  transform: translateX(-3px);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.actions .button--primary {
+  flex: 1 1 auto;
+}
+
+/* ── 6. Panel: the three views ─────────────────────────────────────────── */
+
+/* Lists of rooms and of machines */
 .list {
   display: grid;
-  gap: 6px;
-  margin: 16px 0 0;
+  gap: 4px;
+  margin-top: 8px;
   padding: 0;
   list-style: none;
 }
@@ -483,11 +799,16 @@ button {
   background: none;
   text-align: left;
   cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.16s var(--settle);
 }
 
 .row:hover {
   background: var(--accent-soft);
   border-color: rgba(47, 107, 255, 0.25);
+}
+
+.row:active {
+  transform: scale(0.985);
 }
 
 .row__icon {
@@ -499,19 +820,31 @@ button {
   border-radius: 10px;
   background: var(--accent-soft);
   color: var(--accent-ink);
+  transition: background 0.2s, color 0.2s, transform 0.4s var(--spring);
+}
+
+.row:hover .row__icon {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.06) rotate(-6deg);
 }
 
 .row__number {
   display: grid;
   place-items: center;
   flex: none;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
+  transition: transform 0.35s var(--spring);
+}
+
+.row:hover .row__number {
+  transform: scale(1.12);
 }
 
 .row__number--planned {
@@ -538,10 +871,29 @@ button {
   color: var(--ink-soft);
 }
 
-.row__meta {
+.row__step {
   flex: none;
-  font-size: 12.5px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 700;
   color: var(--ink-soft);
+}
+
+.row__chevron {
+  flex: none;
+  display: grid;
+  color: var(--ink-faint);
+  transition: transform 0.25s var(--settle), color 0.2s;
+}
+
+.row:hover .row__chevron {
+  color: var(--accent-ink);
+  transform: translateX(3px);
 }
 
 .chip {
@@ -554,21 +906,206 @@ button {
   white-space: nowrap;
 }
 
-.chip--built {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-
 .chip--planned {
   background: var(--planned-soft);
   color: var(--planned);
 }
 
+/* "Back · Next room", always in reach at the bottom of a room's panel */
+.panel[data-mode='room'] {
+  padding-bottom: 0;
+}
+
+.route-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 12px -20px 0;
+  padding: 12px 20px 16px;
+  background: linear-gradient(to top, #fff 62%, rgba(255, 255, 255, 0));
+}
+
+/* A machine: back to the room, and step to its neighbours */
+.panel__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -6px 0 12px;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  margin-left: -8px;
+  padding: 6px 12px 6px 4px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.back span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.back:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.back svg {
+  flex: none;
+  transition: transform 0.25s var(--settle);
+}
+
+.back:hover svg {
+  transform: translateX(-3px);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+  font-size: 12.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.stepper span {
+  min-width: 34px;
+  text-align: center;
+}
+
+.stepper button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, transform 0.16s var(--settle);
+}
+
+.stepper button:hover {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.stepper button:active {
+  transform: scale(0.9);
+}
+
+/* The pills: the machine itself · About · Features · Capabilities */
+.tabs {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  margin-top: 14px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--surface);
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-padding: 0 12px;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* More pills than fit: they scroll sideways, and the edge that hides some fades out. */
+.tabs.has-more-after {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+}
+
+.tabs.has-more-before {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 30px), transparent);
+}
+
+.tabs.has-more-before.has-more-after {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+}
+
+.tabs__thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: var(--thumb-w, 0);
+  border-radius: 10px;
+  background: var(--accent);
+  box-shadow: 0 3px 10px rgba(47, 107, 255, 0.35);
+  transform: translateX(var(--thumb-x, 0));
+}
+
+/* Only once a pill has been picked: the thumb must not slide in on arrival. */
+.tabs.is-moving .tabs__thumb {
+  transition: transform 0.42s var(--spring), width 0.35s var(--settle);
+}
+
+.tabs [role='tab'] {
+  position: relative;
+  z-index: 1;
+  flex: 1 0 auto;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+
+.tabs [role='tab']:hover {
+  color: var(--ink);
+}
+
+.tabs [role='tab'][aria-selected='true'] {
+  color: #fff;
+}
+
+.tabs [role='tab']:focus-visible {
+  outline-offset: -3px;
+}
+
+.tabpanel.is-entering {
+  animation: slide-from-right 0.36s var(--settle) both;
+}
+
+.tabpanel.is-entering-back {
+  animation: slide-from-left 0.36s var(--settle) both;
+}
+
+/* The machine itself */
 .facts {
   display: grid;
-  gap: 10px;
-  margin: 16px 0 0;
-  padding: 14px 0 0;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid var(--line);
 }
 
@@ -591,11 +1128,12 @@ button {
 }
 
 .note {
-  margin: 16px 0 0;
-  padding: 12px 14px;
+  margin-top: 12px;
+  padding: 11px 14px;
   border-radius: 12px;
   background: var(--planned-soft);
   font-size: 13px;
+  line-height: 1.45;
   color: var(--ink-soft);
 }
 
@@ -606,93 +1144,570 @@ button {
 
 .slider {
   display: block;
-  margin: 16px 0 0;
-  padding: 14px 0 0;
-  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding: 12px 14px 10px;
+  border-radius: 14px;
+  background: var(--surface);
 }
 
 .slider__label {
   display: flex;
   justify-content: space-between;
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .slider output {
-  color: var(--ink-soft);
+  color: var(--accent-ink);
   font-variant-numeric: tabular-nums;
 }
 
 .slider input {
+  display: block;
   width: 100%;
   height: 28px;
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   accent-color: var(--accent);
+  cursor: grab;
 }
 
-/* ── Phones and narrow windows: the panel becomes a sheet under the lab ── */
+.slider input:active {
+  cursor: grabbing;
+}
+
+.slider__ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+
+/* About */
+.brand-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.brand-card__label {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.brand-card__name {
+  margin-top: 1px;
+  font-size: 23px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.brand-card__facts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.brand-card__facts svg {
+  flex: none;
+  color: var(--accent-ink);
+}
+
+/* Features: the key figures, the first one large */
+.specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: dense;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.spec {
+  display: flex;
+  flex-direction: column-reverse; /* the figure above its name */
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.spec dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.spec dt {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ink-soft);
+}
+
+.spec dt small {
+  font-size: inherit;
+  color: var(--ink-faint);
+}
+
+.spec--wide,
+.spec--lead {
+  grid-column: 1 / -1;
+}
+
+.spec--lead {
+  padding: 14px 16px;
+  background: linear-gradient(135deg, var(--accent), #5a8bff);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(47, 107, 255, 0.25);
+}
+
+.spec--lead dd {
+  font-size: 27px;
+  letter-spacing: -0.02em;
+}
+
+.spec--lead dt,
+.spec--lead dt small {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.footnote {
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.sources a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink-soft);
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.sources a:hover {
+  color: var(--accent-ink);
+  text-decoration-color: currentColor;
+}
+
+/* Capabilities */
+.points {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.points__mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 0.5px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+/* Figures and points arrive one after the other when their pill is picked. */
+.tabpanel.is-entering .spec,
+.tabpanel.is-entering-back .spec,
+.tabpanel.is-entering .points li,
+.tabpanel.is-entering-back .points li {
+  animation: rise 0.45s var(--settle) both;
+  animation-delay: calc(0.06s + var(--i, 0) * 0.04s);
+}
+
+.tabpanel.is-entering .points__mark,
+.tabpanel.is-entering-back .points__mark {
+  animation: pop 0.5s var(--spring) both;
+  animation-delay: calc(0.14s + var(--i, 0) * 0.04s);
+}
+
+/* ── 7. Navigation bar ─────────────────────────────────────────────────── */
+
+/* Wide screens: a bar floating over the lab, centred in the part of the
+   window the panel leaves free. (Phones: section 9.) */
+.dock {
+  position: absolute;
+  left: calc((100% - var(--panel-w) - 20px) / 2);
+  bottom: 18px;
+  z-index: 4;
+  display: flex;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  transform: translateX(-50%);
+}
+
+.dock__highlight {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--w, 0);
+  height: var(--h, 0);
+  border-radius: 14px;
+  background: var(--accent);
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.35);
+  transform: translate(var(--x, 0), var(--y, 0));
+}
+
+.dock.is-ready .dock__highlight {
+  transition: transform 0.5s var(--spring), width 0.4s var(--settle);
+}
+
+.dock__item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 14px 0 12px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+
+.dock__item:hover {
+  color: var(--ink);
+}
+
+.dock__item[aria-current] {
+  color: #fff;
+}
+
+.dock__icon {
+  display: grid;
+  transition: transform 0.35s var(--spring);
+}
+
+.dock__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dock__item:hover .dock__icon {
+  transform: translateY(-2px);
+}
+
+.dock__item:active .dock__icon {
+  transform: scale(0.86);
+}
+
+.dock__item[aria-current] .dock__icon {
+  animation: pop 0.5s var(--spring);
+}
+
+.dock__label {
+  margin-left: 8px;
+}
+
+/* Not enough room for seven names: only the current stop keeps its name. */
+@media (min-width: 900px) and (max-width: 1279.98px) {
+  .dock__item {
+    padding: 0 12px;
+  }
+
+  .dock__label {
+    max-width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-width 0.4s var(--settle), margin-left 0.4s var(--settle), opacity 0.25s;
+  }
+
+  .dock__item[aria-current] .dock__label {
+    max-width: 96px;
+    margin-left: 8px;
+    opacity: 1;
+  }
+}
+
+/* ── 8. Welcome guide ──────────────────────────────────────────────────── */
+
+.guide {
+  width: min(468px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  background: #fff;
+  color: inherit;
+  box-shadow: 0 30px 80px rgba(20, 33, 61, 0.32);
+  overflow: auto;
+}
+
+.guide::backdrop {
+  background: rgba(20, 33, 61, 0.36);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+.guide[open] {
+  animation: guide-in 0.5s var(--settle) both;
+}
+
+.guide[open]::backdrop {
+  animation: fade-in 0.35s ease both;
+}
+
+.guide.is-closing {
+  animation: guide-out 0.17s ease-in both;
+}
+
+.guide.is-closing::backdrop {
+  animation: fade-out 0.17s ease both;
+}
+
+.guide__card {
+  position: relative;
+  padding: 28px 26px 20px;
+}
+
+/* Focus starts on the card (so a screen reader reads the title), not on a
+   button that would then wear a ring nobody asked for. */
+.guide__card:focus {
+  outline: none;
+}
+
+.guide__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, transform 0.3s var(--spring);
+}
+
+.guide__close:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  transform: rotate(90deg);
+}
+
+.guide h2 {
+  margin: 4px 44px 0 0;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.guide .lead {
+  color: var(--ink-soft);
+}
+
+.guide__steps {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.guide__steps li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--surface);
+  animation: rise 0.5s var(--settle) both;
+  animation-delay: calc(0.18s + var(--i, 0) * 0.08s);
+}
+
+.guide__steps strong {
+  display: block;
+  font-size: 14.5px;
+}
+
+.guide__steps small {
+  display: block;
+  margin-top: 1px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.guide__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: #fff;
+  color: var(--accent-ink);
+  box-shadow: var(--shadow-small);
+}
+
+/* Each step's icon acts out its step, gently and out of step with the others. */
+.guide__icon--1 svg {
+  animation: nudge 3.2s var(--settle) infinite;
+}
+
+.guide__icon--2 svg {
+  animation: tap 3.2s var(--settle) 1s infinite;
+  transform-origin: 50% 90%;
+}
+
+.guide__icon--3 svg {
+  animation: nudge 3.2s var(--settle) 2s infinite;
+}
+
+.guide__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.guide__actions .button {
+  flex: 1 1 auto;
+  min-height: 46px;
+}
+
+.guide__hint {
+  margin-top: 12px;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--ink-faint);
+}
+
+/* ── 9. Phones and narrow windows ──────────────────────────────────────── */
+/* The panel becomes a sheet under the lab; the navigation bar a tab bar along
+   the bottom edge. */
 
 @media (max-width: 899.98px) {
   .topbar {
     padding: 8px 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
   }
 
   .brand__tagline {
     display: none;
   }
 
+  .topbar__status {
+    padding: 5px 10px;
+    font-size: 11.5px;
+  }
+
   .panel {
     top: auto;
     left: 8px;
     right: 8px;
-    bottom: max(8px, env(safe-area-inset-bottom));
+    bottom: 8px;
     width: auto;
-    max-height: 42%;
+    max-height: 46%;
     padding: 14px 14px 12px;
+  }
+
+  /* A machine's sheet keeps one height whichever pill is open, so the machine
+     above it does not jump. */
+  .panel[data-mode='item'] {
+    height: 48%;
+    max-height: none;
+  }
+
+  /* The machine's name is already on its first pill. */
+  .panel[data-mode='item']:not([data-tabs='0']) .panel__header {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .panel[data-mode='item']:not([data-tabs='0']) .tabs {
+    margin-top: 0;
+  }
+
+  .panel__top {
+    margin: -4px 0 8px;
+  }
+
+  /* The rooms are one tap away on the bar below; keep the lab in view. */
+  .panel[data-mode='overview'] .route-list {
+    display: none;
   }
 
   .panel__header h1 {
     font-size: 18px;
   }
 
-  .list {
-    margin-top: 10px;
+  .tile {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
   }
 
-  /* Overview: all six rooms at a glance, as tiles, instead of a list that hides
-     two of them below the fold. */
-  .list--rooms {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .lead {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.45;
   }
 
-  .list--rooms li {
-    display: grid; /* tiles in one row share a height */
+  .actions {
+    margin-top: 12px;
   }
 
-  .list--rooms .row {
-    gap: 9px;
-    min-height: 48px;
-    padding: 6px 8px;
-    background: rgba(47, 107, 255, 0.05);
+  .section-title {
+    margin-top: 14px;
   }
 
-  .list--rooms .row__icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-  }
-
-  .list--rooms .row__meta {
-    display: none;
-  }
-
-  .list--rooms .row__text strong[data-short] {
-    font-size: 0; /* the full name stays in the document for screen readers */
-  }
-
-  .list--rooms .row__text strong[data-short]::after {
-    content: attr(data-short);
-    font-size: 14.5px;
+  .route-nav {
+    margin: 8px -14px 0;
+    padding: 10px 14px 12px;
   }
 
   .stage__controls {
@@ -704,41 +1719,89 @@ button {
 
   .legend {
     left: 8px;
-    top: 8px;
-    bottom: auto;
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
     padding: 6px 10px;
   }
+
+  .dock {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    padding: 5px 6px;
+    padding-bottom: max(5px, env(safe-area-inset-bottom));
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(6px, env(safe-area-inset-right));
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: none;
+    transform: none;
+  }
+
+  .dock__highlight {
+    border-radius: 12px;
+    background: var(--accent-soft);
+    box-shadow: none;
+  }
+
+  .dock__item {
+    flex-direction: column;
+    gap: 3px;
+    min-height: 50px;
+    padding: 5px 0 4px;
+    border-radius: 12px;
+    font-size: 10.5px;
+    letter-spacing: 0.01em;
+  }
+
+  .dock__item[aria-current] {
+    color: var(--accent-ink);
+  }
+
+  .dock__icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .dock__label {
+    margin-left: 0;
+  }
+
+  .guide {
+    margin-bottom: 12px; /* a sheet rising from the bottom edge, where the thumb is */
+  }
+
+  .guide[open] {
+    animation-name: guide-up;
+  }
+
+  .guide__card {
+    padding: 24px 18px 16px;
+  }
+
+  .guide h2 {
+    font-size: 21px;
+  }
 }
 
-/* Phone width: two tiles per row, names only (each room's subtitle is shown
-   again as soon as it is opened). */
-@media (max-width: 599.98px) {
-  .list--rooms {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+/* Very narrow phones: the Guide button is its icon alone. */
+@media (max-width: 400px) {
+  .topbar__guide {
+    padding: 0 9px;
   }
 
-  .list--rooms .row {
-    min-height: 46px;
-  }
-
-  .list--rooms .row__text strong,
-  .list--rooms .row__text strong[data-short]::after {
-    font-size: 14px;
-  }
-
-  .list--rooms .row__text small {
-    display: none;
-  }
-}
-
-/* Short screens (small phones, phones held sideways): drop the summary line so
-   the room tiles fit without scrolling. */
-@media (max-width: 899.98px) and (max-height: 700px) {
-  .panel[data-mode='overview'] .panel__header .muted {
-    display: none;
+  .topbar__guide span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 }
 
@@ -793,6 +1856,8 @@ button {
   white-space: nowrap;
 }
 
+/* ── 10. Touch, motion ─────────────────────────────────────────────────── */
+
 /* Fingers need more room than a mouse pointer. The markers stay the same size
    to look at (neighbouring machines can be 35 px apart); only the area that
    responds grows. The machine under a marker and its row in the panel are
@@ -802,18 +1867,145 @@ button {
   .is-tiny .room-pill::before {
     content: '';
     position: absolute;
-    inset: -7px;
+    inset: -6px;
     border-radius: 50%;
   }
 
   .back {
     min-height: 40px;
-    margin-bottom: 6px;
+  }
+
+  .stepper button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .tabs [role='tab'] {
+    min-height: 40px;
   }
 }
 
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+}
+
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+}
+
+@keyframes ping {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+@keyframes turn {
+  0%,
+  20% {
+    transform: rotate(0deg);
+  }
+  70%,
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nudge {
+  0%,
+  70%,
+  100% {
+    transform: none;
+  }
+  82% {
+    transform: scale(1.16) rotate(-8deg);
+  }
+  92% {
+    transform: scale(0.96);
+  }
+}
+
+@keyframes tap {
+  0%,
+  70%,
+  100% {
+    transform: none;
+  }
+  80% {
+    transform: translateY(3px) scale(0.92);
+  }
+  90% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes guide-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+}
+
+@keyframes guide-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+
+@keyframes guide-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* Visitors who asked their device for less motion get none: no glides (see
+   camera-rig.js), no slides, no pulsing. Everything simply appears. */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
+    animation: none !important;
   }
 }

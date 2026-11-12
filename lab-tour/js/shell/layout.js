@@ -37,14 +37,15 @@ export const WALL_STYLES = {
 
 export const CORRIDOR = { x: 0, z: ROW, w: BUILDING.w, d: CORRIDOR_D };
 
+// `tab`:        the room's one-word name on the navigation bar.
 // `lightStrip`: which wall of the room carries a light strip ('north', 'west' or none).
 export const ROOMS = [
-  { id: 'design', name: 'Design Room', subtitle: 'CAD Design & Planning', icon: 'design', x: 0, z: 0, w: 5.2, d: ROW, lightStrip: 'north' },
-  { id: 'printing', name: 'Printing Room', subtitle: '3D Printing', icon: 'printing', x: 5.2, z: 0, w: 4, d: ROW, lightStrip: 'north' },
-  { id: 'clinic', name: 'Clinic Reception', subtitle: 'Patient Care', icon: 'clinic', x: 9.2, z: 0, w: 4.6, d: ROW },
-  { id: 'plaster', name: 'Plaster Room', subtitle: 'Model Preparation', icon: 'plaster', x: 0, z: SOUTH_Z, w: 5.2, d: ROW, lightStrip: 'west' },
-  { id: 'ceramic', name: 'Ceramic Room', subtitle: 'Ceramic Work', icon: 'ceramic', x: 5.2, z: SOUTH_Z, w: 3.6, d: ROW },
-  { id: 'acrylic', name: 'Acrylic & Prosthodontic Room', shortName: 'Acrylic & Prostho', subtitle: 'Final Prosthesis', icon: 'acrylic', x: 8.8, z: SOUTH_Z, w: 5, d: ROW },
+  { id: 'design', name: 'Design Room', tab: 'Design', subtitle: 'CAD Design & Planning', icon: 'design', x: 0, z: 0, w: 5.2, d: ROW, lightStrip: 'north' },
+  { id: 'printing', name: 'Printing Room', tab: 'Printing', subtitle: '3D Printing', icon: 'printing', x: 5.2, z: 0, w: 4, d: ROW, lightStrip: 'north' },
+  { id: 'clinic', name: 'Clinic Reception', tab: 'Clinic', subtitle: 'Patient Care', icon: 'clinic', x: 9.2, z: 0, w: 4.6, d: ROW },
+  { id: 'plaster', name: 'Plaster Room', tab: 'Plaster', subtitle: 'Model Preparation', icon: 'plaster', x: 0, z: SOUTH_Z, w: 5.2, d: ROW, lightStrip: 'west' },
+  { id: 'ceramic', name: 'Ceramic Room', tab: 'Ceramic', subtitle: 'Ceramic Work', icon: 'ceramic', x: 5.2, z: SOUTH_Z, w: 3.6, d: ROW },
+  { id: 'acrylic', name: 'Acrylic & Prosthodontic Room', shortName: 'Acrylic & Prostho', tab: 'Acrylic', subtitle: 'Final Prosthesis', icon: 'acrylic', x: 8.8, z: SOUTH_Z, w: 5, d: ROW },
 ];
 
 // Walls run in the +x or +z direction from (x1, z1) to (x2, z2).
@@ -82,5 +83,13 @@ export const VIEWS = {
   // steeply, which turns the spare height into bigger, less hidden rooms.
   overviewPortrait: { azimuth: 64, elevation: 52, fov: 20, padding: 0.04 },
   room: { azimuth: 24, elevation: 38, fov: 26, padding: 0.08 },
-  item: { azimuthOffset: 14, elevation: 17, fov: 30, padding: 0.38 },
+  // A machine on its own: a three-quarter view from slightly above, the way a
+  // product is photographed. `azimuthOffset` is how far round from straight-on.
+  item: { azimuthOffset: 24, elevation: 15, fov: 24, padding: 0.24 },
 };
+
+// A machine being looked at stays as it is; everything around it is faded.
+//   rest      how much of the surroundings stays visible (0.1 = 10 %)
+//   passing   the same, while the camera travels from one machine to the next:
+//             the room comes back a little so the move makes sense
+export const SPOTLIGHT = { rest: 0.1, passing: 0.7 };

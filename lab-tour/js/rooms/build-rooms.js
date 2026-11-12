@@ -99,6 +99,7 @@ export function buildRooms(shell) {
       name: built ? library.name : entry.name,
       shortName: entry.shortName ?? (built ? library.name : entry.name),
       kind: entry.kind,
+      icon: entry.icon ?? 'machine',
       description: built ? library.description : null,
       sizeMm,
       canExplode: built && library.canExplode,

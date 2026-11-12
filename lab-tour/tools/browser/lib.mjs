@@ -13,6 +13,10 @@
 // the tour's animations in real time. They stop the tour's clock (`holdClock`)
 // and move it by hand (`pass`): the same result on any machine, and quick,
 // because time can pass without every frame being drawn.
+// (The opening, where the lab comes up part by part, is the browser's own
+// fading of page elements and runs on the browser's clock. `openTour` waits
+// until it is over; to look INSIDE it, open with `intro=hold` and move it with
+// `labTour.motion.seek(ms)`.)
 // What this proves is behaviour: what is on screen, what a tap does, that
 // nothing throws.
 import { createRequire } from 'node:module';
@@ -40,17 +44,21 @@ export async function launchBrowser() {
 
 /**
  * Open the tour and wait until it has finished loading.
- * options: { width, height, dpr, touch, reducedMotion, query, hash, storage, forget }
+ * options: { width, height, dpr, touch, reducedMotion, query, hash, storage, forget, until }
  *   storage   localStorage entries to set before the page starts, e.g.
  *             { 'lab-tour:welcomed': '1' } for a returning visitor
  *   forget    true for a first-time visitor: whatever earlier pages of this
  *             browser remembered is wiped first. (A private window would be the
  *             obvious way, but the packaged Chromium cannot open one.)
+ *   until     'ready' (default): every model is in and the opening is over.
+ *             'started': the tour's script has run; the lab may still be coming
+ *             up. With `query: 'intro=hold'` the opening stands still at its
+ *             first moment until `labTour.motion.release()`.
  * Returns { page, problems, state, loadMs } — `problems` collects console
  * errors and warnings, page errors and failed requests as they happen.
  */
 export async function openTour(browser, baseUrl, options = {}) {
-  const { width = 1280, height = 800, dpr = 1, touch = false, reducedMotion = false, query = '', hash = '', storage = null, forget = false } = options;
+  const { width = 1280, height = 800, dpr = 1, touch = false, reducedMotion = false, query = '', hash = '', storage = null, forget = false, until = 'ready', init = null } = options;
   const page = await browser.newPage();
   await page.setViewport({ width, height, deviceScaleFactor: dpr, isMobile: touch, hasTouch: touch });
   if (reducedMotion) await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
@@ -59,9 +67,17 @@ export async function openTour(browser, baseUrl, options = {}) {
       for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, value);
     }, storage);
   }
+  // `init` runs in the page before any of its own scripts (to take a browser feature away, for example).
+  if (init) await page.evaluateOnNewDocument(init);
   const problems = [];
   page.on('console', (message) => {
-    if (message.type() === 'error' || message.type() === 'warning') problems.push(`console.${message.type()}: ${message.text()}`);
+    // console.warn() is 'warn' to newer versions of Puppeteer and 'warning' to older ones.
+    const type = message.type() === 'warning' ? 'warn' : message.type();
+    if (type !== 'error' && type !== 'warn') return;
+    // Not the tour's doing: the graphics driver remarks that the picture was
+    // read back, which only the checks do (to compare pictures).
+    if (/GPU stall due to ReadPixels/.test(message.text())) return;
+    problems.push(`console.${type}: ${message.text()}`);
   });
   page.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
   page.on('requestfailed', (request) => problems.push(`request failed: ${request.url()}`));
@@ -78,14 +94,26 @@ export async function openTour(browser, baseUrl, options = {}) {
   const url = `${baseUrl}${query ? `?${query}` : ''}${hash}`;
   const started = Date.now();
   await page.goto(url, { waitUntil: 'load', timeout: 120000 });
-  await waitReady(page);
+  if (until === 'started') await page.waitForFunction(() => Boolean(window.labTour) || document.documentElement.dataset.tour === 'failed', { timeout: 180000, polling: 50 });
+  else await waitReady(page);
   const state = await page.evaluate(() => document.documentElement.dataset.tour);
   return { page, problems, state, loadMs: Date.now() - started };
 }
 
-/** Wait until the tour has loaded every model (or given up). */
+/**
+ * Wait until the tour has loaded every model (or given up) and nothing is
+ * arriving any more: the opening is over and the last model has faded in.
+ * Those fades run on the browser's clock, not the tour's, so they cannot be
+ * stepped by hand (see `pass`); the checks start once they are done.
+ */
 export function waitReady(page) {
-  return page.waitForFunction(() => /^ready|^failed/.test(document.documentElement.dataset.tour || ''), { timeout: 180000, polling: 250 });
+  return page.waitForFunction(
+    () => {
+      const tour = document.documentElement.dataset.tour || '';
+      return /^failed/.test(tour) || (/^ready/.test(tour) && !window.labTour.motion.busy);
+    },
+    { timeout: 180000, polling: 250 },
+  );
 }
 
 /** Stop the tour's own clock. From here on its animations move only when `pass` says so. */

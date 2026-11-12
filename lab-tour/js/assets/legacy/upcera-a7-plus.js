@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // GENERATED FILE — do not edit. Re-create with: npm run import-assets -- <library.html>
 //
-// Source    : Dental_Lab_Equipment_Asset_Library (2).html
+// Source    : Dental_Lab_Equipment_Asset_Library (2) + GK3 component.html
 // Component : <script id="component-3-asset-upcera-a7-plus">
 // sha256    : 1a253e21f9fdf1c0ce8c0da7f7693cf6f4cf07172235a907155e302e6eba5216
 //

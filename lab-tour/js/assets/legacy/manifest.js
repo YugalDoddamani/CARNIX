@@ -5,8 +5,8 @@
 // what the geometry actually spans at scale 1 (1 unit = 80 mm): w = x, d = z, h = y.
 
 export const LEGACY_SOURCE = {
-  "file": "Dental_Lab_Equipment_Asset_Library (2).html",
-  "sha256": "98dd36af64f4131c8203ff1a912ad67b436929835c5438391e80d9cd4761a3d1",
+  "file": "Dental_Lab_Equipment_Asset_Library (2) + GK3 component.html",
+  "sha256": "8cbaa591427e8f6f47aff91c210ed561a56b3cd9b9777e56331631947eaca091",
   "threeRevision": "160"
 };
 
@@ -623,6 +623,95 @@ export const LEGACY_ASSETS = [
         ]
       ],
       "textureMB": 0.7
+    }
+  },
+  {
+    "id": "uniformation-gk3",
+    "module": "./uniformation-gk3.js",
+    "component": "component-6b-asset-uniformation-gk3",
+    "meta": {
+      "id": "uniformation-gk3",
+      "code": "PRINTER-01",
+      "name": "UniFormation GK3 Resin 3D Printer",
+      "category": "16K MSLA Dental Resin 3D Printer (Table 3 · Dedicated Printing Bench)",
+      "capabilityNote": "9.6\" 16K (15120×6230, 14×19 µm) 405 nm COB MSLA printer with smart PTC chamber heating, hinged emerald UV hood, and 1200 ml auto-feeding resin cartridge.",
+      "tableId": "table-printers",
+      "realDimensionsMm": "392 × 332 × 520 mm",
+      "benchScale": 1,
+      "benchPosition": [
+        32.4,
+        0,
+        -0.1
+      ],
+      "subAssemblies": [
+        "lowerChassis",
+        "opticalDeckAndVat",
+        "zColumnAndChamber",
+        "buildPlateCarriage",
+        "hingedUvHood"
+      ]
+    },
+    "datasheetMm": [
+      392,
+      332,
+      520
+    ],
+    "instanceKeys": [
+      "productRoot",
+      "assemblies",
+      "setLidOpenFactor",
+      "setExplodeFactor",
+      "dispose"
+    ],
+    "partsKey": "assemblies",
+    "parts": [
+      "lowerChassis",
+      "opticalDeckAndVat",
+      "zColumnAndChamber",
+      "buildPlateCarriage",
+      "hingedUvHood"
+    ],
+    "declaredPartsMatch": true,
+    "measured": {
+      "box": {
+        "min": [
+          -2.497,
+          0,
+          -2.23
+        ],
+        "max": [
+          2.497,
+          6.52,
+          2.304
+        ]
+      },
+      "mm": {
+        "w": 400,
+        "d": 363,
+        "h": 522
+      },
+      "meshes": 178,
+      "drawCalls": 178,
+      "triangles": 23176,
+      "vertices": 23456,
+      "materials": 22,
+      "geometries": 86,
+      "shadowCasters": 170,
+      "textures": [
+        [
+          1024,
+          256
+        ],
+        [
+          512,
+          512
+        ],
+        [
+          512,
+          320
+        ]
+      ],
+      "textureMB": 3.5
     }
   }
 ];

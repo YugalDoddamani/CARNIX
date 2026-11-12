@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // GENERATED FILE — do not edit. Re-create with: npm run import-assets -- <library.html>
 //
-// Source    : Dental_Lab_Equipment_Asset_Library (2).html
+// Source    : Dental_Lab_Equipment_Asset_Library (2) + GK3 component.html
 // Component : <script id="component-2-asset-zubler-vario-200">
 // sha256    : 5e14813ba60d0353c81e765190c1b2b4b6d0dbe54115f41fbb34bf7467158688
 //

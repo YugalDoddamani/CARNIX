@@ -30,13 +30,7 @@ export const EQUIPMENT = {
   'zubler-vario-200': { status: 'built', icon: 'furnace', shortName: 'Vario 200', kind: 'Ceramic furnace' },
   'upcera-a7-plus': { status: 'built', icon: 'furnace', shortName: 'UPCERA A7+', kind: 'Porcelain furnace' },
   'ivoclar-programat-p300': { status: 'built', icon: 'furnace', shortName: 'Programat P300', kind: 'Ceramic furnace' },
-
-  // ── Known, waiting for its 3D model ────────────────────────────────────────
-  // The model exists (Drive: "UniFormation GK3 — Three.js Viewer", and in the
-  // asset library of 11 Nov 2026 under this same id) but has not been imported.
-  // After `npm run import-assets`, this line becomes
-  //   'uniformation-gk3': { status: 'built', icon: 'printer', shortName: 'GK3', kind: 'Resin 3D printer' },
-  'uniformation-gk3': { status: 'planned', known: true, icon: 'printer', name: 'UniFormation GK3', shortName: 'GK3', kind: 'Resin 3D printer', mount: 'bench', sizeMm: { w: 392, d: 332, h: 520 } },
+  'uniformation-gk3': { status: 'built', icon: 'printer', shortName: 'GK3', kind: 'Resin 3D printer' },
 
   // ── Planned · Printing Room ────────────────────────────────────────────────
   'resin-printer': { status: 'planned', icon: 'printer', name: 'Resin 3D printer', kind: '3D printer', mount: 'bench', sizeMm: { w: 400, d: 400, h: 580 } },

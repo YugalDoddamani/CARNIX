@@ -1,7 +1,8 @@
 // Turns the floor-plan data (layout.js) into geometry: podium, floors, walls,
 // glazing, door openings, light strips — all merged into one mesh per material
 // (the whole building is 8 draw calls) — plus an invisible tap target and a
-// label anchor per room.
+// label anchor per room. `parts` lists those meshes in the order a building
+// goes up (floor, walls, glazing), for the entrance.
 import * as THREE from 'three';
 import { GeometryBatch } from '../core/batch.js';
 import { PALETTE } from '../core/palette.js';
@@ -164,6 +165,15 @@ export function buildShell() {
   catcher.renderOrder = -1; // before glass and placeholders
   group.add(catcher);
 
+  // The building in the order it is put up when the tour opens (motion.js):
+  // what it stands on, then what divides it, then what encloses it.
+  const made = (...materials) => group.children.filter((mesh) => materials.includes(mesh.material));
+  const parts = {
+    floor: [...made(PALETTE.plinth, PALETTE.floorCorridor, PALETTE.floor), catcher],
+    walls: made(PALETTE.wall, PALETTE.wallCap),
+    glazing: made(PALETTE.glass, PALETTE.frame, PALETTE.lightStrip),
+  };
+
   // Per-room data used for tapping, labelling and framing.
   const tapTargets = new THREE.Group();
   tapTargets.name = 'room-tap-targets';
@@ -202,5 +212,5 @@ export function buildShell() {
     new THREE.Vector3(planX(BUILDING.w + PODIUM_LIP), m(roomHeight), planZ(BUILDING.d + PODIUM_LIP)),
   );
 
-  return { group, tapTargets, rooms, bounds, frameBox };
+  return { group, parts, tapTargets, rooms, bounds, frameBox };
 }

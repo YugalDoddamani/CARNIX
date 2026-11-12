@@ -57,7 +57,7 @@ for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
   } else if (foreign.length > 0) {
     skipped.push({ id, reason: `uses browser window state: ${foreign.join(', ')}` });
   } else {
-    const name = id.replace(/^component-\d+-/, '').replace(/^asset-/, '');
+    const name = id.replace(/^component-\d+[a-z]?-/, '').replace(/^asset-/, '');
     components.push({ id, name, file: `${name}.js`, body, registerFns, sha: sha256(body) });
   }
 }

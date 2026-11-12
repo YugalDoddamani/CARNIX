@@ -2,10 +2,13 @@
   "name": "lab-tour",
   "private": true,
   "type": "module",
-  "description": "Interactive 3D tour of the dental lab. Static site: no build step and no runtime dependencies (three.js is vendored).",
+  "description": "Interactive, educational 3D tour of the dental lab. Static site: no build step and no runtime dependencies (three.js is vendored).",
   "scripts": {
     "serve": "node tools/serve.mjs",
     "import-assets": "node tools/import-asset-library.mjs",
-    "check": "node tools/check.mjs"
+    "check": "node tools/check.mjs",
+    "e2e": "node tools/browser/e2e.mjs",
+    "shots": "node tools/browser/shots.mjs",
+    "film": "node tools/browser/film.mjs"
   }
 }

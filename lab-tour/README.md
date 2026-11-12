@@ -1,25 +1,45 @@
 # Lab Tour
 
-An interactive 3D walk-through of the lab: the whole floor → a room → a machine.
+An interactive 3D walk-through of the lab, made for people who want to learn
+what a dental lab does: the whole floor → a room → a machine, with a short
+explanation at every step.
 
 It is one static page. There is no build step, nothing to install and no CDN:
 three.js is served from `vendor/`, and everything else is plain ES modules.
 
-**Status:** first working version — the building, six furnished rooms, the 7
-machines from the asset library, and 23 placeholders for machines that are not
-modelled yet. What comes next, and why it is built in this order, is in
+**Status:** the building, six furnished rooms, the 7 machines from the asset
+library, and 23 placeholders for machines that are not modelled yet; on top of
+that a guided route through the rooms and a page that explains each machine,
+with sourced figures for the five real ones.
+What comes next, and why it is built in this order, is in
 [`docs/PLAN.md`](docs/PLAN.md).
+
+## What a visitor gets
+
+- **A bar to move around with** — the whole lab, then one stop per room in tour
+  order. It floats over the lab on wide screens and is a tab bar on phones.
+- **A guided route** — every room is "Stop n of 6" with a paragraph on what
+  happens there, the machines in it, and a button to the next stop.
+- **A welcome guide** — three steps on how to use the page, shown once on a
+  first visit and any time from the Guide button.
+- **Machines that come forward** — tap one and the lab around it fades. Drag
+  and the machine turns about its own middle while the faded lab stands still;
+  pinch or scroll to zoom; a slider takes it apart.
+- **Up to four pills per machine** — what it is, who makes it (About), its key
+  figures (Features) and what sets it apart (Capabilities). Figures carry links
+  to the maker's documents they were taken from.
 
 ## Run it
 
 ```bash
 cd lab-tour
 npm run serve     # http://localhost:4173
-npm run check     # validates the data files and the drawing budget (no browser needed)
+npm run check     # validates the data and the texts, and the drawing budget (no browser needed)
+npm run e2e       # walks through the tour in a headless browser (see "Testing")
 ```
 
-The page itself needs nothing but a static file server. The two tools
-(`check`, `import-assets`) need Node 20.6 or newer and have no dependencies.
+The page itself needs nothing but a static file server. `check` and
+`import-assets` need Node 20.6 or newer and have no dependencies.
 
 Useful addresses while working:
 
@@ -29,25 +49,32 @@ Useful addresses while working:
 | `#/ceramic/zubler-vario-200` | opens a machine directly (these are shareable links) |
 | `?q=low` · `?q=medium` · `?q=high` | forces a quality tier (normally chosen per device) |
 
-## The three files you will edit
+## The four files you will edit
 
-Everything specific to *this* lab is data. The 3D scene is generated from it.
+Everything specific to *this* lab is data. The 3D scene and the panels are
+generated from it.
 
 | File | What it holds |
 |---|---|
 | [`js/shell/layout.js`](js/shell/layout.js) | The floor plan in metres: rooms, walls, doors, wall styles, camera angles |
 | [`js/rooms/catalogue.js`](js/rooms/catalogue.js) | Every machine: built (has a 3D model) or planned (shown as a blue volume) |
 | [`js/rooms/content.js`](js/rooms/content.js) | What stands where in each room: benches, chairs, shelves, machines |
+| [`js/rooms/knowledge.js`](js/rooms/knowledge.js) | Everything the visitor reads: the welcome guide, the tour order, what happens in each room, the makers, and each machine's description, figures and sources |
 
 After any edit run `npm run check`. It builds the whole lab without a browser
 and reports, in plain words, anything in a wall, in front of a door, overlapping
 its neighbour, hanging off its bench, missing from the catalogue, or over the
-drawing budget.
+drawing budget — and any machine without a description, figure without a
+source, or icon that does not exist. It ends with the list of things that
+still need the lab's confirmation.
 
-> ⚠ The floor-plan dimensions and all 19 "planned" machine types are a **draft**
-> (read off the concept image and typical for these rooms). They are marked as
-> such in the files and are meant to be replaced with the real plan and the real
-> equipment list.
+> ⚠ **Drafts.** The floor-plan dimensions and all 19 "planned" machine types
+> (read off the concept image and typical for these rooms), the order of the
+> tour and the paragraph about each room are drafts. They are marked as such in
+> the files and are meant to be replaced with the real plan, the real equipment
+> list and the lab's own words. The figures for the five real machines are
+> taken from their makers' documents; what is still uncertain about them is
+> listed by `npm run check` and in `docs/PLAN.md`.
 
 ## Recipes
 
@@ -97,6 +124,43 @@ laid out, and the backlog stays visible, before any modelling is done.
 Nothing else changes: the marker turns solid, the panel says "3D model", and
 the machine gets the close-up and exploded view automatically.
 
+### Write about a machine
+
+Add or edit its entry in `MACHINE_INFO` in `knowledge.js`, under the same id it
+has in `catalogue.js`:
+
+```js
+'upcera-a7-plus': {
+  summary: 'What it is and what it is for, in one or two sentences.',     // required
+  how: 'How it works, in two or three.',
+  brand: 'upcera',                                   // adds the "About" pill; the maker is described once, in BRANDS
+  features: [                                        // adds "Features"; the first figure is shown large
+    { label: 'Highest temperature', value: '1,150 °C' },
+    { label: 'Chamber', value: '85 × 55 mm', note: 'width × height' },
+  ],
+  featuresNote: 'An optional sentence under the figures.',
+  capabilities: ['What sets it apart, one sentence per point.'],          // adds "Capabilities"
+  sources: [{ label: 'UPCERA, product page', url: 'https://…' }],         // required as soon as there are figures
+  confirm: 'A note to ourselves about anything unverified. Never shown to visitors.',
+},
+```
+
+Only `summary` is required; a pill appears only if there is something to put
+under it. The rule for this file: **no figure without a source.** If a number
+cannot be traced to the maker's manual, data sheet or product page, leave it
+out — the tour is for teaching, and a wrong figure is worse than a missing one.
+`npm run check` refuses figures that have no source and prints every `confirm`
+note. The tour never displays those notes, but the file is as public as the
+page itself, so nothing private belongs in one.
+
+### Change the tour order, the room texts or the welcome guide
+
+All in `knowledge.js`: `ROUTE` is one line listing the rooms in tour order (the
+bar, "Stop n of 6" and the Next buttons follow it), `ROOM_INFO` has one
+paragraph per room, `GUIDE` the welcome text. A room's one-word name on the bar
+is its `tab` in `layout.js`; icons are picked by name from
+[`js/ui/icons.js`](js/ui/icons.js).
+
 ### Update an existing model
 
 Change it in the asset library and re-run the import. Never edit the files in
@@ -125,6 +189,24 @@ Rules for new models, so they drop in without adjustment:
   full detail. The tour bakes each machine down to a few draw calls when it is
   not the one being inspected, but triangles are drawn either way.
 
+## How a machine is shown on its own
+
+Two things make a machine view feel like holding the machine rather than
+flying around a room, and both are easy to break:
+
+- **The spotlight** ([`js/core/stage.js`](js/core/stage.js)). The lab is drawn,
+  faded to a tenth of its strength, and the machine is drawn again on top,
+  untouched, with a soft shade under it. Nothing in the scene is changed to do
+  this, so it costs the same for any machine. How faded: `SPOTLIGHT` in
+  `layout.js`.
+- **Two cameras** ([`js/core/camera-rig.js`](js/core/camera-rig.js)). The
+  camera always looks at, and turns about, the middle of the machine; the panel
+  is avoided by sliding the picture inside the lens, not by aiming beside the
+  machine. While a machine is lit, a second camera draws the lab and keeps the
+  direction the visitor arrived from, so a drag turns the machine only. When
+  the visitor leaves, the faded lab first swings round to match, then returns
+  to full strength.
+
 ## How it stays fast
 
 - **Two forms per machine.** Seen from afar, a machine is a baked "lite" copy
@@ -138,25 +220,65 @@ Rules for new models, so they drop in without adjustment:
 - **Machine code is loaded lazily**, after the building is on screen.
 - **Budget:** 400 draw calls and 450,000 triangles for the overview, enforced
   by `npm run check`. Current use: 175 draw calls, 218,000 triangles.
-- **Download:** about 290 KB compressed in total (three.js 178 KB, machine
-  models 67 KB, tour code 47 KB). No images, no fonts.
+- **A machine view** draws the picture in three passes. Measured for the seven
+  models: 84–219 draw calls per frame while a machine is turned, 150–323 on the
+  frames that also redo the shadows (arriving, and each step of the take-apart
+  slider).
+- **Download:** about 320 KB compressed in total (three.js 178 KB, machine
+  models 66 KB, tour code and texts 77 KB). No images, no fonts.
 
 ## Folder map
 
 ```text
 index.html              page shell + import map
 css/tour.css            all styling (light theme; card on wide screens, sheet on phones)
-js/main.js              the app: state (overview / room / machine), links, labels, loading
+js/main.js              the app: where the visitor is (lab / room / machine), links, the route, loading
 js/shell/               layout.js (floor-plan DATA) · build-shell.js (walls, floors from it)
-js/rooms/               catalogue.js, content.js (DATA) · build-rooms.js (places everything)
+js/rooms/               catalogue.js, content.js, knowledge.js (DATA) · build-rooms.js (places everything)
 js/assets/registry.js   one contract over all machine models
 js/assets/legacy/       GENERATED from the asset library — do not edit
 js/assets/kit/          furniture: bench, shelves, chair, sofa, monitor, display, desk, plant
-js/core/                units, stage (renderer + lights), camera, picking, baking, palette
-js/ui/                  room and machine labels, icons, the information panel
+js/core/                units, stage (renderer, lights, spotlight), camera, picking, baking, palette
+js/ui/                  panel (rooms, machines, pills) · dock (the bar) · guide · labels · icons
 tools/                  serve.mjs · check.mjs · import-asset-library.mjs
+tools/browser/          e2e.mjs (the walk-through test) · shots.mjs · film.mjs · lib.mjs
 vendor/three-r160/      three.js 0.160.0, unmodified (see its README for why this version)
 ```
+
+## Testing
+
+`npm run check` needs nothing and is quick; run it after every edit.
+
+`npm run e2e` walks through the tour the way four visitors would — on a desktop
+with a mouse, on a 390 × 844 phone with a finger, on a first visit, and with
+"reduce motion" switched on — with real clicks, taps, drags and key presses,
+and checks what happens (about 270 checks, 6–7 minutes). Among them: a drag
+turns the machine about its own middle and leaves the lab behind it unchanged,
+pixel for pixel; a machine fits the area the panel leaves free, in a wide
+window, a small one and on a phone; leaving a machine clears the spotlight;
+Back, Forward, Escape and shared links work.
+
+It needs the tour running (`npm run serve`) and a headless Chromium, which is
+not part of the repository. Install it once, anywhere outside the repo:
+
+```bash
+mkdir -p /tmp/lab-tour-browser && cd /tmp/lab-tour-browser
+npm init -y && npm install puppeteer-core @sparticuz/chromium
+export LAB_TOUR_BROWSER=/tmp/lab-tour-browser     # this path is the default
+```
+
+Two more tools for looking rather than checking:
+
+```bash
+# stills of any address; add ~<javascript> to run something first
+npm run shots -- /tmp/tour-shots --size=390x844 --touch 'room=#/ceramic' 'features=#/design/3shape-e4~labTour.panel.selectTab("features")'
+# a journey as one still per tenth of a second
+npm run film -- /tmp/tour-film --from='#/ceramic/zubler-vario-200' --to='#/ceramic' --turn=200
+```
+
+The headless browser draws 3D in software, so the tests stop the tour's clock
+and move it by hand (`labTour.stage.clock`). They prove behaviour; they say
+nothing about speed on a real device.
 
 ## Deploying with CARNIX
 
@@ -169,6 +291,11 @@ Things to know — none of the existing CARNIX files have been changed:
 - **It is public.** The tour does not go through the dashboard login and reads
   no data. Anyone with the address can open it.
 - **Nothing links to it yet.** Add a link wherever it should be reachable from.
+- **It links out, and loads nothing from outside.** The sources under a
+  machine's figures are links to the makers' websites; they open in a new tab.
+  The page itself requests files from its own folder only.
+- **It remembers one thing** in the browser: that the welcome guide has been
+  seen (`lab-tour:welcomed` in localStorage). No cookies, no tracking.
 - **Headers.** The security headers in `/_headers` are attached to `/*.html`
   and `/`, so they do not cover `/lab-tour/`. The tour works without them. To
   give it the same protection, add a block such as:
@@ -180,9 +307,11 @@ Things to know — none of the existing CARNIX files have been changed:
     Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:
   ```
 
-  (`'unsafe-inline'` is needed for the import map and for the script that
-  `functions/_middleware.js` adds to every page.) Leave `X-Frame-Options` out if
-  the tour should be embeddable in another website.
+  (`'unsafe-inline'` is needed for the import map, for the script that
+  `functions/_middleware.js` adds to every page, and for a few `style`
+  attributes in the panel. The browser tests have been run with exactly this
+  block in place.) Leave `X-Frame-Options` out if the tour should be
+  embeddable in another website.
 - **The middleware** adds `window.__ENV__` (Supabase URL and publishable key) to
   every HTML page, this one included. The tour does not use it; it is the same
   public information the login page already carries.
@@ -195,7 +324,9 @@ Things to know — none of the existing CARNIX files have been changed:
   instead of an empty page.
 - It has been tested in an automated desktop browser and an emulated phone, with
   software rendering. It has not been run on real phones yet, so real-device
-  speed is unmeasured.
-- Browser tests (navigation, deep links, touch, context loss) exist but are not
-  in the repository yet, because they need a headless browser to be installed.
+  speed and feel are unmeasured.
+- The welcome guide is remembered per device (in the browser's storage); a
+  visitor in a private window sees it every time.
+- A machine that is not modelled yet shows a description of its kind only: no
+  maker, no figures.
 - See `docs/PLAN.md` for everything in the concept image that is not built yet.

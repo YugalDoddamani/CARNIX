@@ -29,31 +29,79 @@ then filled in by editing a list.
 |---|---|---|
 | 0 | Foundations: one unit system, importer for the asset library, furniture kit, floor plan as data, automatic checks | ✅ done |
 | 1 | The whole floor, walkable: building, six furnished rooms, overview → room → machine, shareable links, phone layout | ✅ done |
-| 2 | Make it true: real floor plan, real equipment list, real name | ⏳ needs your input |
-| 3 | Room by room: replace placeholders with models | next |
+| 1b | A tour that teaches: navigation bar, guided route, welcome guide, machines that come forward and turn on their own, a page of facts per machine | ✅ done |
+| 2 | Make it true: real floor plan, real equipment list, real name, the lab's own words | ⏳ needs your input |
+| 3 | Room by room: replace placeholders with models, and write each machine's page | next |
 | 4 | The rest of the concept's interface | later |
 | 5 | Atmosphere | later |
 | 6 | Launch | later |
 
+### Phase 1b — a tour that teaches (done)
+
+The tour is meant for education and awareness, so it now explains itself:
+
+- **Navigation bar** with the lab and one stop per room, in tour order.
+- **Guided route**: each room is a numbered stop with a paragraph on what
+  happens there and a button to the next one.
+- **Welcome guide** on a first visit: what the page is, and how to use it.
+- **Machine view**: the machine comes forward, the lab fades; dragging turns
+  the machine about its own middle and nothing else; it can be taken apart.
+- **A page per machine** with up to four pills: the machine, About (its
+  maker), Features (key figures, with links to their sources) and Capabilities.
+  The five real machines have all four; the two workstation PCs have a
+  description and capabilities; placeholders have a description of their kind.
+
+How it is checked: `npm run e2e` walks through all of this in a headless
+browser as a desktop visitor, a phone visitor, a first-time visitor and one who
+asked for reduced motion (README, "Testing").
+
 ### Phase 2 — make it true
 
-Two things in the tour are educated guesses and are marked as such in the files:
+Three things in the tour are educated guesses and are marked as such in the files:
 
 - **The floor plan** (13.8 × 10.2 m, two rows of rooms 4 m deep, a 2.2 m
   corridor) was read off the concept image. → `js/shell/layout.js`
 - **Every "planned" machine** — its name, its size and which room it is in — is
   what a lab with these six rooms typically runs, not your equipment list.
   → `js/rooms/catalogue.js`, `js/rooms/content.js`
+- **The words**: the order of the tour (reception → plaster → design →
+  printing → ceramic → acrylic), the paragraph about each room and the
+  one-line descriptions of the planned machines. → `js/rooms/knowledge.js`
 
-Needed from you: room sizes (a sketch with dimensions is enough), and for each
-room the machines in it with make and model. Sizes can be looked up from the
-datasheets.
+Needed from you: room sizes (a sketch with dimensions is enough), for each room
+the machines in it with make and model, the order in which a case really moves
+through the rooms, and a read-through of the texts by somebody who works in
+the lab. Sizes can be looked up from the datasheets.
+
+#### What the machine pages say, and what still needs confirming
+
+Every figure shown for a real machine was taken from its maker's manual, data
+sheet or product page (or a dealer's copy of one) and links to it in the panel.
+What could not be settled from documents alone:
+
+| Machine | Taken from | To confirm |
+|---|---|---|
+| SHINING 3D AutoScan-DS-EX Pro | SHINING 3D's product page and the data sheets of the three versions | **Which version the lab has**: Pro, Pro(C) or Pro(H). They differ in cameras (1.3 to 5 megapixels), accuracy (10 to 8 µm) and scan time, so the panel shows ranges for now. |
+| 3Shape E4 | 3Shape's E4 page, Dental System catalogue and E-scanner press release | Auto-start and articulator support are described by 3Shape for the E1–E3 and listed by dealers for the E4; 3Shape's own E4 page does not mention them. |
+| Zubler VARIO 200 | Zubler's operating instructions and product table | **VARIO 200 or VARIO 200ZR?** Controlled cooling (TTC) belongs to the ZR only; the panel says so. Also: the asset library calls it a "pressing & ceramic furnace", Zubler's manual says it fires ceramics only (the press furnace is the VARIO PRESS 300), so the tour calls it a ceramic furnace. |
+| UPCERA A7+ | UPCERA's product page | Its heating rate is printed without a unit of time (read as per minute); dealers quote a slightly different vacuum figure. |
+| Ivoclar Programat P300 | Ivoclar's operating instructions, 2006 | The later P300/G2 holds more programs. Which one is in the lab? |
+
+`npm run check` prints these notes every time it runs, from the `confirm`
+fields in `knowledge.js`; they are never shown to visitors.
+
+**What helps most for each new machine:** its exact model name as printed on
+the type plate, and the maker's manual or data sheet (a PDF or a link) in that
+machine's folder next to its 3D model. With those, its page can be written
+from the source instead of from a search.
 
 ### Phase 3 — room by room
 
 For each room: confirm its equipment list → model the machines in the asset
-library → import → switch the catalogue entry from `planned` to `built` → add
-the room's own touches. A room is done when it has no blue volumes left.
+library → import → switch the catalogue entry from `planned` to `built` →
+write the machine's page in `knowledge.js` from its manual → add the room's
+own touches. A room is done when it has no blue volumes left and every machine
+in it has a maker, figures and sources.
 
 Suggested order:
 
@@ -69,13 +117,18 @@ The Design Room already has all four of its machines.
 
 ### Phase 4 — the rest of the concept's interface
 
+Built in phase 1b: per-machine content ("Explore features") and the route
+through the rooms, as numbered stops.
+
 In the concept image and not built yet:
 
 - **Equipment list** — every machine in one searchable list (the data exists).
-- **Workflow** — the path of a case through the rooms, drawn on the floor.
-- **Per-machine content** — "Explore features" and "See how it works". Needs
-  text (and optionally steps tied to the exploded parts) for each machine.
-- Compass, "About", and the left-hand navigation that ties these together.
+- **Workflow on the floor** — the path of a case through the rooms, drawn as a
+  line on the floor plan. The order exists (`ROUTE`); the drawing does not.
+- **"See how it works"** — steps tied to the parts of a machine as it comes
+  apart. Needs a short script per machine.
+- Compass, "About" the lab, and the left-hand navigation of the concept (the
+  bar at the bottom does that job now).
 
 ### Phase 5 — atmosphere
 
@@ -87,8 +140,8 @@ change what the tour can do, and people in particular are costly to do well.
 
 A link from wherever the tour should be reached, the real name in the header,
 a preview image for sharing, a test on real phones (so far it has only been
-tested in an emulated phone browser), and the header rules described in the
-README.
+tested in an emulated phone browser, where speed cannot be judged), and the
+header rules described in the README.
 
 ## Inventory
 
@@ -190,7 +243,13 @@ measures each one. Three things worth knowing:
 2. **The wording.** The header says "Dental Lab — Digital. Precise. Reliable.",
    as in the concept image; the real name can go there. The Acrylic room's
    subtitle is spelled "Final Prosthesis" (the image has "Prothesis").
-3. **DS-EX Pro:** re-proportion the model to its datasheet, or leave it.
+3. **DS-EX Pro:** re-proportion the model to its datasheet, or leave it. And
+   which version is it (see the table under phase 2)?
 4. **How much phones matter.** The tour works on a phone and adapts its layout,
    but on a narrow screen the overview is small. If most visitors arrive on
    phones, that view deserves a design of its own.
+5. **The order of the tour.** Reception → plaster → design → printing →
+   ceramic → acrylic is a guess at how a case travels. One line to change.
+6. **Who the reader is.** The texts are written for somebody with no dental
+   training (a student, a patient, a visitor). If the audience is dentists or
+   technicians, they should say more and explain less.

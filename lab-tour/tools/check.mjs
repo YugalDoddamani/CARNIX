@@ -3,6 +3,9 @@
 //
 //   • every kit piece measures what its `meta.sizeMm` says, and stands on the floor
 //   • the catalogue and the room contents refer to things that exist
+//   • what the visitor reads (knowledge.js) is complete: every machine has a
+//     description, every figure a source, every icon and brand exists; and it
+//     lists the notes that still need the lab's confirmation
 //   • nothing pokes through a wall, blocks a door, or overlaps its neighbour
 //   • machines fit on the bench they are placed on
 //   • every imported machine builds, and its baked ("lite") form is identical in size
@@ -21,6 +24,8 @@ const { preciseBox, sceneStats } = await import(js('core/measure.js'));
 const { m, toM, toMm } = await import(js('core/units.js'));
 const { EQUIPMENT } = await import(js('rooms/catalogue.js'));
 const { ROOM_CONTENT, STATIONS } = await import(js('rooms/content.js'));
+const { BRANDS, GUIDE, MACHINE_INFO, ROOM_INFO, ROUTE } = await import(js('rooms/knowledge.js'));
+const { ICONS, UI } = await import(js('ui/icons.js'));
 const { buildRooms } = await import(js('rooms/build-rooms.js'));
 const { buildShell, planX, planZ } = await import(js('shell/build-shell.js'));
 const { BUILDING, ROOMS, WALL, WALLS } = await import(js('shell/layout.js'));
@@ -124,7 +129,104 @@ for (const id of Object.keys(EQUIPMENT)) if (!used.has(id)) warn(`catalogue "${i
 const builtCount = Object.values(EQUIPMENT).filter((entry) => entry.status === 'built').length;
 console.log(`  ${Object.keys(EQUIPMENT).length} machine types: ${builtCount} built, ${Object.keys(EQUIPMENT).length - builtCount} planned`);
 
-// ── 3. Floor plan ────────────────────────────────────────────────────────────
+// ── 3. What the visitor reads ────────────────────────────────────────────────
+section('What the visitor reads');
+const isText = (value) => typeof value === 'string' && value.trim().length > 0 && value === value.trim() && !/\s{2,}/.test(value);
+const needText = (value, where) => isText(value) || fail(`${where} is missing, or has stray spaces`);
+function checkSources(sources, where) {
+  for (const [index, source] of (sources ?? []).entries()) {
+    needText(source?.label, `${where}: source ${index + 1} label`);
+    let url = null;
+    try {
+      url = new URL(source?.url);
+    } catch {
+      // reported below
+    }
+    if (!url || !/^https?:$/.test(url.protocol)) fail(`${where}: source ${index + 1} needs a full web address (got "${source?.url}")`);
+  }
+}
+
+// The guide and the route
+for (const field of ['eyebrow', 'title', 'lead', 'start', 'skip', 'reopen']) needText(GUIDE[field], `knowledge.js GUIDE.${field}`);
+if (!Array.isArray(GUIDE.steps) || !GUIDE.steps.length) fail('knowledge.js GUIDE.steps needs at least one step');
+for (const [index, step] of (GUIDE.steps ?? []).entries()) {
+  needText(step.title, `GUIDE step ${index + 1} title`);
+  needText(step.text, `GUIDE step ${index + 1} text`);
+  if (!ICONS[step.icon] && !UI[step.icon]) fail(`GUIDE step ${index + 1}: no icon called "${step.icon}" in icons.js`);
+}
+for (const id of ROUTE) if (!roomIds.has(id)) fail(`knowledge.js ROUTE lists "${id}", which is not a room in layout.js`);
+if (new Set(ROUTE).size !== ROUTE.length) fail('knowledge.js ROUTE visits a room twice');
+for (const room of ROOMS) {
+  if (!ROUTE.includes(room.id)) warn(`room "${room.id}" is not on the ROUTE in knowledge.js; it is added as the last stop`);
+  if (!ICONS[room.icon]) fail(`room "${room.id}": no icon called "${room.icon}" in icons.js`);
+  if (!isText(room.tab)) warn(`room "${room.id}" has no \`tab\` (its one-word name on the navigation bar); the full name is used`);
+  else if (room.tab.length > 9) warn(`room "${room.id}": tab "${room.tab}" is long for a phone's navigation bar (9 letters fit)`);
+  needText(ROOM_INFO[room.id]?.about, `knowledge.js ROOM_INFO.${room.id}.about (what happens in the room)`);
+}
+for (const id of Object.keys(ROOM_INFO)) if (!roomIds.has(id)) fail(`knowledge.js ROOM_INFO has "${id}", which is not a room in layout.js`);
+
+// Makers
+const usedBrands = new Set();
+for (const [id, brand] of Object.entries(BRANDS)) {
+  needText(brand.name, `brand "${id}" name`);
+  needText(brand.about, `brand "${id}" about`);
+  if (brand.place !== undefined) needText(brand.place, `brand "${id}" place`);
+  if (brand.since !== undefined && !(Number.isInteger(brand.since) && brand.since > 1800 && brand.since <= new Date().getFullYear())) fail(`brand "${id}": \`since\` should be a year`);
+  if (!brand.sources?.length) fail(`brand "${id}" has no source for what is said about it`);
+  checkSources(brand.sources, `brand "${id}"`);
+}
+
+// Machines
+const toConfirm = [];
+const pills = { about: 0, features: 0, capabilities: 0 };
+for (const id of Object.keys(MACHINE_INFO)) if (!EQUIPMENT[id]) fail(`knowledge.js describes "${id}", which is not in catalogue.js`);
+for (const [id, entry] of Object.entries(EQUIPMENT)) {
+  if (!ICONS[entry.icon]) fail(`catalogue "${id}": ${entry.icon ? `no icon called "${entry.icon}" in icons.js` : 'needs an icon'}`);
+  const info = MACHINE_INFO[id];
+  if (!info) {
+    fail(`"${id}" has no entry in knowledge.js; a visitor who taps it would learn nothing`);
+    continue;
+  }
+  const where = `knowledge.js "${id}"`;
+  needText(info.summary, `${where} summary`);
+  if (info.how !== undefined) needText(info.how, `${where} how`);
+  if (info.brand !== undefined) {
+    if (!BRANDS[info.brand]) fail(`${where}: brand "${info.brand}" is not in BRANDS`);
+    else {
+      usedBrands.add(info.brand);
+      pills.about++;
+    }
+  }
+  if (info.features !== undefined) {
+    if (!Array.isArray(info.features) || !info.features.length) fail(`${where}: features should be a list of { label, value }`);
+    for (const [index, feature] of (Array.isArray(info.features) ? info.features : []).entries()) {
+      needText(feature?.label, `${where} feature ${index + 1} label`);
+      needText(feature?.value, `${where} feature ${index + 1} value`);
+      if (feature?.note !== undefined) needText(feature.note, `${where} feature ${index + 1} note`);
+    }
+    // The rule this file exists for: no figure without a source.
+    if (!info.sources?.length) fail(`${where} has figures but no source for them`);
+    pills.features++;
+  }
+  if (info.featuresNote !== undefined) needText(info.featuresNote, `${where} featuresNote`);
+  if (info.capabilities !== undefined) {
+    if (!Array.isArray(info.capabilities) || !info.capabilities.length) fail(`${where}: capabilities should be a list of sentences`);
+    for (const [index, point] of (Array.isArray(info.capabilities) ? info.capabilities : []).entries()) needText(point, `${where} capability ${index + 1}`);
+    pills.capabilities++;
+  }
+  checkSources(info.sources, where);
+  if (entry.status === 'planned' && (info.brand || info.features)) warn(`${where}: a planned machine has a maker or figures; is the real machine known now? Then give it its real name in catalogue.js`);
+  if (info.confirm !== undefined) {
+    needText(info.confirm, `${where} confirm`);
+    toConfirm.push([EQUIPMENT[id].shortName ?? EQUIPMENT[id].name ?? id, info.confirm]);
+  }
+}
+for (const id of Object.keys(BRANDS)) if (!usedBrands.has(id)) warn(`brand "${id}" is not used by any machine`);
+const types = Object.keys(EQUIPMENT).length;
+console.log(`  ${ROOMS.length} rooms described, route: ${ROUTE.join(' → ')}`);
+console.log(`  ${types} machine types described · About on ${pills.about} · Features on ${pills.features} · Capabilities on ${pills.capabilities} · ${Object.keys(BRANDS).length} makers`);
+
+// ── 4. Floor plan ────────────────────────────────────────────────────────────
 section('Floor plan');
 for (const room of ROOMS) {
   if (room.x < 0 || room.z < 0 || room.x + room.w > BUILDING.w + 1e-9 || room.z + room.d > BUILDING.d + 1e-9) fail(`room "${room.id}" extends outside the building`);
@@ -148,10 +250,10 @@ for (const wall of WALLS) {
 }
 console.log(`  ${ROOMS.length} rooms, ${WALLS.length} walls, ${WALLS.reduce((n, wall) => n + (wall.doors?.length ?? 0), 0)} doors in a ${BUILDING.w} × ${BUILDING.d} m building`);
 
-// Sections 4–6 need the lab to actually build. If the data is too broken for
+// Sections 5–7 need the lab to actually build. If the data is too broken for
 // that, say why and still print the report instead of a stack trace.
 async function checkBuiltLab() {
-  // ── 4. Placement ─────────────────────────────────────────────────────────────
+  // ── 5. Placement ─────────────────────────────────────────────────────────────
   section('Placement');
   const shell = buildShell();
   const lab = buildRooms(shell);
@@ -213,7 +315,7 @@ async function checkBuiltLab() {
   }
   console.log(`  ${lab.footprints.length} placed objects, ${lab.items.size} machines, ${doorCount} doors checked`);
 
-  // ── 5. Imported machines ─────────────────────────────────────────────────────
+  // ── 6. Imported machines ─────────────────────────────────────────────────────
   section('Imported machines (hero → lite)');
   let liteDraws = 0;
   let machineTriangles = 0;
@@ -244,7 +346,7 @@ async function checkBuiltLab() {
     bench.dispose();
   }
 
-  // ── 6. Budget ────────────────────────────────────────────────────────────────
+  // ── 7. Budget ────────────────────────────────────────────────────────────────
   section('Drawing budget (overview, everything visible)');
   const shellStats = sceneStats(shell.group);
   const furnitureStats = sceneStats(lab.furniture);
@@ -272,6 +374,10 @@ try {
 }
 
 // ── Result ───────────────────────────────────────────────────────────────────
+if (toConfirm.length) {
+  section(`To confirm with the lab (${toConfirm.length}) — notes from knowledge.js, never shown to visitors`);
+  for (const [name, note] of toConfirm) console.log(`  ? ${name}: ${note}`);
+}
 if (warnings.length) {
   section(`Warnings (${warnings.length})`);
   for (const message of warnings) console.log(`  ! ${message}`);

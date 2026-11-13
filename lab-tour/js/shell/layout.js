@@ -87,6 +87,17 @@ export const VIEWS = {
   // A machine on its own: a three-quarter view from slightly above, the way a
   // product is photographed. `azimuthOffset` is how far round from straight-on.
   item: { azimuthOffset: 24, elevation: 15, fov: 24, padding: 0.24 },
+  // A step of a "How to use it" guide: the camera goes to the part that the
+  // step is about. Which side it looks from is the step's own business
+  // (rooms/how-to.js); this is how much of the free area is left empty around
+  // what it frames. Little on a phone, where every pixel of the part counts;
+  // more beside a wide panel, where the free area is large: a keypad that
+  // filled a monitor would show how coarse its picture is, and a switch seen
+  // that close no longer says where on the machine it is. One thing overrules
+  // the wide margin: a step does not show the machine smaller than its own
+  // page does (main.js: `within`). A place that takes in half the machine is
+  // then framed closer, down to the small margin.
+  step: { padding: 0.08, paddingWide: 0.3 },
 };
 
 // A machine being looked at stays as it is; everything around it is faded.

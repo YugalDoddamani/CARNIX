@@ -33,7 +33,7 @@ then filled in by editing a list.
 | 1c | Text on a phone: one scale of sizes for the phone layout, nothing under 12 px | ✅ done |
 | 2 | Make it true: real floor plan, real equipment list, real name, the lab's own words | ⏳ needs your input |
 | 3 | Room by room: replace placeholders with models, and write each machine's page | next |
-| 4 | The rest of the concept's interface | "How to use it" is approved and next; the rest later |
+| 4 | The rest of the concept's interface | "How to use it" is built, for one machine; the rest later |
 | 5 | Atmosphere | later |
 | 6 | Launch | later |
 
@@ -212,39 +212,69 @@ The Design Room already has all its machines.
 ### Phase 4 — the rest of the concept's interface
 
 Built in phase 1b: per-machine content ("Explore features") and the route
-through the rooms, as numbered stops.
+through the rooms, as numbered stops. Built since: **"How to use it"**, guides
+to working a machine, for one machine so far. See below.
 
 In the concept image and not built yet:
 
 - **Equipment list** — every machine in one searchable list (the data exists).
 - **Workflow on the floor** — the path of a case through the rooms, drawn as a
   line on the floor plan. The order exists (`ROUTE`); the drawing does not.
-- **"How to use it"** — approved, and next. See below.
 - Compass, "About" the lab, and the left-hand navigation of the concept (the
   bar at the bottom does that job now).
 
-#### "How to use it" (approved, not built)
+#### "How to use it" (built, for one machine)
 
-The concept's "See how it works": steps tied to the parts of a machine. As
-sketched and approved:
+The concept's "See how it works": steps tied to the parts of a machine. Built
+as it was sketched and approved:
 
-- **The way in** is a card on the machine's page: "How to use it", with the
-  number of guides.
-- **The guides** of that machine, each with its number of steps. The sketch
-  used the thermopress 400: "Run a program", "Set a program", "Eject a
-  cartridge by hand".
+- **The way in** is a card on the machine's first pill: "How to use it", with
+  the number of guides.
+- **The guides** of that machine, each with its number of steps. The
+  thermopress 400 has three: "Run a program" (13 steps), "Set a program" (5)
+  and "Eject a cartridge by hand" (2).
 - **One step at a time** on a phone: a title, two or three sentences, Back and
-  Next, and a row of dashes showing how far along. The model turns to the part
-  the step is about and marks it. On a desktop all the steps are a list, with
-  the current one open.
+  Next, and a row of dashes showing how far along. On a desktop all the steps
+  are a list, with the current one open.
+- **The model shows the step.** It turns to the part the step is about, and
+  rings mark the keys or screws to use.
 - **Every step comes from the maker's instructions for use**, named and linked
   under the guide, with a sentence saying that the guide does not replace the
-  manual that came with the unit, or training on it. The rule of
+  manual that came with the machine, or training on it. The rule of
   `knowledge.js` holds here too: nothing without a source.
 
-What exists for it: each model already names its sub-assemblies (`parts` in
-`js/assets/registry.js`), which is what a step can point at. What does not: the
-guides themselves, one short script per machine, and the marker on the model.
+Added while building, beyond what was approved:
+
+- The machine is shown as it is at that point of the work: its lid open or
+  shut, the flask in or not yet.
+- On a phone a guide's sheet is taller than a machine's own: 56 % of the
+  height against 48 %. With less, a step had to be scrolled.
+- The open step has a button, "Show it on the machine again". It brings the
+  step's view back after the visitor has turned the machine. Turned so far
+  that the part is out of sight, the rings go and the button stands out.
+- Under each step, after the source, a sentence says that the model's keypad
+  is drawn differently from the real one and that the rings go by a key's
+  place.
+- "Done" on the last step leads back to the list of the guides.
+
+How it is made: the guides are data, in `js/rooms/how-to.js` (README, "Write a
+guide to working a machine"). `npm run check` builds the model and tries every
+step on it. `npm run e2e` walks through every step of every guide, beside the
+lab and on a phone (README, "Testing").
+
+What is left:
+
+- **Guides for the other machines**: one entry in `how-to.js` each, from the
+  maker's instructions for use. Five models have a lid or cover that a step
+  can open.
+- **To confirm with the lab** (`npm run check` lists it): the guides retell the
+  part of the unit's manual that bredent reprints in its 2025 instructions for
+  use. The manual that came with the lab's own unit was not read. Which
+  clamping screw is number 1 and which number 2 was read from bredent's
+  drawing.
+- Left out of the thermopress's guides: working with both heating chambers at
+  once, the error messages, cleaning.
+- Not tried on a real phone, nor in Safari or Firefox.
 
 ### Phase 5 — atmosphere
 
@@ -709,9 +739,10 @@ triangles). No model before it did that, and `npm run check` failed on it:
 the baked form that stands in the lab leaves out what is hidden, so it had
 fewer triangles than the model. The check now measures a model as it stands,
 says how much is hidden, and fails only if a hidden part reaches outside the
-closed machine. In the tour the tool appears when the machine is taken apart;
-the stay never does, because the tour never opens the lid. `npm run e2e`
-checks both, and that the tool is gone again when the machine is put together.
+closed machine. In the tour the tool appears when the machine is taken apart.
+The stay does not; it is seen, with the tool, when a step of a guide opens the
+lid ("How to use it", under phase 4). `npm run e2e` checks both, and that the
+tool is gone again when the machine is put together.
 
 **Sizes.** The thermopress's body has the maker's size exactly. What sticks
 out is measured with it, hence 658 × 314 × 263 mm: the knob of the lever on
@@ -746,10 +777,11 @@ Three things differ from the stand-alone viewers:
   white one in its flask chamber. The tour switches off any light inside a
   machine (`js/assets/registry.js`). The heater's orange glow is its
   material's own and stays. The SR Ivocap holds no light.
-- **Nothing opens and nothing is injected.** The viewers have a button for
-  each ("Release Yoke" and "6-Bar Inject"; "Open Press Lid" and "400 °C
-  Inject"). The tour has no such buttons for any machine yet; the models'
-  functions for it are imported and unused.
+- **No button opens them and nothing is injected.** The viewers have a button
+  for each ("Release Yoke" and "6-Bar Inject"; "Open Press Lid" and "400 °C
+  Inject"). The tour has no such buttons for any machine. Since "How to use
+  it" (phase 4) the thermopress's lid opens at the steps of its guides that
+  have it open; the models' other functions are imported and unused.
 - **The name on the first pill is "thermopress", without the 400.** The full
   name is in the heading. With "thermopress 400" there, the fourth pill,
   "Capabilities", was pushed out of the row: 14 letters fit, and `npm run

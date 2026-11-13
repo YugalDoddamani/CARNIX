@@ -84,10 +84,22 @@ export function createCameraRig({ camera, domElement, invalidate, addTicker }) {
   /**
    * Solve the pose that fits `box` in the visible part of the canvas: as large
    * as possible, centred in the area not covered by UI, looking at its centre.
-   * `view` angles are in degrees.
+   * `view` angles are in degrees; `padding` is the share of the free area left
+   * empty around the box.
+   *
+   * `view.within`, for a box that is a part of something larger:
+   *   { box, view, padding }
+   * However much room `view.padding` leaves around the part, the camera stands
+   * no further away than it does to show the whole (that `box`, framed as that
+   * `view` says): going to a part does not make it smaller than it was. It
+   * comes closer for that only as far as the part still fits with
+   * `within.padding` around it.
+   *
    * Returns { target, azimuth, elevation, distance, fov, shiftX, shiftY } (radians, pixels).
    */
-  function solve(box, { azimuth, elevation, fov, padding = 0.08 }) {
+  function solve(box, { azimuth, elevation, fov, padding = 0.08, within = null }) {
+    // Worked out first: what follows keeps its directions in vectors that every call of this function shares.
+    const farthest = within ? solve(within.box, within.view).distance : Infinity;
     const az = azimuth * DEG;
     const el = elevation * DEG;
     const width = domElement.clientWidth || 1;
@@ -99,8 +111,6 @@ export function createCameraRig({ camera, domElement, invalidate, addTicker }) {
     const freeH = Math.max(48, height - insets.top - insets.bottom);
     const freeX = insets.left + freeW / 2 - width / 2;
     const freeY = insets.top + freeH / 2 - height / 2;
-    const fitW = freeW * (1 - padding);
-    const fitH = freeH * (1 - padding);
 
     // One unit of "tangent" (sideways distance ÷ depth) covers this many pixels,
     // whatever the distance.
@@ -135,11 +145,19 @@ export function createCameraRig({ camera, domElement, invalidate, addTicker }) {
     // With perspective the near corners spread wider than the far ones, so the
     // right distance cannot be written down directly; a few rounds of "measure
     // the outline, scale the distance" settle it.
-    let distance = (box.getSize(_offset).length() * pixelsPerTan) / Math.min(fitW, fitH);
-    for (let round = 0; round < 8; round++) {
-      const o = outline(distance);
-      distance *= Math.max(((o.maxX - o.minX) * pixelsPerTan) / fitW, ((o.maxY - o.minY) * pixelsPerTan) / fitH);
-    }
+    const size = box.getSize(_offset).length();
+    const fit = (margin) => {
+      const fitW = freeW * (1 - margin);
+      const fitH = freeH * (1 - margin);
+      let from = (size * pixelsPerTan) / Math.min(fitW, fitH);
+      for (let round = 0; round < 8; round++) {
+        const o = outline(from);
+        from *= Math.max(((o.maxX - o.minX) * pixelsPerTan) / fitW, ((o.maxY - o.minY) * pixelsPerTan) / fitH);
+      }
+      return from;
+    };
+    let distance = fit(padding);
+    if (distance > farthest) distance = Math.max(farthest, fit(Math.min(padding, within.padding ?? 0)));
     // Slide the picture so the middle of the outline lands on the middle of the
     // free rectangle.
     const o = outline(distance);
@@ -230,7 +248,8 @@ export function createCameraRig({ camera, domElement, invalidate, addTicker }) {
 
   /**
    * Move the camera so `box` is framed as described by `view`
-   * ({ azimuth, elevation, fov, padding } in degrees). Resolves when it arrives.
+   * ({ azimuth, elevation, fov, padding, within } in degrees; `within`: see
+   * `solve`). Resolves when it arrives.
    *   keepAngles  stay on the side the visitor has turned to; only re-fit the
    *               distance (used while a machine is being taken apart)
    *   room        'join' (default): the room camera moves with the visitor's.

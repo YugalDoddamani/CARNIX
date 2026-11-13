@@ -568,6 +568,61 @@ dl {
   transition-delay: 0s;
 }
 
+/* Rings on a machine: the spots that a step of a guide is about. marker.js
+   gives each its place and its size; they take no taps, so a finger that
+   lands on one turns the machine under it. The ring itself is drawn by
+   ::before, because the element's own transform is its place on screen. */
+.marker-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+/* The part is turned away from the visitor: no ring over the wrong side. */
+.marker-layer.is-away {
+  opacity: 0;
+}
+
+.marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+}
+
+.marker::before,
+.marker::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--size, 30px) / -2);
+  top: calc(var(--size, 30px) / -2);
+  width: var(--size, 30px);
+  height: var(--size, 30px);
+  border-radius: 50%;
+}
+
+/* A line and no fill: a filled ring hid the sign on the key under it. The
+   white on either side keeps the line in sight on a dark part and on a light
+   one. */
+.marker::before {
+  border: 2.5px solid var(--accent);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9), inset 0 0 0 1.5px rgba(255, 255, 255, 0.9), 0 2px 8px rgba(20, 33, 61, 0.22);
+  animation: marker-in 0.45s var(--settle) both;
+  animation-delay: calc(0.25s + var(--i, 0) * 0.08s);
+}
+
+/* It pulses once when its step opens, to catch the eye, then keeps still. */
+.marker::after {
+  border: 2px solid var(--accent);
+  opacity: 0;
+  animation: marker-ping 1.1s ease-out both;
+  animation-delay: calc(0.65s + var(--i, 0) * 0.08s);
+}
+
 /* ── 5. Panel: the shell ───────────────────────────────────────────────── */
 
 .panel {
@@ -625,8 +680,11 @@ dl {
   animation-delay: 0.16s;
 }
 
-/* The sticky "next room" bar must not ride up with the rest. */
-.panel.is-entering > .route-nav {
+/* The sticky "next room" bar must not ride up with the rest; nor do the head
+   and the "Back · Next" of a guide (section 6). */
+.panel.is-entering > .route-nav,
+.panel.is-entering > .howto-head,
+.panel.is-entering > .howto-nav {
   animation-name: fade-in;
 }
 
@@ -1360,6 +1418,283 @@ dl {
   animation-delay: calc(0.14s + var(--i, 0) * 0.04s);
 }
 
+/* "How to use it": a machine's guides (rooms/how-to.js, ui/panel.js) */
+
+/* The way in: a card on the machine's first pill, above its description. */
+.howto-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(47, 107, 255, 0.22);
+  border-radius: 14px;
+  background: var(--accent-soft);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.2s, transform 0.16s var(--settle);
+}
+
+.howto-entry:hover {
+  border-color: var(--accent);
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.16);
+}
+
+.howto-entry:active {
+  transform: scale(0.985);
+}
+
+.howto-entry__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--accent), #5a8bff);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(47, 107, 255, 0.28);
+}
+
+/* A filled triangle, where the other icons are lines. */
+.howto-entry__icon svg {
+  fill: currentColor;
+}
+
+.howto-entry__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.howto-entry strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 650;
+  line-height: 1.25;
+  color: var(--accent-ink);
+}
+
+.howto-entry small {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.howto-entry .row__chevron {
+  color: var(--accent-ink);
+}
+
+.howto-entry:hover .row__chevron {
+  transform: translateX(3px);
+}
+
+/* Under the guides: where they come from, and that they are no manual. */
+.howto-note {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.howto-note a {
+  color: var(--ink-soft);
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.howto-note a:hover {
+  color: var(--accent-ink);
+  text-decoration-color: currentColor;
+}
+
+/* The list of the guides */
+.howto-guides {
+  margin-top: 14px;
+}
+
+/* A guide. Beside the lab all its steps are listed and the open one is
+   unfolded. Its head and "Back · Next" stay put, and the steps scroll between
+   the two: where one is ("Step 9 of 13"), the way back and the way on are
+   always in sight. (On a phone there is one step at a time: section 9.)
+   A step that the Tab key lands on is brought out from under the head and the
+   bar, not just into the panel: that is what scroll-padding is for. panel.js
+   measures the head, since a long title takes two lines. */
+.panel[data-howto='guide'] {
+  padding-bottom: 0;
+  scroll-padding: var(--howto-head, 128px) 0 72px;
+}
+
+/* The head reaches over the panel's padding to the very top (a sticky box
+   otherwise stops at the padding, and the steps would show above it). */
+.howto-head {
+  position: sticky;
+  top: -20px;
+  z-index: 1;
+  margin: -20px -20px 0;
+  padding: 20px 20px 10px;
+  background: linear-gradient(to bottom, #fff 88%, rgba(255, 255, 255, 0));
+}
+
+.howto-count {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+.howto-title {
+  margin: 2px 0 0;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+/* One dash per step, filled up to the open one. */
+.howto-progress {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.howto-progress i {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.howto-progress i.is-done {
+  background: var(--accent);
+}
+
+.howto-steps {
+  display: grid;
+  gap: 2px;
+  margin: 0 -8px;
+  padding: 0;
+  list-style: none;
+}
+
+.howto-step {
+  border-radius: 12px;
+}
+
+.howto-step.is-current {
+  background: var(--accent-soft);
+}
+
+.howto-step__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  text-align: left;
+}
+
+button.howto-step__row {
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+button.howto-step__row:hover {
+  background: var(--accent-soft);
+}
+
+.howto-step__number {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.howto-step.is-current .howto-step__number {
+  background: var(--accent);
+  color: #fff;
+}
+
+.howto-step__title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.howto-step__text {
+  padding: 0 12px 12px 40px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* "Show it on the machine again": brings the step's view back after the
+   visitor has turned the machine or zoomed. */
+.howto-aim {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--accent-ink);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, box-shadow 0.2s, transform 0.16s var(--settle);
+}
+
+.howto-aim:hover {
+  background: rgba(47, 107, 255, 0.16);
+}
+
+.howto-aim:active {
+  transform: scale(0.92);
+}
+
+/* The part is turned out of sight and its rings are gone (main.js): now the
+   button is what the visitor needs, and it says so. */
+.panel[data-mark-away] .howto-aim {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(47, 107, 255, 0.35);
+}
+
+/* "Back · Next", always in reach at the bottom of a guide, like the bar at
+   the bottom of a room's panel. The list of steps scrolls under it all the
+   time, so it is white up to the top of its buttons: no step's name shows
+   through behind "Back". */
+.howto-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 12px -20px 0;
+  padding: 12px 20px 16px;
+  background: linear-gradient(to top, #fff 84%, rgba(255, 255, 255, 0));
+}
+
 /* ── 7. Navigation bar ─────────────────────────────────────────────────── */
 
 /* Wide screens: a bar floating over the lab, centred in the part of the
@@ -1654,6 +1989,7 @@ dl {
   .body,
   .points li,
   .row__text strong,
+  .howto-step__text,
   .guide__steps strong {
     font-size: var(--type-read);
   }
@@ -1663,7 +1999,8 @@ dl {
   .tabs [role='tab'],
   .facts dt,
   .facts dd,
-  .slider__label {
+  .slider__label,
+  .howto-entry strong {
     font-size: var(--type-control);
   }
 
@@ -1687,6 +2024,9 @@ dl {
   .slider__ends,
   .brand-card__label,
   .sources,
+  .howto-entry small,
+  .howto-note,
+  .howto-count,
   .guide__hint {
     font-size: var(--type-label);
   }
@@ -1694,6 +2034,7 @@ dl {
   .eyebrow,
   .count,
   .chip,
+  .howto-title,
   .topbar__status {
     font-size: var(--type-small);
   }
@@ -1703,6 +2044,7 @@ dl {
   .slider__ends,
   .spec dt small,
   .sources,
+  .howto-note,
   .guide__hint {
     color: var(--ink-soft);
   }
@@ -1851,9 +2193,111 @@ dl {
     overflow-wrap: anywhere;
   }
 
-  .route-nav {
+  .route-nav,
+  .howto-nav {
     margin: 8px -14px 0;
     padding: 10px 14px 12px;
+  }
+
+  /* A guide on a phone: one step at a time. The sheet holds the way back and
+     the step's number, the guide's name, the dashes, then the open step alone:
+     its title, its text, the source, and "Back · Next" at the bottom edge.
+     A step takes more room than a machine's own page gives it: with the 48 %
+     of that page, four lines of a step could be read and the rest had to be
+     scrolled. So a guide's sheet is taller, and the machine above it is drawn
+     in what is left: still two fifths of the picture. It has one height for
+     every step, so the machine does not jump from step to step, and
+     "Back · Next" stay at its bottom edge however short the step is: a thumb
+     that taps "Next" finds the next "Next" under it. */
+  .panel[data-mode='item'][data-howto='guide'] {
+    display: flex;
+    flex-direction: column;
+    height: 56%;
+  }
+
+  .panel[data-howto='guide'] > * {
+    flex: none;
+  }
+
+  .panel[data-howto='guide'] {
+    scroll-padding: 0 0 66px;
+  }
+
+  /* The head goes with the step when a long one is scrolled: every line of
+     the sheet is for reading. */
+  .howto-head {
+    position: static;
+    margin: 0;
+    padding: 0;
+    background: none;
+  }
+
+  /* The machine's name is one level up, on the way back from the list. In its
+     place stands the guide's name, set as the small heading over a step. */
+  .howto-machine {
+    display: none;
+  }
+
+  .howto-title {
+    margin: 0;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+  }
+
+  .howto-progress {
+    margin-top: 6px;
+  }
+
+  .howto-steps {
+    margin: 10px 0 0;
+  }
+
+  .howto-step:not(.is-current) {
+    display: none;
+  }
+
+  .howto-step.is-current {
+    background: none;
+  }
+
+  .howto-step.is-current .howto-step__number {
+    display: none;
+  }
+
+  .howto-step__row {
+    min-height: 0;
+    padding: 0;
+  }
+
+  .howto-step__title {
+    font-size: 18px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .howto-step__text {
+    padding: 6px 0 0;
+    line-height: 1.45;
+  }
+
+  /* A finger's worth, without making the title's row taller. */
+  .howto-aim {
+    width: 40px;
+    height: 40px;
+    margin: -8px -8px -8px 0;
+  }
+
+  .howto-note {
+    margin-top: 10px;
+    margin-bottom: auto; /* what is left of the sheet lies between it and "Back · Next" */
+    padding-top: 8px;
+  }
+
+  .howto-guides {
+    margin-top: 8px;
   }
 
   .stage__controls {
@@ -2211,6 +2655,30 @@ dl {
   100% {
     opacity: 0;
     transform: scale(2);
+  }
+}
+
+/* A ring on a machine arrives, then pulses once: gentler than `ping`, because
+   it sits on the very thing the visitor is trying to read. */
+@keyframes marker-in {
+  from {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes marker-ping {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
   }
 }
 

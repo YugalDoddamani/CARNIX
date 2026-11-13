@@ -1,7 +1,8 @@
 // The tour itself: builds the lab, then moves the visitor between three places —
 // the whole floor ("overview"), one room, one machine. Everything on screen is a
 // function of that location; the address bar (#/room/machine) mirrors it, so the
-// browser's Back button and shared links work.
+// browser's Back button and shared links work. A machine with guides ("How to
+// use it") has pages of its own under it: #/room/machine/how-to/guide/step.
 //
 // When the tour opens, the lab comes up part by part, then the names over it,
 // then the interface around it; a machine's model fades in when it has loaded
@@ -11,12 +12,14 @@ import { createEquipment, createWorkbench } from './assets/registry.js';
 import { bakeLite } from './core/batch.js';
 import { CATCH_UP, createCameraRig } from './core/camera-rig.js';
 import { preciseBox } from './core/measure.js';
+import { directionOf, findPlaces, marksInWorld } from './core/places.js';
 import { ENTRANCE, ENTRANCE_SHORT, createMotion } from './core/motion.js';
 import { PALETTE } from './core/palette.js';
 import { createPicker } from './core/picking.js';
 import { chooseQuality, createStage } from './core/stage.js';
 import { m } from './core/units.js';
 import { buildRooms } from './rooms/build-rooms.js';
+import { HOW_TO } from './rooms/how-to.js';
 import { BRANDS, GUIDE, MACHINE_INFO, ROOM_INFO, ROUTE } from './rooms/knowledge.js';
 import { buildShell, GROUND_Y } from './shell/build-shell.js';
 import { ROOMS, SPOTLIGHT, VIEWS } from './shell/layout.js';
@@ -24,6 +27,7 @@ import { createDock } from './ui/dock.js';
 import { createGuide } from './ui/guide.js';
 import { ICONS } from './ui/icons.js';
 import { createLabelLayer } from './ui/labels.js';
+import { createMarker } from './ui/marker.js';
 import { createPanel } from './ui/panel.js';
 
 const DEG = 180 / Math.PI;
@@ -32,6 +36,13 @@ const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
 const COARSE_POINTER = window.matchMedia('(pointer: coarse)');
 const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
+
+// A step of a "How to use it" guide.
+const STEP_TIME = 0.8; // seconds for the camera to go from one step's part to the next
+const LID_TIME = 0.6; // seconds for a lid to swing open or shut
+const AWAY = 80; // degrees: turned further than this from the side a step looks from, its part counts as out of sight
+const RING = { min: 30, max: 160 }; // the smallest and the largest ring, in px across
 
 // How far the visitor may turn and zoom in each kind of place. A machine can be
 // walked all the way round; a room and the whole lab only looked at from the
@@ -99,10 +110,15 @@ function start() {
   // Things arriving: the lab when the tour opens, a model when it has loaded.
   // They are faded in from stills of the picture, and a still is only true for
   // the view it was taken from, so this says what "the view" is.
+  // A lid that a step of a guide is swinging open or shut: { item, from, to, elapsed }.
+  let lidMotion = null;
+  /** Is the picture still changing on the tour's own clock: the camera on its way, the lab fading, a lid swinging? */
+  const pictureBusy = () => rig.busy || stage.spotlightState.busy || Boolean(lidMotion);
+
   const motion = createMotion({
     stage,
     reducedMotion: REDUCED_MOTION,
-    isBusy: () => rig.busy || stage.spotlightState.busy,
+    isBusy: pictureBusy,
     getView: () => {
       const pose = rig.pose;
       const lit = stage.spotlightState;
@@ -111,8 +127,12 @@ function start() {
     },
   });
 
-  /** Where the visitor is. */
-  let state = { mode: null, roomId: null, itemId: null };
+  /**
+   * Where the visitor is. `howTo` is a page of a machine's guides: null (the
+   * machine's own page), { guideId: null } (the list of its guides) or
+   * { guideId, step } (a step of one, counted from 0).
+   */
+  let state = { mode: null, roomId: null, itemId: null, howTo: null };
   const itemOf = (id) => (id ? rooms.items.get(id) : null);
   const roomOf = (id) => (id ? shell.rooms.get(id) : null);
 
@@ -187,6 +207,8 @@ function start() {
     onStart: () => navigate({ roomId: route[0].id }),
     onGuide: () => guide.open(),
     onExplode: takeApart,
+    onHowTo: (page) => navigate({ roomId: state.roomId, itemId: state.itemId, howTo: page }),
+    onAim: () => frameCurrent({ duration: REDUCED_MOTION.matches ? 0 : STEP_TIME }),
   });
 
   function renderPanel() {
@@ -195,6 +217,7 @@ function start() {
       const list = rooms.itemsByRoom.get(state.roomId) ?? [];
       const index = list.indexOf(item);
       const info = MACHINE_INFO[item.typeId] ?? null;
+      const guides = guidesOf(item);
       panel.render({
         mode: 'item',
         room: roomOf(state.roomId).def,
@@ -202,6 +225,8 @@ function start() {
         info,
         brand: info?.brand ? (BRANDS[info.brand] ?? null) : null,
         modelState: item.modelState,
+        // Its guides, and which page of them is open (null: the machine's own page).
+        howTo: guides ? { guides: guides.guides, source: guides.source, note: guides.note ?? '', page: state.howTo } : null,
         siblings: { index, total: list.length, previous: list[(index - 1 + list.length) % list.length], next: list[(index + 1) % list.length] },
       });
     } else if (state.mode === 'room') {
@@ -229,6 +254,13 @@ function start() {
     if (tier === 'lite') {
       item.asset.setExplode(0);
       item.apart = 0;
+      // Whatever a step of a guide did to it is undone as well: it is shut and whole again.
+      if (lidMotion?.item === item) lidMotion = null;
+      if (item.open) {
+        item.asset.setOpen(0);
+        item.open = 0;
+      }
+      showParts(item, []);
     }
     item.holder.remove(tier === 'hero' ? lite : hero);
     item.holder.add(tier === 'hero' ? hero : lite);
@@ -278,6 +310,140 @@ function start() {
     rig.frame(box, itemView(item), { duration: Math.max(0.3, rig.remaining), limits: LIMITS.item, keepAngles: true, room: 'stay' });
   }
 
+  // ── "How to use it" ────────────────────────────────────────────────────────
+  // A machine with guides (rooms/how-to.js) has more pages than its own: the
+  // list of its guides, and every step of each. They are pages of one place:
+  // the machine stays in the spotlight throughout. A step can point at the
+  // machine. The camera then goes to the part it is about, rings mark the
+  // spots, and the machine is shown as it is at that point of the work: its
+  // lid open, say, and the flask not in yet.
+  const guidesOf = (item) => (item ? (HOW_TO[item.typeId] ?? null) : null);
+
+  /** Turn a page of guides that was asked for into one that exists: null (none), the list, or a step of a guide. */
+  function howToFor(item, wanted) {
+    const info = guidesOf(item);
+    if (!info || !wanted) return null;
+    const found = info.guides.find((entry) => entry.id === wanted.guideId);
+    if (!found) return { guideId: null, step: 0 };
+    return { guideId: found.id, step: clamp(Math.round(Number(wanted.step) || 0), 0, found.steps.length - 1) };
+  }
+  const sameHowTo = (a, b) => (a && b ? a.guideId === b.guideId && a.step === b.step : a === b);
+
+  /**
+   * The step that is open, if one is: its guide, the step, its number from 0,
+   * and `place`: where it points on the model. That is null for a step that
+   * points nowhere, and until the machine's model is there.
+   */
+  function openStep() {
+    if (!state.howTo?.guideId) return null;
+    const item = itemOf(state.itemId);
+    const found = guidesOf(item).guides.find((entry) => entry.id === state.howTo.guideId);
+    const step = found.steps[state.howTo.step];
+    const place = item.asset && item.tier === 'hero' && step.at ? (item.asset.places.get(step.at) ?? null) : null;
+    return { item, guide: found, step, index: state.howTo.step, place };
+  }
+
+  /** Take these parts of the model out of the picture (by name), and put back whatever was out before. */
+  function showParts(item, without) {
+    const before = item.without ?? [];
+    if (before.length === without.length && before.every((partName) => without.includes(partName))) return;
+    for (const partName of before) {
+      const part = item.asset.hero.getObjectByName(partName);
+      if (part) part.visible = true;
+    }
+    for (const partName of without) {
+      const part = item.asset.hero.getObjectByName(partName);
+      if (part) part.visible = false;
+    }
+    item.without = [...without];
+    stage.shadowsDirty();
+  }
+
+  /** Swing the machine's lid to `target` (0 shut … 1 open). */
+  function moveLid(item, target, { instant = false } = {}) {
+    const now = item.open ?? 0;
+    if (lidMotion?.item === item) lidMotion = null;
+    if (Math.abs(now - target) < 1e-3) return;
+    if (instant || REDUCED_MOTION.matches) {
+      item.open = target;
+      item.asset.setOpen(target);
+      stage.shadowsDirty();
+      return;
+    }
+    lidMotion = { item, from: now, to: target, elapsed: 0 };
+  }
+  stage.addTicker((dt) => {
+    if (!lidMotion) return false;
+    lidMotion.elapsed += dt;
+    const { item, from, to } = lidMotion;
+    const t = Math.min(1, lidMotion.elapsed / LID_TIME);
+    // Evenly: the models ease the swing themselves.
+    item.open = from + (to - from) * t;
+    item.asset.setOpen(item.open);
+    if (t >= 1) lidMotion = null;
+    stage.shadowsDirty();
+    return true;
+  });
+
+  /**
+   * Show the machine as the open step has it: the lid open or shut, without
+   * the parts that are not there yet. With no step open it is shut and whole.
+   */
+  function dress({ instant = false } = {}) {
+    const item = itemOf(state.itemId);
+    if (!item?.asset || item.tier !== 'hero') return;
+    const step = openStep()?.step ?? null;
+    showParts(item, step?.without ?? []);
+    moveLid(item, step?.open ? 1 : 0, { instant });
+  }
+
+  // The rings. They are put in place after every frame that is drawn, where the
+  // step's spots land in that frame; `marks` keeps what was shown, for the checks.
+  const marker = createMarker(stageElement);
+  let marks = { step: null, away: false, spots: [] };
+  const _point = new THREE.Vector3();
+  const _scale = new THREE.Vector3();
+  const _eye = new THREE.Vector3();
+  const _side = new THREE.Vector3();
+  const frontAzimuthOf = (item) => Math.atan2(item.front.x, item.front.z) * DEG;
+
+  function placeMarks() {
+    const open = openStep();
+    if (!open?.place) {
+      marker.clear();
+      marks = { step: null, away: false, spots: [] };
+      panelElement.removeAttribute('data-mark-away');
+      return;
+    }
+    const { item, place } = open;
+    const camera = stage.camera; // a machine in the spotlight is drawn by the visitor's camera
+    camera.updateMatrixWorld(); // it may have moved since the last frame was drawn
+    item.asset.hero.updateWorldMatrix(true, true);
+    const width = stageElement.clientWidth;
+    const height = stageElement.clientHeight;
+    // A length of 1 at a distance of 1 from the camera covers this many pixels.
+    const pixelsPerTan = height / (2 * Math.tan((camera.fov * Math.PI) / 360));
+    const modelScale = item.asset.hero.getWorldScale(_scale).x;
+    const spots = [];
+    marksInWorld(place).forEach((point, index) => {
+      const depth = -_point.copy(point).applyMatrix4(camera.matrixWorldInverse).z;
+      if (!(depth > 0)) return; // behind the camera
+      _point.copy(point).project(camera);
+      spots.push({ x: (_point.x * 0.5 + 0.5) * width, y: (-_point.y * 0.5 + 0.5) * height, size: clamp((place.sizes[index] * modelScale * pixelsPerTan) / depth, RING.min, RING.max) });
+    });
+    // Has the visitor turned the part away? Then a ring would float over the
+    // wrong side of the machine. Compare the side they look from with the side
+    // the step looks from, both as the machine sees them.
+    const pose = rig.pose;
+    const turned = directionOf([pose.azimuth - frontAzimuthOf(item), pose.elevation], _eye).angleTo(directionOf(place.from, _side)) * DEG;
+    const away = turned > AWAY;
+    marker.show(spots, { key: `${item.id}/${open.guide.id}/${open.index}`, away });
+    marks = { step: `${open.guide.id}/${open.index}`, away, spots };
+    // The button that brings the step's view back stands out while it is needed.
+    panelElement.toggleAttribute('data-mark-away', away);
+  }
+  stage.onAfterRender(placeMarks);
+
   // ── Camera ─────────────────────────────────────────────────────────────────
   /** Keep the subject clear of the panel (beside the lab on wide screens, under it on phones) and of the navigation bar. */
   let freeArea = { width: 1, height: 1 };
@@ -324,6 +490,24 @@ function start() {
     updateInsets();
     if (state.mode === 'item') {
       const item = itemOf(state.itemId);
+      const place = openStep()?.place;
+      if (place) {
+        // A step of a guide: what its place frames, from the side its place names.
+        // `within`: a place that takes in half the machine, with the margin of a wide screen
+        // around it, would be framed from further away than the machine's own page is. A
+        // step must not send the visitor backwards: the camera then comes closer, as far
+        // as the place still fits with the small margin around it.
+        const view = {
+          azimuth: frontAzimuthOf(item) + place.from[0],
+          elevation: place.from[1],
+          fov: VIEWS.item.fov,
+          padding: WIDE_LAYOUT.matches ? VIEWS.step.paddingWide : VIEWS.step.padding,
+          within: { box: boundsOf(item).clone(), view: itemView(item), padding: VIEWS.step.padding },
+        };
+        // The place is written in the model's own coordinates: bring it to where the model stands.
+        item.asset.hero.updateWorldMatrix(true, false);
+        return rig.frame(place.box.clone().applyMatrix4(item.asset.hero.matrixWorld), view, { duration, limits: LIMITS.item, room: 'stay' });
+      }
       // `room: 'stay'`: from here on the visitor turns the machine, not the lab.
       return rig.frame(boundsOf(item), itemView(item), { duration, limits: LIMITS.item, room: 'stay' });
     }
@@ -383,7 +567,14 @@ function start() {
   }
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  const hashFor = ({ roomId, itemId }) => (itemId ? `#/${itemId}` : roomId ? `#/${roomId}` : '#/');
+  // "#/acrylic/bredent-thermopress-400/how-to/run-a-program/4": a machine, its
+  // guides, one of them, its fourth step (the first is written without a number).
+  function hashFor({ roomId, itemId, howTo }) {
+    if (!itemId) return roomId ? `#/${roomId}` : '#/';
+    if (!howTo) return `#/${itemId}`;
+    if (!howTo.guideId) return `#/${itemId}/how-to`;
+    return `#/${itemId}/how-to/${howTo.guideId}${howTo.step ? `/${howTo.step + 1}` : ''}`;
+  }
 
   function locationFromHash() {
     let path = location.hash.replace(/^#\/?/, '');
@@ -392,8 +583,12 @@ function start() {
     } catch {
       // A malformed link is treated as "overview" below.
     }
-    const [roomId, machine] = path.split('/').filter(Boolean);
-    return { roomId: roomId ?? null, itemId: roomId && machine ? `${roomId}/${machine}` : null };
+    const [roomId, machine, page, guideId, step] = path.split('/').filter(Boolean);
+    return {
+      roomId: roomId ?? null,
+      itemId: roomId && machine ? `${roomId}/${machine}` : null,
+      howTo: machine && page === 'how-to' ? { guideId: guideId ?? null, step: Number(step) - 1 } : null,
+    };
   }
 
   /**
@@ -411,13 +606,16 @@ function start() {
   function navigate(target, { instant = false, history: historyMode = 'push' } = {}) {
     const room = roomOf(target.roomId);
     const item = room ? itemOf(target.itemId) : null;
+    const here = item && item.roomId === room.def.id ? item : null;
     const next = {
-      mode: item && item.roomId === room.def.id ? 'item' : room ? 'room' : 'overview',
+      mode: here ? 'item' : room ? 'room' : 'overview',
       roomId: room ? room.def.id : null,
-      itemId: item && item.roomId === room.def.id ? item.id : null,
+      itemId: here ? here.id : null,
+      howTo: howToFor(here, target.howTo),
     };
     if (next.mode === state.mode && next.roomId === state.roomId && next.itemId === state.itemId) {
-      showAddress(next, historyMode);
+      if (sameHowTo(next.howTo, state.howTo)) showAddress(next, historyMode);
+      else turnPage(next, { instant, historyMode });
       return;
     }
 
@@ -431,6 +629,7 @@ function start() {
 
     if (previous.itemId && previous.itemId !== next.itemId) showTier(itemOf(previous.itemId), 'lite');
     if (next.itemId) showTier(itemOf(next.itemId), 'hero');
+    if (next.howTo) dress({ instant: true }); // a link straight to a step of a guide
 
     // Room names over the whole floor; machine markers inside a room; nothing
     // in front of a machine being inspected.
@@ -454,21 +653,63 @@ function start() {
     else hideHint();
 
     showAddress(next, historyMode);
-
-    const title = next.itemId ? itemOf(next.itemId).name : next.roomId ? room.def.name : 'Lab overview';
-    announcer.textContent = title;
-    document.title = next.mode === 'overview' ? 'Lab Tour — Dental Lab' : `${title} — Lab Tour`;
-
-    // The label that was just activated has gone; carry keyboard focus over to
-    // the panel so the next Tab lands on what is now on offer.
-    const focused = document.activeElement;
-    if (previous.mode && (!focused || focused === document.body || focused.closest('[inert]') || !focused.isConnected)) panelElement.focus({ preventScroll: true });
+    announce();
+    if (previous.mode) keepFocus();
 
     frameCurrent({ duration });
+    if (!openStep()) placeMarks(); // the rings of a step that was open go at once, not with the next frame
   }
 
+  /** Say where the visitor is now: to screen readers, and in the title of the page. */
+  function announce() {
+    const item = itemOf(state.itemId);
+    const open = openStep();
+    const place = item ? item.name : state.roomId ? roomOf(state.roomId).def.name : 'Lab overview';
+    announcer.textContent = open ? `Step ${open.index + 1} of ${open.guide.steps.length}: ${open.step.title}` : state.howTo ? `How to use it: ${place}` : place;
+    const title = open ? `${open.guide.title} · ${place}` : state.howTo ? `How to use it · ${place}` : place;
+    document.title = state.mode === 'overview' ? 'Lab Tour — Dental Lab' : `${title} — Lab Tour`;
+  }
+
+  /**
+   * The control that was just used may have gone with the page it was on;
+   * carry keyboard focus over to the panel, so the next Tab lands on what is
+   * now on offer.
+   */
+  function keepFocus() {
+    const focused = document.activeElement;
+    if (!focused || focused === document.body || focused.closest('[inert]') || !focused.isConnected) panelElement.focus({ preventScroll: true });
+  }
+
+  /**
+   * Another page of the same machine: its own, the list of its guides, a step
+   * of a guide. The machine stays in the spotlight; what changes is the panel
+   * and, for a step, how the machine is shown and which part the camera is on.
+   */
+  function turnPage(next, { instant, historyMode }) {
+    const leavesStep = Boolean(state.howTo?.guideId);
+    // A guide shows the machine whole: put it together if it was taken apart.
+    if (!state.howTo && itemOf(next.itemId).apart) takeApart(0);
+    state = next;
+    const still = instant || REDUCED_MOTION.matches;
+    dress({ instant: still });
+    renderPanel();
+    showAddress(next, historyMode);
+    announce();
+    keepFocus();
+    // The camera goes to the part a step is about, and back to the whole
+    // machine when the guide is left. Between the machine's own page and the
+    // list of its guides it stays: the visitor keeps the side they turned to.
+    if (next.howTo?.guideId || leavesStep) {
+      motion.cancel(); // the view is about to change: whatever is still fading in is simply there
+      frameCurrent({ duration: still ? 0 : STEP_TIME });
+    }
+    placeMarks(); // rings that are no longer wanted go at once; new ones are put right by the next frame
+  }
+
+  /** One step back: a step of a guide → the list of the guides → the machine → its room → the lab. */
   function goBack() {
-    if (state.mode === 'item') navigate({ roomId: state.roomId });
+    if (state.howTo) navigate({ roomId: state.roomId, itemId: state.itemId, howTo: state.howTo.guideId ? {} : null });
+    else if (state.mode === 'item') navigate({ roomId: state.roomId });
     else if (state.mode === 'room') navigate({});
   }
 
@@ -643,6 +884,10 @@ function start() {
       try {
         const asset = await createEquipment(item.typeId);
         const model = { ...asset, hero: asset.root, lite: bakeLite(asset.root) };
+        // Where the steps of its guides point: found now, while the model stands shut and whole.
+        const found = findPlaces(asset.root, HOW_TO[item.typeId]?.places);
+        model.places = found.places;
+        for (const problem of found.problems) console.warn(`how-to.js "${item.typeId}": ${problem}`);
         putInPlace(() => {
           item.asset = model;
           item.modelState = 'ready';
@@ -650,7 +895,13 @@ function start() {
           item.tier = state.itemId === item.id ? 'hero' : 'lite';
           item.holder.add(item.asset[item.tier]);
           stage.shadowsDirty();
-          if (state.itemId === item.id) renderPanel();
+          if (state.itemId !== item.id) return;
+          renderPanel();
+          // A step of a guide was open before its machine had arrived: show it now.
+          if (openStep()) {
+            dress({ instant: true });
+            frameCurrent({ duration: REDUCED_MOTION.matches ? 0 : STEP_TIME });
+          }
         }, itemFailed);
       } catch (error) {
         failed++;
@@ -670,15 +921,19 @@ function start() {
   window.labTour = {
     navigate,
     get state() {
-      return { ...state };
+      return { ...state, howTo: state.howTo && { ...state.howTo } };
     },
-    /** Is anything still moving on the tour's own clock (camera on its way, surroundings fading)? Things fading in are `motion.busy`. */
+    /** Is anything still moving on the tour's own clock (camera on its way, surroundings fading, a lid swinging)? Things fading in are `motion.busy`. */
     get busy() {
-      return rig.busy || stage.spotlightState.busy;
+      return pictureBusy();
+    },
+    /** The rings of the open step as last put in place: { step: 'guide/2', away, spots: [{ x, y, size }] } in CSS pixels of the stage. */
+    get marks() {
+      return { ...marks, spots: marks.spots.map((spot) => ({ ...spot })) };
     },
     rooms: ROOMS.map((room) => room.id),
     route: route.map((room) => room.id),
-    items: () => [...rooms.items.values()].map(({ id, status, known, name, modelState, tier, apart }) => ({ id, status, known, name, modelState, tier, apart: apart ?? 0 })),
+    items: () => [...rooms.items.values()].map(({ id, status, known, name, modelState, tier, apart, open, without }) => ({ id, status, known, name, modelState, tier, apart: apart ?? 0, open: open ?? 0, without: without ?? [] })),
     renderInfo: () => ({ ...stage.renderer.info.render, ...stage.renderer.info.memory, framesDrawn: stage.framesDrawn, quality: stage.quality }),
     stage,
     rig,

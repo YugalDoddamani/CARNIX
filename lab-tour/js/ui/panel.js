@@ -5,6 +5,10 @@
 // A machine's panel has up to four pills: its own name (what it is), About (who
 // makes it), Features (its key figures) and Capabilities (what sets it apart).
 // A pill only appears when knowledge.js has something to put under it.
+//
+// A machine with guides (rooms/how-to.js) has a card "How to use it" on its
+// first pill. It leads to two more pages of the same machine: the list of its
+// guides, and a guide, step by step.
 import { ICONS, UI } from './icons.js';
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -16,6 +20,9 @@ const icon = (name) => ICONS[name] ?? ICONS.machine;
 const name = (value) => esc(value).replace(/-/g, '\u2011');
 // A figure longer than this gets a full-width card instead of half a row.
 const WIDE_VALUE = 13;
+// Beside the lab a guide lists all its steps and unfolds the open one; under
+// the lab, on a phone, it shows one step at a time (tour.css, section 9).
+const LISTS_ALL_STEPS = window.matchMedia('(min-width: 900px)');
 
 // ── Overview ─────────────────────────────────────────────────────────────────
 
@@ -90,7 +97,7 @@ function roomView({ room, about, items, stop }) {
 
 // ── A machine ────────────────────────────────────────────────────────────────
 
-function overviewTab({ item, room, info, modelState }) {
+function overviewTab({ item, room, info, modelState, howTo }) {
   const built = item.status === 'built';
   let model = '';
   if (item.known) {
@@ -110,6 +117,7 @@ function overviewTab({ item, room, info, modelState }) {
       </label>`;
   }
   return `
+    ${howToCard(howTo)}
     ${info?.summary ? `<p class="lead">${esc(info.summary)}</p>` : ''}
     ${info?.how ? `<p class="body">${esc(info.how)}</p>` : ''}
     ${model}
@@ -210,14 +218,118 @@ function itemView(view, activeTab) {
     ${tabs.map((tab) => `<section class="tabpanel" role="tabpanel" id="tabpanel-${tab.id}" data-panel="${tab.id}" ${tabs.length > 1 ? `aria-labelledby="tab-${tab.id}"` : ''} ${tab.id === active ? '' : 'hidden'}>${tab.render(view)}</section>`).join('')}`;
 }
 
+// ── A machine's guides: "How to use it" ──────────────────────────────────────
+
+/** The way in: a card on the machine's first pill. */
+function howToCard(howTo) {
+  if (!howTo?.guides?.length) return '';
+  const count = howTo.guides.length;
+  return `
+    <button type="button" class="howto-entry" data-howto>
+      <span class="howto-entry__icon" aria-hidden="true">${UI.play}</span>
+      <span class="howto-entry__text"><strong>How to use it</strong><small>${count === 1 ? 'A short guide' : `${count} short guides`}, step by step</small></span>
+      <span class="row__chevron" aria-hidden="true">${UI.chevron}</span>
+    </button>`;
+}
+
+/**
+ * Under the guides: where they come from, and what they are not. `about` adds
+ * the machine's remark on its 3D model, for a page that points at the model.
+ */
+function howToNote({ source, note }, about = false) {
+  return `<p class="howto-note">A short guide from <a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(source.label)}</a>. It does not replace the manual that came with the machine, or training on it.${about && note ? ` ${esc(note)}` : ''}</p>`;
+}
+
+/** The guides of a machine. */
+function howToListView({ item, howTo }) {
+  return `
+    <div class="panel__top">
+      <button type="button" class="back" data-howto-close>${UI.back}<span>${name(item.shortName ?? item.name)}</span></button>
+    </div>
+    <header class="panel__header">
+      <p class="eyebrow">${esc(item.kind)}</p>
+      <h1>How to use it</h1>
+    </header>
+    <ol class="list howto-guides">
+      ${howTo.guides
+        .map(
+          (guide, index) => `
+        <li>
+          <button type="button" class="row" data-howto-guide="${esc(guide.id)}">
+            <span class="row__number" aria-hidden="true">${index + 1}</span>
+            <span class="row__text"><strong>${esc(guide.title)}</strong><small>${plural(guide.steps.length, 'step')}</small></span>
+            <span class="row__chevron" aria-hidden="true">${UI.chevron}</span>
+          </button>
+        </li>`,
+        )
+        .join('')}
+    </ol>
+    ${howToNote(howTo)}`;
+}
+
+/**
+ * A guide, at one of its steps. Every step is in the list; the open one is
+ * unfolded, and the others are buttons that open them. (On a phone the
+ * stylesheet shows the open one alone.)
+ */
+function howToGuideView({ item, howTo }) {
+  const guide = howTo.guides.find((entry) => entry.id === howTo.page.guideId);
+  const id = esc(guide.id);
+  const { step } = howTo.page;
+  const total = guide.steps.length;
+  const back = step > 0 ? `<button type="button" class="button button--quiet" data-howto-guide="${id}" data-howto-step="${step - 1}" data-focus="back" aria-label="Back to step ${step}">${UI.back}<span>Back</span></button>` : '<span></span>';
+  const next =
+    step < total - 1
+      ? `<button type="button" class="button button--primary" data-howto-guide="${id}" data-howto-step="${step + 1}" data-focus="next" aria-label="Next: step ${step + 2}"><span>Next</span>${UI.chevron}</button>`
+      : `<button type="button" class="button button--primary" data-howto-list data-focus="next" aria-label="Done: back to the guides"><span>Done</span>${UI.check}</button>`;
+  return `
+    <div class="howto-head">
+      <div class="panel__top">
+        <button type="button" class="back" data-howto-list>${UI.back}<span>How to use</span></button>
+        <span class="howto-count">Step ${step + 1} of ${total}</span>
+      </div>
+      <p class="eyebrow howto-machine">${name(item.name)}</p>
+      <h1 class="howto-title">${esc(guide.title)}</h1>
+      <div class="howto-progress" aria-hidden="true">${guide.steps.map((_, index) => `<i${index <= step ? ' class="is-done"' : ''}></i>`).join('')}</div>
+    </div>
+    <ol class="howto-steps">
+      ${guide.steps
+        .map((entry, index) =>
+          index === step
+            ? `
+        <li class="howto-step is-current" aria-current="step">
+          <div class="howto-step__row">
+            <span class="howto-step__number" aria-hidden="true">${index + 1}</span>
+            <h2 class="howto-step__title">${esc(entry.title)}</h2>
+            ${entry.at ? `<button type="button" class="howto-aim" data-howto-aim data-focus="aim" aria-label="Show it on the machine again" title="Show it on the machine again">${UI.aim}</button>` : ''}
+          </div>
+          <p class="howto-step__text">${esc(entry.text)}</p>
+        </li>`
+            : `
+        <li class="howto-step">
+          <button type="button" class="howto-step__row" data-howto-guide="${id}" data-howto-step="${index}" aria-label="Step ${index + 1}: ${esc(entry.title)}">
+            <span class="howto-step__number" aria-hidden="true">${index + 1}</span>
+            <span class="howto-step__title">${esc(entry.title)}</span>
+          </button>
+        </li>`,
+        )
+        .join('')}
+    </ol>
+    ${howToNote(howTo, true)}
+    <nav class="howto-nav" aria-label="Steps of this guide">${back}${next}</nav>`;
+}
+
 /**
  * @param {HTMLElement} element
  * @param {object} handlers
  *   onRoom(id) onItem(id) onBack() onLab() onStart() onGuide() onExplode(0…1) onTab(id)
+ *   onHowTo(page)   the machine's guides: null (leave them), {} (their list), { guideId, step }
+ *   onAim()         show the open step on the machine again
  */
 export function createPanel(element, handlers) {
   let shown = null; // which place the panel currently describes ("item:design/3shape-e4")
   let tab = 'overview';
+  let step = null; // the open step of a guide, if the panel shows one
 
   /** Where the pills do not all fit they scroll sideways; fade whichever edge hides more of them. */
   function fadeEdges(tabs) {
@@ -274,7 +386,40 @@ export function createPanel(element, handlers) {
     else if ('goLab' in data) handlers.onLab();
     else if ('start' in data) handlers.onStart();
     else if ('guide' in data) handlers.onGuide();
+    else if ('howto' in data || 'howtoList' in data) handlers.onHowTo({});
+    else if (data.howtoGuide) handlers.onHowTo({ guideId: data.howtoGuide, step: Number(data.howtoStep ?? 0) });
+    else if ('howtoClose' in data) handlers.onHowTo(null);
+    else if ('howtoAim' in data) handlers.onAim();
   });
+
+  /**
+   * A guide's open step, where it can be read. On a phone it has the sheet to
+   * itself and starts at its first line. Where all the steps are listed (a
+   * wide screen) the list stays where it is and moves only as far as the open
+   * step needs to come out from under the guide's head or from under
+   * "Back · Next": both stay put while the list scrolls between them.
+   */
+  function showOpenStep() {
+    const current = element.querySelector('.howto-step.is-current');
+    const head = element.querySelector('.howto-head');
+    const bar = element.querySelector('.howto-nav');
+    if (!current || !head || !bar) return;
+    if (!LISTS_ALL_STEPS.matches) {
+      element.scrollTop = 0;
+      return;
+    }
+    // Measured in the panel's own layout (offsetTop, summed up to the panel),
+    // which an entrance that is still playing does not shift.
+    let top = -element.scrollTop;
+    for (let node = current; node && node !== element; node = node.offsetParent) top += node.offsetTop;
+    const bottom = top + current.offsetHeight;
+    const ceiling = head.offsetHeight;
+    const floor = element.clientHeight - bar.offsetHeight;
+    if (top < ceiling) element.scrollTop -= ceiling - top;
+    else if (bottom > floor) element.scrollTop += Math.min(top - ceiling, bottom - floor);
+  }
+  // The window was made wider or narrower with a guide open: the other layout starts from the open step too.
+  LISTS_ALL_STEPS.addEventListener('change', showOpenStep);
 
   // Arrow keys move between pills, as in any tab list.
   element.addEventListener('keydown', (event) => {
@@ -301,19 +446,29 @@ export function createPanel(element, handlers) {
   return {
     /**
      * view: { mode: 'overview' | 'room' | 'item', … }
-     * Drawing the same place again (a model finished loading) keeps the open
-     * pill and the take-apart slider where they were.
+     * Drawing the same place again (a model finished loading, another step of
+     * the same guide) keeps the open pill and the take-apart slider where they
+     * were, and the keyboard focus on the control that had it.
      */
     render(view) {
-      const key = `${view.mode}:${view.item?.id ?? view.room?.id ?? ''}`;
+      // A machine's guides are places of their own: their list, and each guide (whichever step is open).
+      const page = view.mode === 'item' && view.howTo?.page ? (view.howTo.page.guideId ? 'guide' : 'list') : null;
+      const key = `${view.mode}:${view.item?.id ?? view.room?.id ?? ''}${page ? `:how-to:${view.howTo.page.guideId ?? ''}` : ''}`;
       const same = key === shown;
+      const moved = page === 'guide' && view.howTo.page.step !== step;
       const explode = same ? element.querySelector('[data-explode]')?.value : null;
+      // The control that was just used is drawn afresh with everything else ("Next"): which one was it?
+      const held = same && element.contains(document.activeElement) ? document.activeElement.dataset.focus : null;
       if (!same) tab = 'overview';
       shown = key;
+      step = page === 'guide' ? view.howTo.page.step : null;
 
-      element.innerHTML = view.mode === 'item' ? itemView(view, tab) : view.mode === 'room' ? roomView(view) : overviewView(view);
+      element.innerHTML = page === 'guide' ? howToGuideView(view) : page === 'list' ? howToListView(view) : view.mode === 'item' ? itemView(view, tab) : view.mode === 'room' ? roomView(view) : overviewView(view);
       element.dataset.mode = view.mode;
       element.dataset.tabs = String(element.querySelectorAll('[role="tab"]').length);
+      if (page) element.dataset.howto = page;
+      else delete element.dataset.howto;
+      if (held) (element.querySelector(`[data-focus="${held}"]`) ?? element).focus({ preventScroll: true });
 
       const slider = element.querySelector('[data-explode]');
       if (slider && explode) {
@@ -329,7 +484,16 @@ export function createPanel(element, handlers) {
         element.classList.remove('is-entering');
         void element.offsetWidth; // restart the entrance animation
         element.classList.add('is-entering');
+      } else {
+        // The same place, drawn again: its parts are simply there. (With the
+        // class left on, every part of every step would rise in again.)
+        element.classList.remove('is-entering');
       }
+      // How much of the panel the guide's head covers, for the stylesheet (scroll-padding).
+      const head = page === 'guide' ? element.querySelector('.howto-head') : null;
+      if (head) element.style.setProperty('--howto-head', `${head.offsetHeight}px`);
+      else element.style.removeProperty('--howto-head');
+      if (page === 'guide' && (moved || !same)) showOpenStep();
     },
     /** The open pill of the machine being shown ('overview', 'about', …). */
     get tab() {

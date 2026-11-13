@@ -1,5 +1,5 @@
 // npm run e2e — a visitor's walk through the tour, checked step by step in a
-// real (headless) browser. Four visitors, and the way the lab arrives:
+// real (headless) browser. Five visitors, and the way the lab arrives:
 //
 //   desktop   a wide window and a mouse
 //   phone     a 390 × 844 phone and a finger; then 360 × 640 and 320 × 568,
@@ -7,6 +7,10 @@
 //   first     somebody who has never been here (the welcome guide)
 //   reduced   somebody who has asked their device for less motion
 //   entrance  the opening: the lab coming up part by part, a model fading in
+//   howto     somebody who follows a machine's guides ("How to use it"), every
+//             step of every guide: beside the lab, on a phone and on smaller
+//             ones, with reduced motion, and by a link straight to a step
+//   older     a browser that cannot draw rounded rectangles
 //
 //   node tools/browser/e2e.mjs [--only=desktop,phone] [--base=http://127.0.0.1:4173/]
 //        [--q=low] [--verbose]
@@ -18,6 +22,7 @@
 //
 // What this cannot tell: how fast the tour runs on a real phone, and how it
 // looks. For looks there are shots.mjs and film.mjs.
+import { HOW_TO } from '../../js/rooms/how-to.js';
 import { ROOMS, SPOTLIGHT, VIEWS } from '../../js/shell/layout.js';
 import { frames, go, holdClock, launchBrowser, openTour, parseArgs, pass, sleep, waitReady } from './lib.mjs';
 
@@ -45,6 +50,8 @@ const INJECTORS = [
   { id: flags.ivocap || 'acrylic/ivoclar-sr-ivocap', lamps: 0, hides: 0, shows: 0, apart: 'its clamping frame, flask halves, capsule, vise shank and pressure apparatus move away from each other' },
   { id: flags.thermopress || 'acrylic/bredent-thermopress-400', lamps: 2, hides: 4, shows: 3, apart: 'its housing, lid, heating cylinder, flask and clamping tool move away from each other' },
 ];
+// The machine whose guides ("How to use it") the walk follows: any machine with an entry in rooms/how-to.js.
+const GUIDED = flags.guided || 'acrylic/bredent-thermopress-400';
 const roomOf = (id) => id.split('/')[0];
 // The file one walk goes without, to see what the tour says when a model fails to arrive: the scanner's.
 const LOST_MODEL = new RegExp(`/viewers/${SCANNER.split('/')[1]}\\.js`);
@@ -218,10 +225,191 @@ function install() {
         if (!boxes.length) continue;
         const scrolls = Boolean(element.closest('#panel, dialog.guide'));
         if (!scrolls && !boxes.some((r) => r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth)) continue;
-        const read = Boolean(element.closest('.lead, .body, .points li, .row__text strong, .guide__steps strong'));
+        const read = Boolean(element.closest('.lead, .body, .points li, .row__text strong, .howto-step__text, .guide__steps strong'));
         pieces.push({ what: describe(element), px: parseFloat(style.fontSize), text: text.slice(0, 40), read });
       }
       return pieces;
+    },
+
+    /**
+     * The pages of a machine's guides ("How to use it"), as a visitor has them
+     * in front of them: what the panel shows, where the rings are, how the
+     * machine is shown. Rectangles are in CSS pixels of the page.
+     */
+    howTo() {
+      const tour = window.labTour;
+      const panel = document.getElementById('panel');
+      const text = (element) => (element ? element.textContent.replace(/\s+/g, ' ').trim() : '');
+      const shownText = (element) => (element ? element.innerText.replace(/\s+/g, ' ').trim() : ''); // as it is drawn: capitals where the stylesheet sets them
+      const rectOf = (selector) => {
+        const element = panel.querySelector(selector);
+        return element && element.getClientRects().length ? rect(element) : null;
+      };
+      const entry = tour.items().find((item) => item.id === tour.state.itemId) ?? {};
+      const layer = document.querySelector('.marker-layer');
+      // A ring is drawn around the place of its element, which itself has no size.
+      const rings = [...document.querySelectorAll('.marker-layer .marker')].map((ring) => {
+        const at = ring.getBoundingClientRect();
+        const half = parseFloat(ring.style.getPropertyValue('--size')) / 2 || 0;
+        return { left: at.left - half, top: at.top - half, right: at.left + half, bottom: at.top + half };
+      });
+      const note = panel.querySelector('.howto-note');
+      const current = panel.querySelector('.howto-step.is-current');
+      const next = panel.querySelector('[data-focus="next"]');
+      const focused = document.activeElement;
+      return {
+        page: panel.dataset.howto ?? null,
+        card: shownText(panel.querySelector('[data-howto]')),
+        rows: [...panel.querySelectorAll('.howto-guides [data-howto-guide]')].map((row) => ({ id: row.dataset.howtoGuide, text: text(row) })),
+        said: document.getElementById('announcer').textContent,
+        note: note ? { text: text(note), links: [...note.querySelectorAll('a')].map((link) => ({ href: link.getAttribute('href'), target: link.target, rel: link.rel })) } : null,
+        focus: focused === panel ? 'panel' : (focused?.dataset?.focus ?? describe(focused)),
+        rings,
+        ringsShown: rings.length > 0 && !layer.classList.contains('is-away') && Number(getComputedStyle(layer).opacity) > 0.95,
+        awayFlag: panel.hasAttribute('data-mark-away'),
+        ringsTakeTaps: rings.some((ring) => Boolean(document.elementFromPoint((ring.left + ring.right) / 2, (ring.top + ring.bottom) / 2)?.closest('.marker-layer'))),
+        marks: tour.marks,
+        state: tour.state.howTo,
+        lid: entry.open ?? 0,
+        without: entry.without ?? [],
+        tier: entry.tier ?? null,
+        apart: entry.apart ?? 0,
+        count: text(panel.querySelector('.howto-count')),
+        heading: shownText(panel.querySelector('.howto-title')),
+        nameShown: Boolean(panel.querySelector('.howto-machine')?.getClientRects().length),
+        back: text(panel.querySelector('.back')),
+        open: current
+          ? {
+              title: text(current.querySelector('.howto-step__title')),
+              text: text(current.querySelector('.howto-step__text')),
+              rect: rect(current),
+              titleRect: rect(current.querySelector('.howto-step__title')),
+              aim: Boolean(current.querySelector('[data-howto-aim]')),
+            }
+          : null,
+        progress: [...panel.querySelectorAll('.howto-progress i')].map((dash) => dash.classList.contains('is-done')),
+        listed: [...panel.querySelectorAll('.howto-step')].filter((row) => row.getClientRects().length > 0).length,
+        total: panel.querySelectorAll('.howto-step').length,
+        head: rectOf('.howto-head'),
+        bar: rectOf('.howto-nav'),
+        sheet: rect(panel),
+        next: next ? text(next) : null,
+        nextRect: rectOf('[data-focus="next"]'),
+        backRect: rectOf('[data-focus="back"]'),
+        scrolled: panel.scrollTop,
+        scrolls: panel.scrollHeight - panel.clientHeight,
+      };
+    },
+
+    /**
+     * A named part of the machine in the spotlight, on screen: the rectangle
+     * around every corner of its meshes, in CSS pixels of the page. Read from
+     * the 3D scene as it stands at this moment.
+     */
+    partOnScreen(name) {
+      const tour = window.labTour;
+      const id = tour.state.itemId;
+      const root = id ? tour.stage.scene.getObjectByName(id)?.getObjectByName(id.split('/')[1]) : null;
+      const part = root?.getObjectByName(name);
+      if (!part) return null;
+      const camera = tour.stage.camera;
+      camera.updateMatrixWorld();
+      root.updateWorldMatrix(true, true);
+      const bounds = canvas().getBoundingClientRect();
+      const point = camera.position.clone();
+      const seen = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+      part.traverse((mesh) => {
+        if (!mesh.isMesh) return;
+        const vertices = mesh.geometry.attributes.position;
+        for (let index = 0; index < vertices.count; index++) {
+          point.fromBufferAttribute(vertices, index).applyMatrix4(mesh.matrixWorld).project(camera);
+          const x = bounds.left + (point.x * 0.5 + 0.5) * bounds.width;
+          const y = bounds.top + (-point.y * 0.5 + 0.5) * bounds.height;
+          seen.left = Math.min(seen.left, x);
+          seen.right = Math.max(seen.right, x);
+          seen.top = Math.min(seen.top, y);
+          seen.bottom = Math.max(seen.bottom, y);
+        }
+      });
+      return Number.isFinite(seen.left) ? seen : null;
+    },
+
+    /**
+     * A place of a guide on screen, in CSS pixels of the page: the rectangle
+     * that it frames, and `spots`, where each of its points is. `place` is
+     * the place as rooms/how-to.js writes it down ({ part, at, show }), in
+     * the coordinates of the machine's model. Worked out here from that and
+     * from the 3D scene, not by the tour's own code: a stretch of the machine
+     * around its points (`show` as a number), or the box of a part, and in
+     * any case its points.
+     * (A point is taken to lie where the model's file has it. That holds for
+     * a part that stays put when the lid opens, as every part marked so far
+     * does; a mark on the lid itself would have to be followed here too.)
+     */
+    placeOnScreen(itemId, place) {
+      const tour = window.labTour;
+      const root = tour.stage.scene.getObjectByName(itemId)?.getObjectByName(itemId.split('/')[1]);
+      if (!root) return null;
+      const camera = tour.stage.camera;
+      camera.updateMatrixWorld();
+      root.updateWorldMatrix(true, true);
+      const point = camera.position.clone();
+      const toModel = root.matrixWorld.clone().invert();
+      const min = [Infinity, Infinity, Infinity];
+      const max = [-Infinity, -Infinity, -Infinity];
+      const grow = (x, y, z) => {
+        [x, y, z].forEach((value, axis) => {
+          min[axis] = Math.min(min[axis], value);
+          max[axis] = Math.max(max[axis], value);
+        });
+      };
+      const growByPart = (name) => {
+        root.getObjectByName(name)?.traverse((mesh) => {
+          if (!mesh.isMesh) return;
+          const vertices = mesh.geometry.attributes.position;
+          const local = toModel.clone().multiply(mesh.matrixWorld);
+          for (let index = 0; index < vertices.count; index++) {
+            point.fromBufferAttribute(vertices, index).applyMatrix4(local);
+            grow(point.x, point.y, point.z);
+          }
+        });
+      };
+      // The points of the place; without any it points at the middle of its part.
+      let points = Array.isArray(place.at?.[0]) ? place.at : place.at ? [place.at] : [];
+      if (!points.length) {
+        growByPart(place.part);
+        if (!min.every(Number.isFinite)) return null;
+        points = [[0, 1, 2].map((axis) => (min[axis] + max[axis]) / 2)];
+        min.fill(Infinity);
+        max.fill(-Infinity);
+      }
+      if (typeof place.show === 'number') {
+        const mean = [0, 1, 2].map((axis) => points.reduce((sum, at) => sum + at[axis], 0) / points.length);
+        grow(...mean.map((value) => value - place.show / 2));
+        grow(...mean.map((value) => value + place.show / 2));
+      } else {
+        growByPart(typeof place.show === 'string' ? place.show : place.part);
+      }
+      for (const at of points) grow(at[0], at[1], at[2]);
+      if (!min.every(Number.isFinite)) return null;
+      const bounds = canvas().getBoundingClientRect();
+      const onScreen = (x, y, z) => {
+        point.set(x, y, z).applyMatrix4(root.matrixWorld).project(camera);
+        return { x: bounds.left + (point.x * 0.5 + 0.5) * bounds.width, y: bounds.top + (-point.y * 0.5 + 0.5) * bounds.height };
+      };
+      const seen = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity, spots: points.map((at) => onScreen(at[0], at[1], at[2])) };
+      for (const x of [min[0], max[0]]) {
+        for (const y of [min[1], max[1]]) {
+          for (const z of [min[2], max[2]]) {
+            const corner = onScreen(x, y, z);
+            seen.left = Math.min(seen.left, corner.x);
+            seen.right = Math.max(seen.right, corner.x);
+            seen.top = Math.min(seen.top, corner.y);
+            seen.bottom = Math.max(seen.bottom, corner.y);
+          }
+        }
+      }
+      return seen;
     },
 
     /** The stops of the navigation bar: the name each one shows, and where that name and the stop are. */
@@ -477,18 +665,19 @@ function checkCatchUp(seen, label) {
  * the screen, and what scrolls up and down does not scroll sideways as well.
  * No text is set under 12 px, and running text not under 16 (tour.css,
  * section 9: the phone's scale); `reads: false` for a place that holds figures
- * and labels only.
+ * and labels only, `bar: false` on a screen 320 px wide, where the names on
+ * the bar are the one thing that is set smaller.
  */
-async function checkOnPhone(page, where, { reads = true } = {}) {
+async function checkOnPhone(page, where, { reads = true, bar = true } = {}) {
   await atRest(page); // what is still fading in does not count as on show
   const wide = await page.evaluate(() => {
     const sideways = (element) => (element ? element.scrollWidth - element.clientWidth : 0);
     return { page: document.documentElement.scrollWidth, screen: document.documentElement.clientWidth, sheet: sideways(document.getElementById('panel')), guide: sideways(document.querySelector('dialog.guide[open]')) };
   });
   check(`${where}: nothing is wider than the screen, and neither the sheet nor the guide scrolls sideways`, wide.page <= wide.screen && wide.sheet <= 1 && wide.guide <= 1, `page ${wide.page} px on a screen of ${wide.screen}; sideways: sheet ${wide.sheet} px, guide ${wide.guide} px`);
-  const pieces = await page.evaluate(() => window.__t.type());
+  const pieces = (await page.evaluate(() => window.__t.type())).filter((piece) => bar || !/dock__label/.test(piece.what));
   const small = pieces.filter((piece) => piece.px < 12);
-  check(`${where}: no text is set smaller than 12 px`, pieces.length > 0 && small.length === 0, pieces.length ? small.slice(0, 4).map((piece) => `${piece.px} px ${piece.what} "${piece.text}"`).join(', ') : 'found no text at all');
+  check(`${where}: no text is set smaller than 12 px${bar ? '' : ' (but for the names on the bar, which give way on a screen this narrow)'}`, pieces.length > 0 && small.length === 0, pieces.length ? small.slice(0, 4).map((piece) => `${piece.px} px ${piece.what} "${piece.text}"`).join(', ') : 'found no text at all');
   if (!reads) return;
   const read = pieces.filter((piece) => piece.read);
   const off = read.filter((piece) => piece.px < 16);
@@ -2038,6 +2227,579 @@ async function entrance(browser) {
   await later?.page.close();
 }
 
+// ── How to use it ────────────────────────────────────────────────────────────
+// A machine's guides: the card on its first pill, the list of the guides, and
+// every step of every guide. What is checked at a step is what a reader of the
+// guide relies on: the text is the one from how-to.js, the camera has gone to
+// the part, each ring sits on the very point that how-to.js names (worked out
+// here from the 3D scene, not by the tour's own code), and the machine is shown
+// as the step has it.
+async function howTo(browser) {
+  current = 'how to use it';
+  console.log("\nHow to use it — a machine's guides: beside the lab, on a phone, by a link");
+  const info = HOW_TO[GUIDED.split('/')[1]];
+  if (!info?.guides?.length) {
+    console.log(`  (rooms/how-to.js has no guides for "${GUIDED}": nothing to walk through)`);
+    return;
+  }
+  const guides = info.guides;
+  const guide = guides[0];
+  const steps = guide.steps;
+  const total = steps.length;
+  const norm = (text) => String(text).replace(/\s+/g, ' ').trim();
+  const ringsOf = (place) => (Array.isArray(place.at?.[0]) ? place.at.length : 1);
+  const placeOf = (entry) => (entry.at ? info.places[entry.at] : null);
+  const hashOf = (entry, index = 0) => `#/${GUIDED}/how-to/${entry.id}${index ? `/${index + 1}` : ''}`;
+  const tell = (list) => list.slice(0, 4).join('; ');
+  const sorted = (list) => [...list].sort();
+  // Steps of the first guide that the checks single out.
+  const opens = steps.findIndex((entry, index) => index > 0 && entry.open && !steps[index - 1].open); // the lid swings open on the way into this one
+  const bare = steps.findIndex((entry) => entry.open && entry.without?.length); // open, and with a part taken out
+  const sided = steps.findIndex((entry) => placeOf(entry) && Math.abs(placeOf(entry).from[0]) >= 30); // looks at the machine from one side
+  const longest = steps.reduce((best, entry, index) => (entry.text.length > steps[best].text.length ? index : best), 0);
+  const how = (page) => page.evaluate(() => window.__t.howTo());
+  const partOnScreen = (page, name) => page.evaluate((part) => window.__t.partOnScreen(part), name);
+  const placeOnScreen = (page, place) => page.evaluate((id, definition) => window.__t.placeOnScreen(id, definition), GUIDED, { part: place.part, at: place.at ?? null, show: place.show ?? null });
+
+  /** Go through a guide from its first step with "Next"; what there is to see at each step. */
+  async function walk(page, v, entry) {
+    const seen = [];
+    for (let index = 0; index < entry.steps.length; index++) {
+      if (index > 0) {
+        await v.press('#panel [data-focus="next"]');
+        await v.rest();
+      }
+      await atRest(page);
+      const place = placeOf(entry.steps[index]);
+      seen.push({ n: index + 1, step: entry.steps[index], place, s: await v.see(), h: await how(page), part: place ? await partOnScreen(page, place.part) : null, framed: place ? await placeOnScreen(page, place) : null });
+    }
+    return seen;
+  }
+  const centres = (at) => at.h.rings.map(middle);
+  const within = (point, area, margin = 0) => point.x >= area.left - margin && point.x <= area.right + margin && point.y >= area.top - margin && point.y <= area.bottom + margin;
+
+  /**
+   * What holds at every step of a walk, on a desktop and on a phone alike.
+   * `margin` is the share of the free area that a step leaves empty around
+   * what it frames (layout.js); `whole` is how far the camera stands on the
+   * machine's own page, where that page has the same free area as the guide.
+   */
+  function checkWalk(seen, entry, { name, margin, whole = null }) {
+    const count = entry.steps.length;
+    const off = (holds, say) => seen.filter((at) => !holds(at)).map((at) => `step ${at.n}: ${say(at)}`);
+    let wrong = off(
+      (at) => at.s.hash === hashOf(entry, at.n - 1) && at.s.title === `${entry.title} · ${name} — Lab Tour` && at.h.count === `Step ${at.n} of ${count}` && at.s.place === GUIDED && at.s.lit === GUIDED,
+      (at) => `${at.s.hash}, "${at.s.title}", "${at.h.count}"`,
+    );
+    check(`"Next" leads through all ${count} steps: each has its own address, the guide's name in the page title and its number in the top row`, seen.length === count && wrong.length === 0, tell(wrong));
+    wrong = off(
+      (at) => at.h.open && at.h.open.title === norm(at.step.title) && at.h.open.text === norm(at.step.text) && same(at.h.progress, entry.steps.map((_, index) => index < at.n)),
+      (at) => `"${at.h.open?.title}", ${at.h.progress.filter(Boolean).length} dashes filled`,
+    );
+    check('each shows its title and its text as how-to.js has them, and the row of dashes fills up to it', wrong.length === 0, tell(wrong));
+    wrong = off((at) => at.h.said === `Step ${at.n} of ${count}: ${at.step.title}`, (at) => `"${at.h.said}"`);
+    check('screen readers are told the number and the title of each', wrong.length === 0, tell(wrong));
+
+    const open = entry.steps.filter((step) => step.open).length;
+    const less = entry.steps.filter((step) => step.without?.length).length;
+    wrong = off(
+      (at) => at.h.lid === (at.step.open ? 1 : 0) && same(sorted(at.h.without), sorted(at.step.without ?? [])) && at.h.tier === 'hero' && at.h.apart === 0,
+      (at) => `lid ${at.h.lid}, without [${at.h.without}], ${at.h.tier}`,
+    );
+    check(`the machine is shown as each step has it: its lid open in ${open} of them and shut in the rest, a part out of the picture in ${less}`, wrong.length === 0, tell(wrong));
+
+    const pointing = seen.filter((at) => at.place);
+    wrong = off(
+      (at) => (at.place ? at.h.rings.length === ringsOf(at.place) && at.h.marks.step === `${entry.id}/${at.n - 1}` && !at.h.marks.away && at.h.ringsShown && !at.h.awayFlag && centres(at).every((point) => within(point, at.s.free)) : at.h.rings.length === 0),
+      (at) => `${at.h.rings.length} rings at ${centres(at).map((point) => `${Math.round(point.x)},${Math.round(point.y)}`).join(' ')} (free ${box(at.s.free)}), shown ${at.h.ringsShown}`,
+    );
+    check(`${pointing.length} steps point at the machine: each has one ring for every spot it marks, on show in the free part of the picture`, pointing.length > 0 && wrong.length === 0, tell(wrong));
+    wrong = off(
+      (at) => !at.place || (at.part && centres(at).every((point) => within(point, at.part, 2))),
+      (at) => `rings at ${centres(at).map((point) => `${Math.round(point.x)},${Math.round(point.y)}`).join(' ')}, "${at.place.part}" at ${at.part ? box(at.part) : 'nowhere'}`,
+    );
+    check('every ring lies on the part it belongs to, as the 3D scene itself has that part on screen', wrong.length === 0, tell(wrong));
+    // On the right key, not just on the keypad: the middle of a ring is the point that how-to.js names.
+    const onSpot = (at) => at.framed && at.framed.spots.length === at.h.rings.length && centres(at).every((point, index) => Math.hypot(point.x - at.framed.spots[index].x, point.y - at.framed.spots[index].y) <= 1.5);
+    wrong = off(
+      (at) => !at.place || onSpot(at),
+      (at) => `rings at ${centres(at).map((point) => `${round(point.x, 1)},${round(point.y, 1)}`).join(' ')}, the points at ${(at.framed?.spots ?? []).map((point) => `${round(point.x, 1)},${round(point.y, 1)}`).join(' ')}`,
+    );
+    check("and its middle is the very point that how-to.js names, where the 3D scene has that point of the model on screen", wrong.length === 0, tell(wrong));
+    wrong = off((at) => !at.h.ringsTakeTaps, () => 'a ring is the topmost thing at its own middle');
+    check('the rings take no taps: a finger on one lands on the machine under it', wrong.length === 0, tell(wrong));
+
+    wrong = off((at) => !at.place || near(at.s.elevation, at.place.from[1], 0.5), (at) => `${round(at.s.elevation, 1)}° up (wanted ${at.place.from[1]}°)`);
+    check('the camera has gone to each part: it looks from the height that its place names', wrong.length === 0, tell(wrong));
+    // What a place frames fills the free area as far as the margin allows. One
+    // thing overrules a wide margin: a place that takes in much of the machine
+    // is not framed from further away than the machine's own page is. The
+    // camera then comes closer, and the place fills more of the area: at most
+    // what the small margin allows.
+    const most = 1 - VIEWS.step.padding;
+    const held = (at) => whole !== null && near(at.s.distance / whole, 1, 0.005);
+    const share = (at) => fill(at.framed, at.s.free);
+    wrong = off(
+      (at) => !at.place || (at.framed && centred(at.framed, at.s.free, 2) && (near(share(at), 1 - margin, 0.015) || (held(at) && share(at) > 1 - margin && share(at) <= most + 0.015))),
+      (at) => (at.framed ? `fills ${round(share(at) * 100, 1)}%, middle ${Math.round(middle(at.framed).x)},${Math.round(middle(at.framed).y)} in ${box(at.s.free)}${whole === null ? '' : `, ${round(at.s.distance / whole, 3)} of the distance on the machine's own page`}` : 'frames nothing'),
+    );
+    const closer = pointing.filter((at) => held(at) && share(at) > 1 - margin + 0.015);
+    check(
+      `what the place frames sits in the middle of the free area and fills ${Math.round((1 - margin) * 100)}% of it${closer.length ? `; in ${closer.length} steps more, up to ${Math.round(Math.max(...closer.map(share)) * 100)}%, where it would otherwise be framed from further away than the machine's own page is` : ''}`,
+      wrong.length === 0,
+      tell(wrong),
+    );
+    if (whole !== null) {
+      // (Further away only where the place would not fit the free area otherwise.)
+      wrong = off((at) => !at.place || at.s.distance <= whole * 1.005 || near(share(at), most, 0.015), (at) => `${round(at.s.distance / whole, 3)} of that distance`);
+      check('no step shows the machine smaller than its own page does', wrong.length === 0, tell(wrong));
+    }
+    const turns = pointing.slice(1).map((at, index) => ({ n: at.n, turned: turnBetween(pointing[index].s.azimuth, at.s.azimuth), wanted: turnBetween(pointing[index].place.from[0], at.place.from[0]) }));
+    const misturned = turns.filter((turn) => !near(turn.turned, turn.wanted, 0.5));
+    check('and from one step to the next it turns round the machine by as much as their two places differ', misturned.length === 0, tell(misturned.map((turn) => `into step ${turn.n}: ${round(turn.turned, 1)}° (wanted ${turn.wanted}°)`)));
+    return pointing;
+  }
+
+  // ── Beside the lab ─────────────────────────────────────────────────────────
+  const desk = await open(browser, { width: 1280, height: 800, storage: WELCOMED });
+  const { page } = desk;
+  const v = visitor(page);
+  const facts = await page.evaluate(() => ({ items: window.labTour.items() }));
+  const entry = facts.items.find((item) => item.id === GUIDED);
+  if (!entry || entry.status !== 'built') {
+    console.log(`  ("${GUIDED}" is not a modelled machine of the lab: nothing to walk through)`);
+    await page.close();
+    return;
+  }
+  const { name } = entry;
+  let home = null;
+
+  await step("The card on the machine's first pill, and the list of its guides", async () => {
+    await v.go(`#/${MACHINE}`);
+    await v.rest();
+    if (!HOW_TO[MACHINE.split('/')[1]]) check('a machine without guides has no such card', (await page.$('#panel [data-howto]')) === null);
+    await v.go(`#/${GUIDED}`);
+    await v.rest();
+    home = await v.see();
+    let h = await how(page);
+    check('the machine with guides has a card "How to use it" on its first pill, which says how many there are', h.card.startsWith('How to use it') && h.card.includes(guides.length === 1 ? 'A short guide' : `${guides.length} short guides`) && home.tab === 'overview', `"${h.card}"`);
+    await v.press('#panel [data-howto]');
+    await v.rest();
+    await atRest(page);
+    const list = await v.see();
+    h = await how(page);
+    check('a click on it opens the list of the guides, each with the number of its steps', h.page === 'list' && same(h.rows.map((row) => row.id), guides.map((one) => one.id)) && h.rows.every((row, index) => row.text.includes(guides[index].title) && row.text.includes(`${guides[index].steps.length} step`)), h.rows.map((row) => row.text).join(' | '));
+    check('the address, the page title and the heading say where the visitor is', list.hash === `#/${GUIDED}/how-to` && list.title === `How to use it · ${name} — Lab Tour` && list.heading === 'How to use it' && h.said === `How to use it: ${name}`, `${list.hash}, "${list.title}", "${list.heading}", "${h.said}"`);
+    check('the machine stays in the spotlight and is seen as before: the list is a page of the machine', list.place === GUIDED && list.lit === GUIDED && near(list.veil, FADED, 0.001) && near(list.azimuth, home.azimuth, 1e-6) && near(list.distance, home.distance, 1e-6) && same(list.dock, [roomOf(GUIDED)]), `${list.place}, lit ${list.lit}`);
+    check(
+      'under the list: where the guides come from, as a link that opens in a new tab, and that they do not replace the manual',
+      h.note && h.note.links.length === 1 && h.note.links[0].href === info.source.url && h.note.links[0].target === '_blank' && /noopener/.test(h.note.links[0].rel) && h.note.text.includes(info.source.label) && /not replace the manual/.test(h.note.text),
+      JSON.stringify(h.note),
+    );
+    check('the keyboard focus has moved to the panel, since the card has gone', h.focus === 'panel', h.focus);
+    check('nothing is marked and nothing is opened yet', h.rings.length === 0 && h.lid === 0 && h.without.length === 0, `${h.rings.length} rings, lid ${h.lid}`);
+  });
+
+  // Every guide of the machine, from the list of the guides to its last step.
+  for (const [number, entry] of guides.entries()) {
+    await step(`The guide "${entry.title}", step by step`, async () => {
+      const count = entry.steps.length;
+      if (number > 0) {
+        await v.go(`#/${GUIDED}/how-to`);
+        await v.rest();
+      }
+      await v.press(`#panel .howto-guides [data-howto-guide="${entry.id}"]`);
+      await v.rest();
+      const seen = await walk(page, v, entry);
+      checkWalk(seen, entry, { name, margin: VIEWS.step.paddingWide, whole: home.distance });
+      const off = (holds, say) => seen.filter((at) => !holds(at)).map((at) => `step ${at.n}: ${say(at)}`);
+      let wrong = off((at) => at.h.listed === count && at.h.total === count && at.h.nameShown && at.h.heading === entry.title, (at) => `${at.h.listed} of ${at.h.total} listed, heading "${at.h.heading}"`);
+      check(`beside the lab all ${count} steps are listed under the guide's name, and the open one is unfolded`, wrong.length === 0, tell(wrong));
+      wrong = off((at) => at.h.open && at.h.head && at.h.bar && at.h.open.rect.top >= at.h.head.bottom - 14 && at.h.open.rect.bottom <= at.h.bar.top + 14, (at) => `step ${Math.round(at.h.open?.rect.top)} → ${Math.round(at.h.open?.rect.bottom)}, head ends ${Math.round(at.h.head?.bottom)}, bar starts ${Math.round(at.h.bar?.top)}`);
+      check('the open step can always be read whole: the list scrolls it out from under the head and from under "Back · Next", which both stay put', wrong.length === 0 && seen.every((at) => near(at.h.head.top, seen[0].h.head.top, 1) && near(at.h.bar.bottom, at.h.sheet.bottom, 2)), tell(wrong));
+      wrong = off((at) => at.n === 1 || at.h.focus === 'next', (at) => at.h.focus);
+      check('the keyboard focus stays on "Next" from step to step, though every step is drawn afresh', wrong.length === 0, tell(wrong));
+      wrong = off((at) => at.h.note && at.h.note.links[0]?.href === info.source.url && /not replace the manual/.test(at.h.note.text) && (!info.note || at.h.note.text.includes(norm(info.note))), () => 'no source');
+      check(`the source and the reminder about the manual stand under every step${info.note ? ', with the remark about the 3D model' : ''}`, wrong.length === 0, tell(wrong));
+      check('on the last step "Next" has become "Done"', seen[seen.length - 1].h.next === 'Done' && seen.slice(0, -1).every((at) => at.h.next === 'Next'), seen.map((at) => at.h.next).join(' '));
+    });
+  }
+
+  if (opens > 0) {
+    await step('A lid swings open; it does not jump', async () => {
+      await v.go(hashOf(guide, opens - 1));
+      await v.rest();
+      const shut = await how(page);
+      await v.press('#panel [data-focus="next"]');
+      const swing = [];
+      for (let moment = 0; moment < 14; moment++) {
+        await pass(page, 0.1);
+        swing.push(await page.evaluate((id) => ({ lid: window.labTour.items().find((item) => item.id === id).open, busy: window.labTour.busy }), GUIDED));
+      }
+      await v.rest();
+      const there = await how(page);
+      const partWay = swing.filter((moment) => moment.lid > 0.02 && moment.lid < 0.98);
+      check(`into step ${opens + 1} the lid is seen part-way open, and the tour counts as moving until it has arrived`, shut.lid === 0 && partWay.length >= 2 && partWay.every((moment) => moment.busy) && there.lid === 1, `lid: ${swing.map((moment) => round(moment.lid)).join(' ')}`);
+      check('it only ever opens further on the way', swing.every((moment, index) => index === 0 || moment.lid >= swing[index - 1].lid - 1e-9));
+      await v.press('#panel [data-focus="back"]');
+      await v.rest();
+      check('one step back it is shut again', (await how(page)).lid === 0);
+    });
+  }
+
+  await step('"Back", a step picked from the list, "Done"', async () => {
+    await v.go(hashOf(guide, total - 1));
+    await v.rest();
+    await v.press('#panel [data-focus="back"]');
+    await v.rest();
+    await atRest(page);
+    let h = await how(page);
+    check('"Back" goes one step back, and the keyboard focus stays on it', h.state.step === total - 2 && h.count === `Step ${total - 1} of ${total}` && h.focus === 'back', `step ${h.state.step + 1}, focus ${h.focus}`);
+    const picked = total > 3 ? 1 : 0;
+    await v.press(`#panel .howto-step [data-howto-step="${picked}"]`);
+    await v.rest();
+    await atRest(page);
+    h = await how(page);
+    const s = await v.see();
+    check(`a click on step ${picked + 1} in the list opens that step`, h.state.step === picked && h.open?.title === norm(steps[picked].title) && s.hash === hashOf(guide, picked), `step ${h.state.step + 1}, ${s.hash}`);
+    if (picked === 0) check('the first step has no "Back"', h.backRect === null);
+    await v.go(hashOf(guide, total - 1));
+    await v.rest();
+    await v.press('#panel [data-focus="next"]');
+    await v.rest();
+    await atRest(page);
+    const done = await v.see();
+    h = await how(page);
+    const where = await v.whereIs(GUIDED);
+    check('"Done" on the last step leads back to the list of the guides', h.page === 'list' && done.hash === `#/${GUIDED}/how-to`, `${h.page}, ${done.hash}`);
+    check('the machine is shut and whole again, and nothing is marked', h.lid === 0 && h.without.length === 0 && h.rings.length === 0 && !h.awayFlag, `lid ${h.lid}, without [${h.without}], ${h.rings.length} rings`);
+    check('and it is back in full view, as on arrival', inside(where, done.free, 2) && near(fill(where, done.free), FILL, 0.01) && near(done.elevation, VIEWS.item.elevation, 0.5), `machine ${box(where)}, free ${box(done.free)}, ${round(fill(where, done.free) * 100, 1)}%, ${round(done.elevation, 1)}° up`);
+  });
+
+  await step("Escape, and the browser's Back", async () => {
+    const from = Math.min(2, total - 1);
+    await v.go(`#/${GUIDED}/how-to`);
+    await v.rest();
+    await v.press(`#panel .howto-guides [data-howto-guide="${guide.id}"]`);
+    await v.rest();
+    for (let index = 0; index < from; index++) {
+      await v.press('#panel [data-focus="next"]');
+      await v.rest();
+    }
+    const at = await v.see();
+    check(`on step ${from + 1}`, at.hash === hashOf(guide, from), at.hash);
+    await page.keyboard.press('Escape');
+    await v.rest();
+    const list = await v.see();
+    check('Escape leaves the step for the list of the guides', list.hash === `#/${GUIDED}/how-to` && (await how(page)).page === 'list', list.hash);
+    await page.keyboard.press('Escape');
+    await v.rest();
+    const machine = await v.see();
+    check("again, for the machine's own page", machine.hash === `#/${GUIDED}` && machine.place === GUIDED && (await how(page)).page === null && machine.tabs.length > 0, machine.hash);
+    await page.keyboard.press('Escape');
+    await v.rest();
+    const room = await v.see();
+    check('and again, for the room', room.place === roomOf(GUIDED) && room.lit === null, room.place);
+    const back = [];
+    for (let presses = 0; presses < 3; presses++) {
+      await page.goBack();
+      await v.rest();
+      back.push((await v.see()).hash);
+    }
+    await atRest(page);
+    const h = await how(page);
+    check("the browser's Back goes the same way in reverse: the machine, the list, the step", same(back, [`#/${GUIDED}`, `#/${GUIDED}/how-to`, hashOf(guide, from)]), back.join(' '));
+    const place = placeOf(steps[from]);
+    check('and the step is as it was left: its rings, its lid', h.state?.step === from && h.rings.length === (place ? ringsOf(place) : 0) && h.lid === (steps[from].open ? 1 : 0) && h.ringsShown, `step ${(h.state?.step ?? -1) + 1}, ${h.rings.length} rings, lid ${h.lid}`);
+    await page.goBack();
+    await v.rest();
+    const earlier = await v.see();
+    check(`once more: step ${from}, the way "Next" came`, earlier.hash === hashOf(guide, from - 1), earlier.hash);
+  });
+
+  if (sided >= 0) {
+    await step('A part turned out of sight, and "Show it on the machine again"', async () => {
+      const place = placeOf(steps[sided]);
+      await v.go(hashOf(guide, sided));
+      await v.rest();
+      await atRest(page);
+      const before = await v.see();
+      const shown = await how(page);
+      check(`step ${sided + 1} marks its part and has the button`, shown.rings.length === ringsOf(place) && shown.ringsShown && shown.open?.aim && !shown.awayFlag, `${shown.rings.length} rings, button ${shown.open?.aim}`);
+      // Drag across the free area, from its right-hand side to its left: far enough to bring the machine's other side round.
+      await v.drag({ x: before.free.right - 40, y: middle(before.free).y }, -(before.free.right - before.free.left - 80), 0);
+      await v.rest();
+      await atRest(page);
+      const turned = await v.see();
+      const gone = await how(page);
+      check('dragged round to its other side, the rings go rather than float over the wrong side of the machine', turnBetween(before.azimuth, turned.azimuth) > 100 && gone.marks.away && !gone.ringsShown && gone.rings.length === shown.rings.length, `turned ${round(turnBetween(before.azimuth, turned.azimuth), 1)}°, away ${gone.marks.away}, shown ${gone.ringsShown}`);
+      check('the button that brings the view back stands out meanwhile', gone.awayFlag);
+      check('the step, its address and the machine are as they were', turned.hash === before.hash && gone.state.step === sided && gone.lid === shown.lid && same(gone.without, shown.without));
+      await v.press('#panel [data-howto-aim]');
+      await v.rest();
+      await atRest(page);
+      const again = await v.see();
+      const back = await how(page);
+      check(
+        'a click on it turns the machine back to the part: the same view, and the rings where they were',
+        turnBetween(again.azimuth, before.azimuth) < 0.5 && near(again.elevation, before.elevation, 0.5) && near(again.distance / before.distance, 1, 0.01) && back.ringsShown && !back.awayFlag && back.rings.length === shown.rings.length && back.rings.every((ring, index) => near(middle(ring).x, middle(shown.rings[index]).x, 1.5) && near(middle(ring).y, middle(shown.rings[index]).y, 1.5)),
+        `turned ${round(turnBetween(again.azimuth, before.azimuth), 2)}° off, shown ${back.ringsShown}`,
+      );
+      // A small turn keeps them: they stay on the part as it turns.
+      await v.drag(middle(again.free), 60, 0);
+      await v.rest();
+      await atRest(page);
+      const nudged = await v.see();
+      const kept = await how(page);
+      const part = await partOnScreen(page, place.part);
+      check('a small turn keeps the rings, and they stay on their part as it turns', turnBetween(nudged.azimuth, again.azimuth) > 5 && turnBetween(nudged.azimuth, again.azimuth) < 60 && kept.ringsShown && !kept.marks.away && !kept.awayFlag && kept.rings.length === shown.rings.length && kept.rings.every((ring) => within(middle(ring), part, 2)), `turned ${round(turnBetween(nudged.azimuth, again.azimuth), 1)}°, shown ${kept.ringsShown}`);
+    });
+  }
+
+  await step('Taken apart before, another machine after', async () => {
+    await v.go(`#/${GUIDED}`);
+    await v.rest();
+    await page.focus('#panel [data-explode]');
+    await page.keyboard.press('End');
+    await v.rest();
+    const apart = await v.item(GUIDED);
+    await v.press('#panel [data-howto]');
+    await v.rest();
+    const together = await v.item(GUIDED);
+    check('a machine that was taken apart is put together when its guides are opened: they show it whole', apart.apart === 1 && together.apart === 0, `apart ${apart.apart} → ${together.apart}`);
+    await page.keyboard.press('Escape');
+    await v.rest();
+    check("back on its own page the slider is at 0, as the machine is", (await page.$eval('#panel [data-explode]', (input) => input.value).catch(() => null)) === '0');
+    const pick = bare >= 0 ? bare : Math.max(opens, 0);
+    await v.go(hashOf(guide, pick));
+    await v.rest();
+    const dressed = await how(page);
+    await v.go(`#/${MACHINE}`);
+    await v.rest();
+    await atRest(page);
+    const left = await v.item(GUIDED);
+    const rings = await page.evaluate(() => document.querySelectorAll('.marker-layer .marker').length);
+    check(`leaving step ${pick + 1} for another machine: the one with the guide is shut and whole again, and no ring is left behind`, (dressed.lid === 1 || dressed.without.length > 0) && left.open === 0 && left.without.length === 0 && left.tier === 'lite' && rings === 0, `before: lid ${dressed.lid}, without [${dressed.without}]; after: lid ${left.open}, without [${left.without}], ${left.tier}, ${rings} rings`);
+    await checkMachineInView(v, MACHINE);
+  });
+
+  await step('Addresses that do not quite exist', async () => {
+    const tries = [
+      [`#/${GUIDED}/how-to/no-such-guide`, `#/${GUIDED}/how-to`, 'a guide that does not exist opens the list of the guides'],
+      [`#/${GUIDED}/how-to/${guide.id}/${total + 50}`, hashOf(guide, total - 1), 'a step past the end opens the last step'],
+      [`#/${GUIDED}/how-to/${guide.id}/x`, hashOf(guide, 0), 'a step that is not a number opens the first'],
+      [`#/${GUIDED}/how-to/${guide.id}/1`, hashOf(guide, 0), 'the first step is written without its number'],
+    ];
+    if (!HOW_TO[MACHINE.split('/')[1]]) tries.push([`#/${MACHINE}/how-to`, `#/${MACHINE}`, "the guides of a machine that has none open the machine's own page"]);
+    for (const [typed, shown, what] of tries) {
+      await v.go(typed);
+      await v.rest();
+      const s = await v.see();
+      check(`${what}, and the address is put right`, s.hash === shown, `${typed} → ${s.hash}`);
+    }
+  });
+
+  noProblems(desk.problems);
+  await page.close();
+
+  // ── On a phone ─────────────────────────────────────────────────────────────
+  const hand = await open(browser, { width: 390, height: 844, dpr: 2, touch: true, storage: WELCOMED });
+  const p = hand.page;
+  const t = visitor(p, { touch: true });
+  await step('On a phone: one step at a time', async () => {
+    await t.go(`#/${GUIDED}`);
+    await t.rest();
+    const own = await t.see();
+    await checkOnPhone(p, "the machine's own sheet, with the card");
+    await t.press('#panel [data-howto]');
+    await t.rest();
+    const list = await how(p);
+    check('a tap on the card opens the list of the guides', list.page === 'list' && list.rows.length === guides.length, `${list.page}, ${list.rows.length} rows`);
+    await checkOnPhone(p, 'the list of the guides');
+    await t.press(`#panel .howto-guides [data-howto-guide="${guide.id}"]`);
+    await t.rest();
+    const seen = await walk(p, t, guide);
+    checkWalk(seen, guide, { name, margin: VIEWS.step.padding });
+    const off = (holds, say) => seen.filter((at) => !holds(at)).map((at) => `step ${at.n}: ${say(at)}`);
+    let wrong = off((at) => at.h.listed === 1 && at.h.total === total, (at) => `${at.h.listed} steps on the sheet`);
+    check(`the sheet holds one step at a time: the open one, of ${total}`, wrong.length === 0, tell(wrong));
+    wrong = off((at) => at.h.heading.toLowerCase() === guide.title.toLowerCase() && !at.h.nameShown && at.h.back.length > 0, (at) => `heading "${at.h.heading}", machine's name shown: ${at.h.nameShown}`);
+    check("over it: the way back, the step's number, and the guide's name; the machine's name is left out", wrong.length === 0, tell(wrong));
+    const first = seen[0].h.sheet;
+    wrong = off((at) => near(at.h.sheet.top, first.top, 0.5) && near(at.h.sheet.height, first.height, 0.5), (at) => `sheet from ${round(at.h.sheet.top, 1)}`);
+    check('the sheet has one height for every step, so the machine does not jump about', wrong.length === 0, tell(wrong));
+    const left = (first.top - own.stage.top) / own.stage.height;
+    check("it is taller than the machine's own sheet, to fit a step, and leaves the machine two fifths of the picture's height all the same", first.height > own.panelRect.height + 20 && left >= 0.4, `${Math.round(first.height)} px against ${Math.round(own.panelRect.height)} px; ${Math.round(left * 100)}% of the picture is left above it`);
+    wrong = off(
+      (at) => at.h.nextRect && at.h.bar && at.h.nextRect.bottom <= at.h.sheet.bottom + 0.5 && at.h.nextRect.top >= at.h.sheet.top && (at.n === 1 ? at.h.backRect === null : at.h.backRect && at.h.backRect.bottom <= at.h.sheet.bottom + 0.5) && at.h.nextRect.height >= 40,
+      (at) => `"Next" ${at.h.nextRect ? box(at.h.nextRect) : 'missing'}, sheet ${box(at.h.sheet)}`,
+    );
+    check('"Back" and "Next" are in reach at every step without scrolling, and tall enough for a finger', wrong.length === 0, tell(wrong));
+    wrong = off((at) => near(at.h.bar.bottom, at.h.sheet.bottom, 2) && near(at.h.nextRect.top, seen[0].h.nextRect.top, 0.5), (at) => `"Next" starts at ${round(at.h.nextRect.top, 1)}, the bar ends at ${round(at.h.bar.bottom, 1)}, the sheet at ${round(at.h.sheet.bottom, 1)}`);
+    check('and they stay at the bottom edge of the sheet however short the step is: "Next" is where the last "Next" was', wrong.length === 0, tell(wrong));
+    wrong = off((at) => at.h.scrolled === 0 && at.h.open && at.h.open.rect.top >= at.h.sheet.top && at.h.open.rect.bottom <= at.h.bar.top + 14, (at) => `scrolled ${at.h.scrolled}, text ends ${Math.round(at.h.open?.rect.bottom)}, bar starts ${Math.round(at.h.bar?.top)}`);
+    check('every step starts at its first line and can be read whole without scrolling', wrong.length === 0, tell(wrong));
+    await checkOnPhone(p, 'the last step of a guide');
+    await t.go(hashOf(guide, longest));
+    await t.rest();
+    await checkOnPhone(p, 'the step with the most words');
+  });
+
+  for (const entry of guides.slice(1)) {
+    await step(`On a phone: the guide "${entry.title}"`, async () => {
+      const count = entry.steps.length;
+      await t.go(`#/${GUIDED}/how-to`);
+      await t.rest();
+      await t.press(`#panel .howto-guides [data-howto-guide="${entry.id}"]`);
+      await t.rest();
+      const seen = await walk(p, t, entry);
+      checkWalk(seen, entry, { name, margin: VIEWS.step.padding });
+      const off = (holds, say) => seen.filter((at) => !holds(at)).map((at) => `step ${at.n}: ${say(at)}`);
+      let wrong = off((at) => at.h.listed === 1 && at.h.total === count && at.h.heading.toLowerCase() === entry.title.toLowerCase(), (at) => `${at.h.listed} steps on the sheet, heading "${at.h.heading}"`);
+      check(`the sheet holds one step at a time, of ${count}, under the guide's name`, wrong.length === 0, tell(wrong));
+      wrong = off(
+        (at) => at.h.nextRect && at.h.nextRect.bottom <= at.h.sheet.bottom + 0.5 && at.h.scrolled === 0 && at.h.open && at.h.open.rect.top >= at.h.sheet.top && at.h.open.rect.bottom <= at.h.bar.top + 14,
+        (at) => `scrolled ${at.h.scrolled}, text ends ${Math.round(at.h.open?.rect.bottom)}, bar starts ${Math.round(at.h.bar?.top)}`,
+      );
+      check('every step starts at its first line and can be read whole without scrolling, with "Next" in reach', wrong.length === 0, tell(wrong));
+      const most = entry.steps.reduce((best, one, index) => (one.text.length > entry.steps[best].text.length ? index : best), 0);
+      await t.go(hashOf(entry, most));
+      await t.rest();
+      await checkOnPhone(p, 'its step with the most words');
+    });
+  }
+
+  const resize = async (width, height) => {
+    await p.setViewport({ width, height, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    await frames(p, 3);
+    await t.rest();
+  };
+  for (const [width, height] of [
+    [360, 640],
+    [320, 568],
+  ]) {
+    await step(`A smaller phone, ${width} × ${height}`, async () => {
+      await resize(width, height);
+      const tried = [...new Set([longest, sided >= 0 ? sided : 0, total - 1])];
+      let readOn = false;
+      for (const index of tried) {
+        await t.go(hashOf(guide, index));
+        await t.rest();
+        await atRest(p);
+        const s = await t.see();
+        const h = await how(p);
+        const place = placeOf(steps[index]);
+        const part = place ? await partOnScreen(p, place.part) : null;
+        const fits = h.open.rect.bottom <= h.bar.top + 14;
+        check(
+          `step ${index + 1}: its title and "Back · Next" are in view at once${fits ? ', and so is all of its text' : '; its text is longer than the sheet and scrolls'}`,
+          h.scrolled === 0 && h.open.titleRect.top >= h.sheet.top && h.open.titleRect.bottom <= h.bar.top && h.nextRect.bottom <= h.sheet.bottom + 0.5 && h.nextRect.right <= width && (fits || h.scrolls > 0),
+          `title ${box(h.open.titleRect)}, "Next" ${box(h.nextRect)}, sheet ${box(h.sheet)}`,
+        );
+        if (place) check(`step ${index + 1}: its rings are on their part, in the picture above the sheet`, h.rings.length === ringsOf(place) && h.ringsShown && h.rings.every((ring) => within(middle(ring), s.free) && within(middle(ring), part, 2)), `${h.rings.length} rings, free ${box(s.free)}`);
+        await checkOnPhone(p, `at ${width} px, step ${index + 1}`, { bar: width > 320 });
+        if (!fits && index < total - 1 && !readOn) {
+          // Read to the end of a long step, then on: the next one starts at its first line, not where the last one was left.
+          readOn = true;
+          await p.evaluate(() => {
+            const sheet = document.getElementById('panel');
+            sheet.scrollTop = sheet.scrollHeight;
+          });
+          await frames(p, 2);
+          const read = await how(p);
+          await t.press('#panel [data-focus="next"]');
+          await t.rest();
+          const next = await how(p);
+          check(
+            `step ${index + 1} read to its end, then "Next": step ${index + 2} starts at its first line`,
+            read.scrolled > 0 && next.state.step === index + 1 && next.scrolled === 0 && next.open.titleRect.top >= next.sheet.top && next.open.titleRect.bottom <= next.bar.top,
+            `scrolled ${read.scrolled} before, ${next.scrolled} after`,
+          );
+        }
+      }
+      await t.go(`#/${GUIDED}/how-to`);
+      await t.rest();
+      await checkOnPhone(p, `at ${width} px, the list of the guides`, { bar: width > 320 });
+      await t.go(`#/${GUIDED}`);
+      await t.rest();
+      const card = await p.evaluate(() => {
+        const element = document.querySelector('#panel [data-howto]');
+        const r = element.getBoundingClientRect();
+        const sheet = document.getElementById('panel').getBoundingClientRect();
+        return { left: r.left - sheet.left, right: sheet.right - r.right, height: r.height, oneLine: [...element.querySelectorAll('strong, small')].every((line) => line.getClientRects().length === 1) };
+      });
+      check('the card keeps inside the sheet, each of its two lines on one line', card.left >= 0 && card.right >= 0 && card.oneLine && card.height >= 44, JSON.stringify(card));
+    });
+  }
+  noProblems(hand.problems);
+  await p.close();
+
+  // ── With reduced motion ────────────────────────────────────────────────────
+  if (opens > 0) {
+    const calm = await open(browser, { width: 1280, height: 800, reducedMotion: true, storage: WELCOMED });
+    const c = visitor(calm.page);
+    await step('With reduced motion a step is simply there', async () => {
+      await c.go(hashOf(guide, opens - 1));
+      await c.rest();
+      const before = await c.see();
+      await c.press('#panel [data-focus="next"]');
+      const atOnce = await c.see();
+      const lid = (await c.item(GUIDED)).open;
+      await c.rest();
+      await atRest(calm.page);
+      const settled = await c.see();
+      const h = await how(calm.page);
+      const place = placeOf(steps[opens]);
+      check(`step ${opens + 1}: the lid is open and the camera at the part at once, with nothing on its way`, lid === 1 && !atOnce.busy && near(atOnce.azimuth, settled.azimuth, 1e-9) && near(atOnce.distance, settled.distance, 1e-9) && (!place || turnBetween(before.azimuth, atOnce.azimuth) > 1 || near(before.distance, atOnce.distance, 1e-9) === false), `lid ${lid}, busy ${atOnce.busy}`);
+      check('its rings are in place', h.rings.length === (place ? ringsOf(place) : 0) && (h.rings.length === 0 || h.ringsShown), `${h.rings.length} rings`);
+    });
+    noProblems(calm.problems);
+    await calm.page.close();
+  }
+
+  // ── By a link ──────────────────────────────────────────────────────────────
+  // Somebody is sent a link to a step. The tour opens on it, before the
+  // machine's model has arrived: the step has to be put right when it does.
+  const linkTo = bare >= 0 ? bare : Math.max(opens, 0);
+  const linked = await open(browser, { width: 1280, height: 800, forget: true, hash: hashOf(guide, linkTo) });
+  const w = visitor(linked.page);
+  await step('Arriving by a link to a step', async () => {
+    await w.rest();
+    await atRest(linked.page);
+    const s = await w.see();
+    const h = await how(linked.page);
+    const linkedStep = steps[linkTo];
+    const place = placeOf(linkedStep);
+    check(`the tour opens on step ${linkTo + 1} of the guide, with no welcome guide in the way`, s.hash === hashOf(guide, linkTo) && s.place === GUIDED && h.page === 'guide' && h.state?.step === linkTo && h.count === `Step ${linkTo + 1} of ${total}` && !s.guide, `${s.hash}, "${h.count}", welcome guide open: ${s.guide}`);
+    check(
+      'the machine is shown as that step has it, though its model arrived after the page',
+      h.tier === 'hero' && h.lid === (linkedStep.open ? 1 : 0) && same(sorted(h.without), sorted(linkedStep.without ?? [])),
+      `${h.tier}, lid ${h.lid}, without [${h.without}]`,
+    );
+    if (place) {
+      const framed = await placeOnScreen(linked.page, place);
+      check(
+        'the camera is at the part and the rings are on it',
+        near(s.elevation, place.from[1], 0.5) && h.rings.length === ringsOf(place) && h.ringsShown && Boolean(framed) && h.rings.every((ring, index) => Math.hypot(middle(ring).x - framed.spots[index].x, middle(ring).y - framed.spots[index].y) <= 1.5),
+        `${round(s.elevation, 1)}° up (wanted ${place.from[1]}°), ${h.rings.length} rings, shown ${h.ringsShown}`,
+      );
+    }
+    check('the open step is in view in the list, between the head and "Back · Next"', h.open && h.head && h.bar && h.open.rect.top >= h.head.bottom - 14 && h.open.rect.bottom <= h.bar.top + 14, `step ${Math.round(h.open?.rect.top)} → ${Math.round(h.open?.rect.bottom)}, head ends ${Math.round(h.head?.bottom)}, bar starts ${Math.round(h.bar?.top)}`);
+    await linked.page.keyboard.press('Escape');
+    await w.rest();
+    const list = await w.see();
+    check('Escape leads to the list of the guides', list.hash === `#/${GUIDED}/how-to` && (await how(linked.page)).page === 'list', list.hash);
+    await linked.page.keyboard.press('Escape');
+    await w.rest();
+    await atRest(linked.page);
+    const after = await how(linked.page);
+    check("and again to the machine's own page: shut, whole, with nothing marked", after.page === null && after.lid === 0 && after.without.length === 0 && after.rings.length === 0, `${after.page}, lid ${after.lid}, ${after.rings.length} rings`);
+    await checkMachineInView(w, GUIDED);
+  });
+  noProblems(linked.problems);
+  await linked.page.close();
+}
+
 // ── An older browser ─────────────────────────────────────────────────────────
 // The resin printer draws its touch screen with ctx.roundRect(). The tour runs
 // from Chrome 89 and Firefox 108 on; roundRect() came with Chrome 99 and Firefox
@@ -2072,7 +2834,7 @@ async function olderBrowser(browser) {
 }
 
 // ── Run ──────────────────────────────────────────────────────────────────────
-const VISITORS = { desktop, phone, first: firstVisit, reduced: reducedMotion, entrance, older: olderBrowser };
+const VISITORS = { desktop, phone, first: firstVisit, reduced: reducedMotion, entrance, howto: howTo, older: olderBrowser };
 const started = Date.now();
 const browser = await launchBrowser();
 try {

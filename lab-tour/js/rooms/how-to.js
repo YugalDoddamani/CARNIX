@@ -90,7 +90,9 @@ const BRACKET = [3.56, 2.04, 0.22];
 // about 0.09 in front of its origin, the group itself another 0.018.)
 const VARIO_LEAN = Math.atan2(1.18, 1.9);
 const onVario = (x, y, out = 0.108) => [0.44 + x, 1.09 + y * Math.cos(VARIO_LEAN) + out * Math.sin(VARIO_LEAN), 2.61 - y * Math.sin(VARIO_LEAN) + out * Math.cos(VARIO_LEAN)];
-const VARIO_CONSOLE = { part: 'controlConsole', size: 0.44, from: [0, 36], show: 'controlConsole' };
+// It is looked at from well above: seen square on, the glossy plate mirrors the
+// room's light, and the display and the keys' colours wash out.
+const VARIO_CONSOLE = { part: 'controlConsole', size: 0.44, from: [0, 58], show: 'controlConsole' };
 const V = {
   display: [...onVario(-0.68, 0.17, 0.088), 0.95],
   dialer: [...onVario(1.04, 0.24, 0.1), 0.72],
@@ -102,9 +104,12 @@ const V = {
   plus: onVario(1.26, -0.7), // yellow, under the dialer
 };
 // The firing table: a metal collar with a white ceramic cone on it. The model
-// is drawn with the lift down; the collar's top is at 1.42 and the cone's at 2.385.
+// is drawn with the lift down; the collar's top is at 1.42 and the cone's at
+// 2.385. Both places on it share one view of the whole furnace, so that between
+// two steps only the lift moves.
 const VARIO_TABLE_TOP = [-0.36, 2.385, 0.4];
-const VARIO_COLLAR = [-0.36, 1.24, 1.3];
+const VARIO_COLLAR = [-0.36, 1.12, 1.313];
+const VARIO_WHOLE = { part: 'firingPedestal', from: [24, 12], show: 'zubler-vario-200' };
 
 // ── Ivoclar Programat P300 ───────────────────────────────────────────────────
 // Its keypad is a flat plate on the front of the base, leaning back by about
@@ -305,9 +310,11 @@ export const HOW_TO = {
       confirm: { ...VARIO_CONSOLE, at: V.enter },
       otherGroup: { ...VARIO_CONSOLE, at: [V.esc, V.soft1, V.soft2] },
       softKeys: { ...VARIO_CONSOLE, at: [V.soft1, V.soft2] },
-      // The firing table with the lift down, seen from above; and the lift table itself where it shuts the chamber.
-      table: { part: 'firingPedestal', at: VARIO_TABLE_TOP, size: 1.0, from: [24, 36], show: 3.6 },
-      lift: { part: 'firingPedestal', at: VARIO_COLLAR, size: 1.5, from: [24, 6], show: 'chamberHead' },
+      // The top of the firing table, for a step in which the lift is down; and
+      // the lift table's collar, for a step in which it shuts the chamber (with
+      // the lift down, the console hides the collar).
+      table: { ...VARIO_WHOLE, at: VARIO_TABLE_TOP, size: 1.1 },
+      lift: { ...VARIO_WHOLE, at: VARIO_COLLAR, size: 1.6 },
     },
     guides: [
       {
@@ -346,7 +353,7 @@ export const HOW_TO = {
           },
           {
             title: 'Keep clear of the lift',
-            text: 'If the program pre-dries, the lift first holds the work below the chamber, in its heat; then it carries it in, in ten steps. Never reach between the lift table and the chamber, or under the table: it crushes and burns.',
+            text: 'If the program pre-dries, the lift first holds the work below the chamber, in its heat, then carries it in, in ten steps. Never reach between the lift table and the chamber, or under the table: it crushes and burns.',
             at: 'lift',
           },
           {
@@ -356,7 +363,7 @@ export const HOW_TO = {
           },
           {
             title: 'Close the lift afterwards',
-            text: 'At the end the lift lowers again: do not block it. Once the work is off, close the lift with its key, never by hand. Closed, the furnace keeps its idle temperature for four hours, then goes to stand-by.',
+            text: 'At the end the lift lowers: do not block it. Once the work is off, close the lift with the yellow key labelled “Up”, never by hand. Closed, the furnace keeps its idle temperature for 4 hours, then goes to stand-by.',
             at: 'softKeys',
           },
         ],
@@ -421,7 +428,7 @@ export const HOW_TO = {
       },
     ],
     confirm:
-      "(1) The guides retell Zubler's operating instructions for the VARIO 200 as Zubler USA publishes them (sections 0.4 and 0.5, 1.0 to 1.2.1, 1.4, 1.5 and 2.5). They are in English for 120 V units and carry no date; the manual that came with the lab's own furnace was not read. Is it a VARIO 200 or a 200ZR, and is its software the same? (2) The instructions do not describe loading and unloading. The guide says only that the work stands on the firing tray, and 'once the work is off'. They call what stands on the lift table a 'firing tray' in one place and a 'firing brick' in another; the guide takes these as one thing. (3) Which keys are which was read from the legend of the instructions' drawing of the console (section 1.0): green confirms, red cancels, the two yellow keys beside them move the lift, the two yellow keys under the dialer are − and +. The display writes above the yellow keys beside the red one what they do in each menu ('Next', 'Left', 'Right', 'Back', 'Last Line', 'Edit Prog'), so the rings mark both of them. Which of the two moves the lift up and which down is not said: the guide says 'its key'. (4) The instructions call the lift's keys 'Open' and 'Close' in one place and 'Up' and 'Down' in another. (5) The model is drawn with its lift down and has no part that carries the lift table; for a step in which the furnace is shut the tour moves the table up under the chamber (assets/registry.js). (6) Left out: copying, moving and erasing programs, brands, the USB transfer, the settings ('Setup Oven'), the purge program, the fuses and the vacuum pump's filter.",
+      "(1) The guides retell Zubler's operating instructions for the VARIO 200 as Zubler USA publishes them (sections 0.4 and 0.5, 1.0 to 1.2.1, 1.4, 1.5 and 2.5). They are in English for 120 V units and carry no date; the manual that came with the lab's own furnace was not read. Is it a VARIO 200 or a 200ZR, and is its software the same? (2) The instructions do not describe loading and unloading. The guide says only that the work stands on the firing tray, and 'once the work is off'. They call what stands on the lift table a 'firing tray' in one place and a 'firing brick' in another; the guide takes these as one thing. (3) Which keys are which was read from the legend of the instructions' drawing of the console (section 1.0): green confirms, red cancels, the two yellow keys beside them move the lift, the two yellow keys under the dialer are − and +. The display writes above the yellow keys beside the red one what they do in each menu ('Next', 'Left', 'Right', 'Back', 'Last Line', 'Edit Prog'), so the rings mark both of them. (4) The drawings of the main menu write 'Enter', 'Esc', 'Up' and 'Down' above the four keys under the display, and the legend calls the last two 'Lift movement Up / Down'; elsewhere the instructions call them the 'Open' and 'Close' keys. The guide takes 'Up' as the key that closes the lift. Is that what the lab's furnace shows once a program has ended? (5) The model is drawn with its lift down and has no part that carries the lift table; for a step in which the furnace is shut the tour moves the table up under the chamber (assets/registry.js). (6) Left out: copying, moving and erasing programs, brands, the USB transfer, the settings ('Setup Oven'), the purge program, the fuses and the vacuum pump's filter.",
   },
 
   'ivoclar-programat-p300': {
@@ -545,7 +552,7 @@ export const HOW_TO = {
           },
           {
             title: 'Every day',
-            text: 'Brush the cooling tray and the insulation clean. Clean the two sealing rims, on the head and on the base, with the brush and a soft cloth. Look at the quartz glass tube in the chamber: damaged, the furnace must not be used.',
+            text: 'Brush the cooling tray and the insulation clean. Clean both sealing rims, on the head and on the base, with brush and soft cloth. Look at the quartz glass tube in the chamber: damaged, the furnace must not be used.',
             at: 'rims',
             open: true,
           },

@@ -48,7 +48,7 @@ The tour is meant for education and awareness, so it now explains itself:
   the machine about its own middle and nothing else; it can be taken apart.
 - **A page per machine** with up to four pills: the machine, About (its
   maker), Features (key figures, with links to their sources) and Capabilities.
-  The six real machines have all four; the two workstation PCs have a
+  The nine real machines have all four; the two workstation PCs have a
   description and capabilities; placeholders have a description of their kind.
 - **An opening** (added later): when the page opens, the lab comes up part by
   part in about two seconds. See "The opening" under phase 5.
@@ -91,6 +91,8 @@ What could not be settled from documents alone:
 | UniFormation GK3 | UniFormation's GK3 product page | **GK3 (T), GK3 (B) or GK3 Pro?** T and B differ only in the screw that lifts the platform, and the figures shown hold for both. The GK3 Pro uses 385 nm light instead of 405 nm, and UniFormation's own page points dental work to the Pro. The 3D model shows a ball screw and a 405 nm hood, which would be the GK3 (B). |
 
 | Medit Identica T500 | Medit's T-Series brochures (2018 and 2019 editions, dealers' copies) and a dealer's page | **The name:** Medit's brochures say "Medit T500"; dealers and the badge on the 3D model say "Identica T500". **The accessories:** the 2019 brochure lists the multi-die, colour texture and articulator modules as included and the 3-axis arm for impressions as optional; which does the lab have? What the texture and articulator modules are for is described from general use; the brochure only lists them. |
+| imes-icore CORiTEC 350i PRO | imes-icore's product page for the 350i series and its brochure for the 350i PRO series | **PRO, PRO+ or a Loader?** The same body is sold with a 2.6 kW water-cooled spindle (PRO+) and with a changer for 12 blanks (Loader, 300 mm wider); the figures shown are for the PRO. imes-icore's two documents differ on the weight (205 kg, or 180 to 210 kg), on the air pressure and on the size of the screen; the page gives what both agree on, and the brochure's 205 kg. **What it stands on:** imes-icore sells machine tables for it; in the tour it shares a table with the other mill. |
+| DGSHAPE DWX-52Di Plus | DGSHAPE's product page and brochure for the DWX-52Di Plus; its Setup Guide for the DWX-52Di | **Which model exactly:** DWX-52Di Plus (2025), or the earlier DWX-52Di or DWX-52D Plus? **The ionizer and the dust collector** are taken from the Setup Guide of the DWX-52Di, which names the spindle of the Plus but not the name "Plus"; DGSHAPE's page for the Plus does not mention an ionizer. The 3D model has a drawer that its file calls a dust drawer; DGSHAPE shows a storage compartment there. |
 
 `npm run check` prints these notes every time it runs, from the `confirm`
 fields in `knowledge.js`; they are never shown to visitors.
@@ -114,14 +116,15 @@ Suggested order:
    printer, a **UniFormation GK3**, is in as a 3D model (see "The GK3's 3D
    model" below for how it got there and what is left to confirm). Open: are
    the other two printer places also GK3s, other printers, or empty? And what
-   are the wash and curing units?
+   are the wash and curing units? The two milling machines stand in this room
+   too, for want of a milling room (see "The two milling machines' 3D models").
 2. **Ceramic Room** — its three furnaces are done; four small bench units
    finish the room.
 3. **Plaster Room** — five machines, all simple shapes.
 4. **Acrylic & Prosthodontic Room** — the largest backlog (six types).
 5. **Clinic Reception** — mostly furniture and atmosphere; one scanner cart.
 
-The Design Room already has all four of its machines.
+The Design Room already has all its machines.
 
 ### Phase 4 — the rest of the concept's interface
 
@@ -193,7 +196,7 @@ header rules described in the README.
 
 ## Inventory
 
-31 machines are placed: **9 are 3D models, 22 are placeholders** (19 different
+33 machines are placed: **11 are 3D models, 22 are placeholders** (19 different
 types still to identify and model). Sizes are width × depth × height in mm.
 
 ### Design Room — CAD Design & Planning · 5.2 × 4.0 m
@@ -223,8 +226,11 @@ file").
 **The copy the tour was built from is the file in Drive, byte for byte.** The
 connection to Drive does not put a file on disk. It shows a file's text to the
 assistant, and of a long file only the start and the last few thousand
-characters before a chosen cut. (It also has a plain download; that was not
-tried, because it has no such cut to move along the file.) So the file was put
+characters before a chosen cut. (It also has a plain download. That was not
+tried then; it was used for the two milling machines later, and it works: see
+"The two milling machines' 3D models". The scanner's file was fetched again
+that way afterwards. It is the same file, and importing it again changed
+nothing in the tour.) So the file was put
 together again here:
 
 - its first 81,700 characters (the page, the viewer's own code and the model's
@@ -272,10 +278,10 @@ Two things differ from the stand-alone viewer:
   Scan"). The tour has no such button for any machine yet; the model's function
   for it is imported and unused.
 
-The GK3 (below) could be settled the same way. Its own viewer file is in Drive
-with a checksum too, so that file could be rebuilt and proven like this one,
-and the printer imported from it in place of the hand copy. That was not done
-here; it takes about as many readings again.
+The GK3 (below) could be settled the same way, and with the download in one
+step: its own viewer file is in Drive with its checksums, so it can be fetched,
+proven and imported in place of the hand copy. That has not been done: nobody
+asked for it, and it would swap the printer's model for another file's.
 
 ### Printing Room — 3D Printing · 4.0 × 4.0 m
 
@@ -285,8 +291,115 @@ here; it takes about as many readings again.
 | Resin 3D printer × 2 | ◻ placeholder | 400 × 400 × 580 (draft) |
 | Print wash station | ◻ placeholder | 270 × 300 × 360 (draft) |
 | UV post-curing unit | ◻ placeholder | 270 × 270 × 350 (draft) |
+| imes-icore CORiTEC 350i PRO | ✅ 3D model | 759 × 823 × 857 (maker: 758 × 790 × 857) |
+| DGSHAPE DWX-52Di Plus | ✅ 3D model | 495 × 693 × 600 (maker: 495 × 660 × 600) |
 
-Furniture: 3.0 m and 1.8 m benches, island bench, shelf rack.
+Furniture: 3.0 m and 1.8 m benches, shelf rack, and a machine table in the
+middle of the room (1.6 × 0.9 m, 900 mm high) that carries the two milling
+machines. It stands where an empty island bench stood (1.4 × 0.7 m).
+
+#### The two milling machines' 3D models
+
+Neither machine is in the asset library. Each lies in Google Drive as a viewer
+of its own, and was imported from that file with `npm run import-viewer`, as
+the Medit scanner was:
+
+| | imes-icore CORiTEC 350i PRO | DGSHAPE DWX-52Di Plus |
+|---|---|---|
+| Folder in Drive | imes-icore CORiTEC 350i PRO — Three.js Viewer | DGSHAPE DWX-52Di Plus — Three.js Viewer |
+| File | `Imes_Icore_CORiTEC_350i_Viewer.html` | `DGSHAPE_DWX_52Di_Plus_Viewer.html` |
+| Size | 770,459 bytes | 761,507 bytes |
+| MD5 in Drive | `c8ba37b9d304323ead54821f743533ce` | `40d86751d9356817182d3d501f236666` |
+| In the tour as | `imes-icore-350i-pro` | `dgshape-dwx-52di-plus` |
+| Meshes, triangles, materials | 168 · 9,238 · 29 | 213 · 16,788 · 22 |
+| Parts it comes apart into | 7 | 7 |
+| Body as modelled | 758 × 790 × 857 mm | 495 × 660 × 600 mm |
+
+**The copies the tour was built from are the files in Drive, byte for byte.**
+This time the files were downloaded whole. They did not arrive as they are in
+Drive: something between Drive and this workspace had rewritten the page (a
+service that speeds up web pages by loading their scripts late; Cloudflare's
+Rocket Loader, going by the file it adds). Each file was 382 bytes longer:
+
+- every one of its five `<script>` tags had been given a `type` attribute
+  (48 bytes each), and
+- one more `<script>` tag, loading a file of that service, stood before
+  `</body>` (142 bytes).
+
+Both additions were taken out again, and the result was compared with what
+Drive lists for the file: the size, the MD5 and the SHA-256 are Drive's, for
+both files. Those checksums are in `js/assets/viewers/manifest.js` and at the
+top of each model's module. (A README, which is not a web page, arrived
+untouched. The files in Drive were only read.)
+
+The importer now does both by itself. It takes out exactly these two
+additions, and, given the checksum Drive lists (`--md5`, `--sha256`), it stops
+unless the file has it. Tried on the two downloads just as they arrived: the
+modules it wrote are the same, byte for byte, as those from the copies cleaned
+by hand. Tried with a wrong checksum, and with a copy in which one digit of the
+model was changed: it refused both and wrote nothing.
+
+The importer needed one more change. It used to look for the model by the name on
+its `<script>` tag (`id="component-2-product-model"`, as in the scanner's
+file). These two files name their scripts in a comment above each one and leave
+the tag bare. The importer now goes by what a script does: the model is the one
+that sets `window.__ProductModel`. To be sure that the scanner was not touched
+by this, its file was fetched again and imported again: not one byte of
+`medit-t500.js` or of its entry in the manifest changed.
+
+Each body has the maker's size exactly. What sticks out is measured with it,
+hence 823 and 693 mm of depth: on the DGSHAPE the suction port at the back
+(33 mm); on the imes-icore machine the port and the air unit at the back
+(23 mm) and the emergency stop button at the front (10 mm).
+
+**Where they stand is a choice made here.** The floor plan has no milling room
+and none was named. They stand in the Printing Room: both rooms' machines turn
+a design into an object, and the room's text now says so in one more sentence.
+One entry in `js/rooms/content.js` moves them.
+
+- They share a table 900 mm high, the height of the room's benches. imes-icore
+  sells machine tables for the 350i PRO that are 930 mm high and exactly as deep
+  as the machine (790 mm); the tour's table is 900 mm deep so that the ports at
+  the back stand on it too. A real table has to carry the imes-icore's 205 kg.
+- Walking room around the table: 0.75 m to the bench on the west wall, 0.80 m
+  to the east wall, 1.2 m to the printers' bench, 1.0 m to the corridor wall
+  and its door.
+- On its table the imes-icore machine reaches 1.76 m, nearly as high as the
+  shelf rack, and it stands in the middle of the room. Every other machine
+  there can still be seen and tapped from where the visitor stands
+  (`npm run e2e` checks it).
+
+Two things differ from the stand-alone viewers:
+
+- **The chamber lights are off.** Each model holds a point light in its milling
+  chamber, lit all the time in the viewer. The tour switches off any light
+  inside a machine (`js/assets/registry.js`; the reasons were measured on the
+  scanner, see above). The chambers are lit by the tour's own lights through
+  their windows; the tools, the disc and the spindle can be seen.
+- **The cover does not open and nothing mills.** The viewers have a button for
+  each ("Open Cover", "5-Axis Mill"). The tour has no such buttons for any
+  machine yet; the models' functions for it are imported and unused.
+
+**What the makers' documents say, against the notes in Drive.** The figures on
+the two pages were taken from the makers' own documents, not from the READMEs
+that lie beside the viewers. Where the two disagree:
+
+| | Note in Drive | Maker |
+|---|---|---|
+| imes-icore, B axis | "±30°..115°" | "B-axis 115°", no range given |
+| imes-icore, screen | 15 inch | 15 inch (web page) or 15.6 inch (brochure) |
+| imes-icore, weight | 205 kg | 205 kg (brochure); 180 to 210 kg for PRO and PRO+ (web page) |
+| DGSHAPE, ionizer | built in | not on the page or in the brochure of the Plus; in the Setup Guide of the DWX-52Di |
+| DGSHAPE, drawer at the bottom | a dust drawer | a cover with storage behind it; the dust leaves through the port at the back, to a separate dust collector |
+
+Everything else in the notes that was checked agrees with the makers: sizes,
+weights, spindle speeds, the 20 and 15 tools, the 4.8 litre coolant tank, the
+98.5 mm disc.
+
+What they cost to draw is in the README ("How it stays fast"). In short: the
+DGSHAPE is now the costliest model in the tour to show on its own, with 213
+separate parts, and the frame of the whole lab that also redoes the shadows
+went from 400 to 493 draw calls.
 
 #### The GK3's 3D model
 
@@ -399,9 +512,9 @@ Furniture: 3.4 m bench, technicians' benches with chairs.
 
 The first seven machines and the workbench were imported unchanged; the
 importer measures each one. (The eighth, the UniFormation GK3, came later: see
-"The GK3's 3D model" above. The ninth, the Medit T500, is not from the library
-but from its own viewer file: see "The Medit T500's 3D model".) Things worth
-knowing:
+"The GK3's 3D model" above. The Medit T500 and the two milling machines are not
+from the library but from viewer files of their own: see "The Medit T500's 3D
+model" and "The two milling machines' 3D models".) Things worth knowing:
 
 1. **DS-EX Pro is about twice as wide and deep as stated.** The library gives
    the real machine as 260 × 270 × 420 mm; the model measures 470 × 627 × 429 mm,
@@ -415,11 +528,14 @@ knowing:
 3. **The lighting differs slightly from the library viewer.** The main light
    comes more from the side, so that walls and furniture cast visible shadows
    across the floor. Machine fronts are lit a little more softly as a result.
-4. **The GK3 is the costliest model to show on its own.** It is 178 separate
-   parts, where the README asks for under 100 per machine (the 3Shape E4, the
-   next, has 114). In the lab it is baked down to 22 like the others; in its
-   own view a frame that redoes the shadows takes 384 draw calls, against
-   156–346 for the other eight. Its triangle count (23,176) is within the aim.
+4. **The GK3 is the costliest of the library's models to show on its own.** It
+   is 178 separate parts, where the README asks for under 100 per machine (the
+   3Shape E4, the next, has 114). In the lab it is baked down to 22 like the
+   others; in its own view a frame that redoes the shadows takes 392 draw
+   calls. Its triangle count (23,176) is within the aim. (Two of the models
+   from viewer files are in the same class: the DGSHAPE milling machine with
+   213 parts and 518 draw calls on such a frame, the imes-icore with 168 and
+   446.)
    The picture its touch screen shows is drawn with a canvas call that browsers
    older than Chrome 99 and Firefox 112 lack; `js/assets/registry.js` supplies
    it there.
@@ -446,3 +562,8 @@ knowing:
    the other two printer places? The model was copied out of the library file
    rather than imported from it: see "The GK3's 3D model" in the inventory for
    how to confirm it.
+8. **The milling machines.** Two stand in the Printing Room, on a table of
+   their own, because the floor plan has no milling room. Is that where they
+   are? Which models exactly (CORiTEC 350i PRO or PRO+; DWX-52Di Plus or an
+   earlier DWX-52)? And should the tour show them at work, with the cover open
+   and the spindle moving, as their own viewers can?

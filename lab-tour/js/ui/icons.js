@@ -33,6 +33,7 @@ export const ICONS = {
   computer: svg('<rect x="2.5" y="5" width="12.5" height="9" rx="1.6"/><path d="M6.2 18 H11.3 M8.75 14 V18"/><rect x="17.5" y="5" width="4" height="13" rx="1.2"/><path d="M19.5 8 V8.1"/>'),
   furnace: svg('<path d="M10 13.6 V5.5 A2 2 0 0 1 14 5.5 V13.6 A4 4 0 1 1 10 13.6 Z"/><path d="M12 9 V15.6"/>'), // thermometer
   printer: svg(CUBE),
+  mill: svg('<path d="M9.4 2.8 H14.6 V11.4 L12 14.2 L9.4 11.4 Z"/><path d="M9.4 5.8 L14.6 8 M9.4 8.8 L14.6 11"/><path d="M3.5 14.6 H7.8 V17.4 H16.2 V14.6 H20.5 V20.6 H3.5 Z"/>'), // a fluted cutter in the slot it has cut into a block
   droplet: svg(DROPLET),
   light: svg('<circle cx="12" cy="12" r="3.6"/><path d="M12 3.5 V5.5 M12 18.5 V20.5 M3.5 12 H5.5 M18.5 12 H20.5 M6 6 L7.4 7.4 M16.6 16.6 L18 18 M18 6 L16.6 7.4 M7.4 16.6 L6 18"/>'),
   disc: svg(DISC),

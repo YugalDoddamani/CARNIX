@@ -7,7 +7,9 @@
 // Entry types
 //   { kit: 'bench', params, seats, on }   furniture from the kit (never tappable)
 //       seats: chair positions along the bench, mm from its centre
-//       on:    things standing on the worktop, `x` mm along the bench from its centre
+//       on:    things standing on the worktop, `x` mm along the bench from its centre.
+//              A machine stands at the back of the worktop unless it is given `z`
+//              as well: mm from the middle of the worktop towards its front edge.
 //   { equipment: 'plaster-sink' }         a machine from the catalogue (tappable)
 //   { station: 'furnaces' | 'scanners' }  one of the two approved benches from the
 //       asset library, exactly as composed there, with its machines
@@ -62,7 +64,17 @@ export const ROOM_CONTENT = {
         { equipment: 'cure-unit', x: -400 },
       ],
     },
-    { kit: 'bench', at: [2.4, 2.5], params: { length: 1400, height: 900, pedestals: 'none' } },
+    // The two milling machines share a machine table in the middle of the room
+    // (deeper than a lab bench: the larger one is 790 mm deep), fronts to the corridor.
+    {
+      kit: 'bench',
+      at: [2.33, 2.45],
+      params: { length: 1600, depth: 900, height: 900, pedestals: 'both' },
+      on: [
+        { equipment: 'imes-icore-350i-pro', x: -390, z: 0 },
+        { equipment: 'dgshape-dwx-52di-plus', x: 520, z: 60 },
+      ],
+    },
   ],
 
   // 4.6 × 4.0 m · corridor door at x = 0.7 (south side) · street entrance on the east side at z = 2.0

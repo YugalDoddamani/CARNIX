@@ -5,7 +5,7 @@
 // a machine the library does not hold yet). The imported components are also
 // inconsistent with each other (some return `assemblies`, some `subAssemblies`,
 // a viewer's model returns neither; one needs a 0.84 scale to sit right on the
-// bench; three bring a lamp of their own). This file hides all that behind a single
+// bench; four bring lamps of their own). This file hides all that behind a single
 // contract, so the rest of the tour — and every future asset — only ever deals
 // with this shape:
 //
@@ -106,6 +106,9 @@ export async function createEquipment(id) {
   // The two milling machines hold one each as well, a white point light in the
   // milling chamber. The same goes for those. (Their models set the strength
   // of that light whenever they are taken apart; a hidden light stays hidden.)
+  // The thermopress 400 holds two: an orange one at its heater and a white one
+  // in its flask chamber. Its heater keeps its orange colour without them: that
+  // is the material's own glow, not light falling on it.
   root.traverse((node) => {
     if (node.isLight) node.visible = false;
   });

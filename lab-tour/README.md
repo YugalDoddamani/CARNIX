@@ -7,13 +7,14 @@ explanation at every step.
 It is one static page. There is no build step, nothing to install and no CDN:
 three.js is served from `vendor/`, and everything else is plain ES modules.
 
-**Status:** the building, six furnished rooms, 11 machines as 3D models (8 from
-the asset library; three from viewer files of their own: the Medit Identica
-T500 lab scanner and the two milling machines, imes-icore CORiTEC 350i PRO and
-DGSHAPE DWX-52Di Plus), and 22 placeholders for machines that are not modelled
-yet; on top of that a guided route through the rooms, a page that explains each
-machine, with sourced figures for the nine real ones, and an opening in which
-the lab comes up part by part.
+**Status:** the building, six furnished rooms, 13 machines as 3D models (8 from
+the asset library; five from viewer files of their own: the Medit Identica
+T500 lab scanner, the two milling machines, imes-icore CORiTEC 350i PRO and
+DGSHAPE DWX-52Di Plus, and the two injection units of the Acrylic room, Ivoclar
+SR Ivocap and bredent thermopress 400), and 22 placeholders for machines that
+are not modelled yet; on top of that a guided route through the rooms, a page
+that explains each machine, with sourced figures for the eleven real ones, and
+an opening in which the lab comes up part by part.
 What comes next, and why it is built in this order, is in
 [`docs/PLAN.md`](docs/PLAN.md).
 
@@ -81,7 +82,7 @@ still need the lab's confirmation.
 > types (read off the concept image and typical for these rooms), the order of
 > the tour and the paragraph about each room are drafts. They are marked as such
 > in the files and are meant to be replaced with the real plan, the real
-> equipment list and the lab's own words. The figures for the nine real machines
+> equipment list and the lab's own words. The figures for the eleven real machines
 > are taken from their makers' documents; what is still uncertain about them is
 > listed by `npm run check` and in `docs/PLAN.md`.
 
@@ -174,10 +175,20 @@ its own: one HTML file that shows that machine alone
    `js/assets/viewers/manifest.js`, together with the checksums of the file.
    Machines imported earlier are left alone. Like the library's importer it
    reads a file on disk.
-   It finds the model by what the script does (it is the one that sets
-   `window.__ProductModel`), so it does not matter how a viewer names its
-   scripts: the scanner's file names them on the tag, the milling machines'
-   files in a comment above each.
+   It finds the model by what the code does, not by how a viewer names its
+   scripts. The files seen so far are laid out in two ways:
+   - The model is a script of its own, the one that sets
+     `window.__ProductModel` (the scanner's file names its scripts on the tag,
+     the milling machines' files in a comment above each). The whole script is
+     taken.
+   - The model and the viewer's page share one script (the SR Ivocap's and the
+     thermopress 400's files): first the model's functions, among them one
+     `function create…Product(THREE)`, then the page's own code as a function
+     that is called on the spot. The script is taken up to the line on which
+     that code starts. The importer loads the part it took where there is no
+     page and no three.js: it must do nothing but declare functions, and
+     exactly one of them may be a `create…Product(THREE)`. If not, the import
+     stops and says why.
    **Give it the checksum from Drive.** A file can arrive changed: fetched
    through a proxy that rewrites web pages, each of the two milling machines'
    files came with five script tags altered and one added. The importer knows
@@ -185,8 +196,23 @@ its own: one HTML file that shows that machine alone
    else may have happened to a file, the checksum stops the import.
    `docs/PLAN.md` ("The two milling machines' 3D models") has the details.
 2. Add it to `catalogue.js` as `status: 'built'`, place it in `content.js` and
-   describe it in `knowledge.js`, as for any other machine.
+   describe it in `knowledge.js`, as for any other machine. Keep `shortName`
+   to 14 letters: it is the first of four pills in the machine's panel, and a
+   longer one pushes "Capabilities" out of sight (`npm run check` warns).
 3. `npm run check`, then look at it in the browser.
+
+Two things a viewer's model may bring that the tour deals with, so the model's
+code stays as it came:
+
+- **Lights.** They are switched off (`registry.js`); the importer says how many
+  a model holds.
+- **Parts that are hidden while the machine is closed.** The thermopress 400
+  keeps the tool that tightens its flask, and the stay that props its lid open,
+  out of sight until they are needed. The importer notes how many meshes are
+  hidden (`measured.hidden` in the manifest). `npm run check` measures such a
+  model as it stands: it counts what is drawn, and it fails if a hidden part
+  reaches outside the closed machine, because the size on record (which places
+  the machine on its bench) would then not be the size on show.
 
 When the machine later arrives in the asset library under the same id, the
 library's copy is used, and `npm run check` fails until the viewer's copy is
@@ -256,7 +282,8 @@ Rules for new models, so they drop in without adjustment:
 - **No lights, cameras or scene setup inside an asset.** The tour owns those.
   A light that a model brings anyway is switched off (`registry.js`). The Medit
   scanner has one, a blue lamp in its scan bay; each milling machine has one in
-  its milling chamber.
+  its milling chamber; the thermopress 400 has two, one at its heater and one
+  in its flask chamber.
 - **Budget per machine:** aim for under 25,000 triangles and 100 draw calls in
   full detail. The tour bakes each machine down to a few draw calls when it is
   not the one being inspected, but triangles are drawn either way.
@@ -291,25 +318,27 @@ flying around a room, and both are easy to break:
   the scene changes.
 - **Machine code is loaded lazily**, after the building is on screen.
 - **Budget:** 400 draw calls and 450,000 triangles for the overview, enforced
-  by `npm run check`. Current use: 270 draw calls, 283,000 triangles. That is
+  by `npm run check`. Current use: 307 draw calls, 317,000 triangles. That is
   a frame as it is drawn while a visitor looks around. A frame that also
   redoes the shadows (when a model arrives, when a machine is opened, left or
-  taken apart) draws every part that casts a shadow a second time: 493 draw
-  calls and 555,000 triangles for the whole lab. That frame is over 400 since
-  the two milling machines came (with nine machines it was exactly 400); the
-  budget was never defined for it, and `npm run e2e` reports it without
-  limiting it. Each further machine adds 10 to 30 draw calls to a frame, and
-  nearly as many again to a frame with shadows.
-- **A machine view** draws the picture in three passes. Measured for the eleven
-  models: 90–287 draw calls per frame while a machine is turned, 156–518 on the
-  frames that also redo the shadows (arriving, and each step of the take-apart
-  slider); a little more once a machine is taken apart, up to 294 and 529.
-  With nine machines the ranges were 90–242 and 156–384. The DGSHAPE milling
-  machine is the costliest on those frames (518): its model has 213 separate
-  parts. Then come the imes-icore milling machine (446; 168 parts) and the
-  resin printer (392; 178 parts). A machine that stands behind the one on show
-  is drawn too, faded: the two milling machines added 10 to 34 draw calls to
-  the views of the three furnaces in the room in front of them.
+  taken apart) draws every part that casts a shadow a second time: 560 draw
+  calls and 624,000 triangles for the whole lab. That frame is over 400 since
+  the two milling machines came (493 with them; with nine machines it was
+  exactly 400); the budget was never defined for it, and `npm run e2e` reports
+  it without limiting it. Each further machine adds 10 to 30 draw calls to a
+  frame, and nearly as many again to a frame with shadows.
+- **A machine view** draws the picture in three passes. Measured for the
+  thirteen models: 90–287 draw calls per frame while a machine is turned,
+  156–518 on the frames that also redo the shadows (arriving, and each step of
+  the take-apart slider); a little more once a machine is taken apart, up to
+  294 and 529. With nine machines the ranges were 90–242 and 156–384. The
+  DGSHAPE milling machine is the costliest on those frames (518): its model
+  has 213 separate parts. Then come the imes-icore milling machine (446; 168
+  parts) and the resin printer (392; 178 parts). A machine that stands behind
+  the one on show is drawn too, faded: the two milling machines added 10 to 34
+  draw calls to the views of the three furnaces in the room in front of them.
+  The two injection units lie in the middle of the range (SR Ivocap 157 and
+  254, thermopress 114 and 195) and changed none of the other eleven views.
 - **The opening costs four extra frames, once.** Before anything is shown the
   lab is drawn four times with more and more of it switched on, and each
   picture is kept; the browser then fades those pictures away over the live
@@ -319,8 +348,9 @@ flying around a room, and both are easy to break:
   24 MB (above six megapixels the lab comes up in one plain fade, with no
   pictures kept). If the browser will not hand one out, or anything else in
   the opening fails, the tour opens without it.
-- **Download:** about 399 KB compressed in total (three.js 177.8 KB, machine
-  models 128.5 KB, tour code and texts 93.0 KB). No images, no fonts.
+- **Download:** about 428 KB compressed in total (three.js 178.6 KB, machine
+  models 152.4 KB, tour code and texts 97.0 KB). No images, no fonts. The two
+  injection units added 28 KB.
 
 ## Folder map
 
@@ -351,7 +381,7 @@ vendor/three-r160/      three.js 0.160.0, unmodified (see its README for why thi
 with a mouse, on a 390 × 844 phone with a finger, on a first visit, with
 "reduce motion" switched on, one who watches the opening, and one with a
 browser from 2021–22 — with real clicks, taps, drags and key presses, and
-checks what happens (409 checks, 10 to 13 minutes; `--only=entrance,older` runs
+checks what happens (445 checks, 8 to 13 minutes; `--only=entrance,older` runs
 some of them). Among them: a drag turns the machine about its own middle and
 leaves the lab behind it unchanged, pixel for pixel; a machine fits the area
 the panel leaves free, in a wide window, a small one and on a phone; leaving a
@@ -359,11 +389,13 @@ machine clears the spotlight; Back, Forward, Escape and shared links work; the
 opening shows the lab's parts in order, ends at once on a tap or a resize,
 leaves the same picture as opening without it, and never costs a visitor the
 tour: in a browser that cannot supply the pictures it is made of, the tour
-opens without it; the four models that came later (the resin printer; the lab
-scanner and the two milling machines from their viewer files) are shown, fill
-the view and come apart like the first seven; the lamps that the scanner and
-the milling machines bring stay off; and no machine in the Printing Room is
-out of reach behind the milling machines.
+opens without it; the six models that came later (the resin printer; the lab
+scanner, the two milling machines and the two injection units from their
+viewer files) are shown, fill the view and come apart like the first seven;
+the lamps that the scanner, the milling machines and the thermopress bring
+stay off; the parts that the thermopress hides while it is closed are not
+drawn until it is taken apart; and no machine in the Printing Room or the
+Acrylic Room is out of reach behind the new ones.
 
 It needs the tour running (`npm run serve`) and a headless Chromium, which is
 not part of the repository. Install it once, anywhere outside the repo:
@@ -460,5 +492,22 @@ Things to know — none of the existing CARNIX files have been changed:
 - There is no milling room in the floor plan. The two milling machines stand
   in the Printing Room, on a table of their own: a choice made here, and one
   entry in `js/rooms/content.js` to change.
+- The two injection units do less in the tour than in their own viewers too.
+  There, one button lifts the SR Ivocap's pressure apparatus off the flask, or
+  opens the thermopress's lid, and another runs an injection: the needle of
+  the SR Ivocap's manometer rises and its piston goes down; the thermopress's
+  lever moves, its heater glows and its piston pushes. The models' functions
+  for it are imported and unused, and the thermopress's two lights are off.
+  The stay that props the thermopress's lid open is never seen, because the
+  tour never opens the lid. Both models show details that were not checked
+  against the makers' documents (a type plate, the display, the capsule's
+  label, the manometer's face); `npm run check` lists them.
+- The SR Ivocap stands on a bench, assembled, as in its viewer. In use it
+  stands in a bath of boiling water, and it needs a hydraulic press and a
+  vibrator for its capsules: the room has a placeholder for a flask press and
+  none for the other two. The request named it "ivoclar bps"; BPS is Ivoclar's
+  whole system for dentures, and the SR Ivocap is the machine in it. Its page
+  says so. That the two units stand on the island bench of the Acrylic Room is
+  a choice made here as well, and one entry in `js/rooms/content.js` to change.
 - The opening plays on every visit, not only the first.
 - See `docs/PLAN.md` for everything in the concept image that is not built yet.

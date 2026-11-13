@@ -10,18 +10,32 @@
 //        [--md5 <hex>] [--sha256 <hex>]   what Google Drive lists for the file: the
 //                                         import stops unless the file on disk is that file
 //
-// A viewer file holds three components and the inlined three.js:
+// A viewer file holds the inlined three.js and, besides it, three things:
 //   1  scene core      the viewer's own renderer, camera and lights             (left out)
-//   2  product model   the machine: window.__registerProductModel() sets
-//                      window.__ProductModel = { create…Product }               (imported)
+//   2  product model   the machine                                               (imported)
 //   3  viewer app      buttons, keyboard, render loop                            (left out)
-// Viewer files name these in two ways: on the tag (<script id="component-2-product-model">,
-// as in the Medit T500's file) or in a comment above a bare <script> ("COMPONENT 2 OF 3:
-// PRODUCT MODEL (…)", as in the two milling machines' files). The importer goes by
-// what a script does, not by its name: the model is the one that sets window.__ProductModel.
+// The files seen so far are laid out in two ways, and the importer goes by what
+// the code does, not by how a file names its parts:
+//
+//   A  The model is a script of its own, which registers itself:
+//      window.__registerProductModel() sets window.__ProductModel = { create…Product }.
+//      The script is named on its tag (<script id="component-2-product-model">, the
+//      Medit T500's file) or in a comment above a bare <script> ("COMPONENT 2 OF 3:
+//      PRODUCT MODEL (…)", the two milling machines' files). The whole script is taken.
+//
+//   B  The model and the viewer app share one script (the SR Ivocap's and the
+//      thermopress 400's files): first the model's functions, among them
+//          function create…Product(THREE) { … }
+//      and after them the app, as one statement that runs at once:
+//          (function initStudioViewer() { … })();
+//      The script is taken from its start up to the line on which the app starts.
+//      That part has to be nothing but functions: loading it must do nothing, and
+//      exactly one create…Product(THREE) may be among them (one viewer, one machine).
+//      The importer loads the part where there is no page and no three.js to see
+//      both; if either fails, it stops and writes nothing.
 //
 // It writes
-//   js/assets/viewers/<id>.js       the model component, byte for byte, in a module wrapper
+//   js/assets/viewers/<id>.js       the model's source, byte for byte, in a module wrapper
 //   js/assets/viewers/manifest.js   one entry per imported viewer: name, sizes, draw cost,
 //                                   and the checksums of the file it came from
 // Viewers are imported one at a time: the modules of other machines in that folder
@@ -34,6 +48,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import vm from 'node:vm';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(HERE, '../js/assets/viewers');
@@ -119,8 +134,11 @@ for (const [algorithm, wanted] of Object.entries(expected)) {
   }
 }
 
-// ── 1. Find the model component ──────────────────────────────────────────────
+// ── 1. Find the model ────────────────────────────────────────────────────────
 const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)];
+const lineOf = (text, index) => text.slice(0, index).split('\n').length;
+
+// Layout A: a script of its own that sets window.__ProductModel.
 const candidates = [];
 scripts.forEach((match, index) => {
   if (!/\bwindow\.__ProductModel\s*=(?!=)/.test(match[2])) return;
@@ -138,15 +156,104 @@ scripts.forEach((match, index) => {
   const nth = `script ${index + 1} of ${scripts.length}`;
   candidates.push({ id: nth, where: `${nth}${heading ? `, under the comment "${heading}"` : ''}`, body: match[2] });
 });
-if (candidates.length === 0) fail(`${sourceName} has no script that sets window.__ProductModel: is this a single-machine viewer? (The asset library is imported with import-asset-library.mjs.)`);
 if (candidates.length > 1) fail(`${sourceName} has ${candidates.length} scripts that set window.__ProductModel (${candidates.map((c) => c.id).join(', ')}); expected one`);
+
+// Layout B: no such script. Look for the one that declares the model's factory,
+// function create…Product(THREE), and cut it where the viewer app starts.
+if (candidates.length === 0) {
+  // (Found by its text first, wherever it stands on its line; whether it really
+  // is a function of the script itself, and the only one, is settled further
+  // down by loading the script's model part.)
+  const FACTORY = /^[ \t]*function\s+(create[A-Za-z0-9_$]*Product)\s*\(\s*THREE\s*\)\s*\{/gm;
+  const holders = [];
+  scripts.forEach((match, index) => {
+    const found = [...match[2].matchAll(FACTORY)];
+    if (found.length) holders.push({ index, body: match[2], found });
+  });
+  if (holders.length === 0) {
+    fail(
+      `${sourceName} has no model the importer can find: no script sets window.__ProductModel, and none declares a function create…Product(THREE). ` +
+        'Is this a single-machine viewer? (The asset library is imported with import-asset-library.mjs.)',
+    );
+  }
+  if (holders.length > 1) {
+    fail(`${sourceName} declares create…Product(THREE) functions in ${holders.length} scripts (${holders.map((h) => `script ${h.index + 1}: ${h.found.map((f) => f[1]).join(', ')}`).join('; ')}); expected one machine in one script`);
+  }
+  const { index, body, found } = holders[0];
+  const nth = `script ${index + 1} of ${scripts.length}`;
+  // The app comes after the model: look for its start behind the first of them.
+  const firstFactoryAt = found[0].index;
+
+  // Where the app starts: the first line after the factory that opens a function
+  // called on the spot, "(function name() {" or "(() => {", at a place where
+  // everything before it is complete code. (A line like that inside a function
+  // leaves the part before it unfinished, and that does not compile.) A script
+  // with no such line is all model.
+  const compiles = (code) => {
+    try {
+      new vm.Script(code);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const starts = [...body.matchAll(/^[ \t]*\(\s*(?:async\s+)?(?:function\b|\([^()]*\)\s*=>)/gm)].map((m) => m.index).filter((at) => at > firstFactoryAt);
+  const cut = [...starts, body.length].find((at) => compiles(body.slice(0, at)));
+  if (cut === undefined) fail(`${nth} of ${sourceName} declares ${found[0][1]}(THREE) but does not compile`);
+  const model = body.slice(0, cut);
+
+  // The model's part must be functions and nothing else. Run it where there is
+  // no page, no three.js and no globals at all: declaring functions works
+  // there, doing anything does not.
+  const emptyWorld = vm.createContext(Object.create(null));
+  try {
+    new vm.Script(model).runInContext(emptyWorld, { timeout: 2000 });
+  } catch (error) {
+    fail(
+      `${nth} of ${sourceName}: the part taken for the model (up to line ${lineOf(body, cut)} of the script) does more than declare functions, ` +
+        `so the viewer app cannot be cut off cleanly (${error.name}: ${error.message}). Nothing was imported.`,
+    );
+  }
+  // Loading it has declared the script's own functions in that world. Exactly
+  // one of them may be a create…Product(THREE): with two, nothing says which one
+  // is the machine. (One nested inside another function is not among them.)
+  const takesThree = (fn) => /^function\s+[A-Za-z0-9_$]+\s*\(\s*THREE\s*\)/.test(Function.prototype.toString.call(fn));
+  const factories = Object.keys(emptyWorld).filter((key) => /^create[A-Za-z0-9_$]*Product$/.test(key) && typeof emptyWorld[key] === 'function' && takesThree(emptyWorld[key]));
+  if (factories.length === 0) fail(`${nth} of ${sourceName}: ${found[0][1]}(THREE) is declared inside another function, not by the script itself, so the importer cannot call it`);
+  if (factories.length > 1) fail(`${nth} of ${sourceName} declares more than one create…Product(THREE) function (${factories.join(', ')}); expected one machine. Nothing was imported.`);
+  const factory = { name: factories[0] };
+
+  const appFirstLine = body.slice(cut).split('\n')[0].trim();
+  candidates.push({
+    id: cut < body.length ? `${nth}, before the viewer app` : nth,
+    where: cut < body.length ? `${nth}, from its start to the viewer app (its line ${lineOf(body, cut)}: "${appFirstLine}")` : `${nth}, all of it`,
+    body: model,
+    factory: factory.name,
+    appBytes: Buffer.byteLength(body.slice(cut), 'utf8'),
+  });
+}
 const component = candidates[0];
 
-const registerFns = [...component.body.matchAll(/window\.(__register[A-Za-z0-9_$]+)\s*=\s*function/g)].map((m) => m[1]);
-if (registerFns.length !== 1) fail(`${component.id}: expected one window.__register…() function, found ${registerFns.length}`);
+// How the module gets at the factory. A: the script registers it; B: it is a
+// plain function of the script, which wants three.js handed to it.
+let factorySource;
+if (component.factory) {
+  factorySource = `const __factory = () => ${component.factory}(window.__THREE_BUNDLE__.THREE);`;
+} else {
+  const registerFns = [...component.body.matchAll(/window\.(__register[A-Za-z0-9_$]+)\s*=\s*function/g)].map((m) => m[1]);
+  if (registerFns.length !== 1) fail(`${component.id}: expected one window.__register…() function, found ${registerFns.length}`);
+  factorySource = `window.${registerFns[0]}();\nconst __factory = Object.values(window.__ProductModel).find((value) => typeof value === 'function');`;
+}
 const windowProps = [...new Set([...component.body.matchAll(/\bwindow\.([A-Za-z_$][A-Za-z0-9_$]*)/g)].map((m) => m[1]))];
 const foreign = windowProps.filter((prop) => !ALLOWED_WINDOW_PROPS.test(prop));
-if (foreign.length > 0) fail(`${component.id} uses browser window state (${foreign.join(', ')}), so it cannot run outside its viewer`);
+if (foreign.length > 0) {
+  fail(
+    `${component.id} uses browser window state (${foreign.join(', ')}), so it cannot run outside its viewer` +
+      (component.factory && component.appBytes === 0
+        ? '. (No line was found on which the viewer app starts, so the whole script was taken for the model: the importer looks, after the model, for a function that is called on the spot, "(function name() {" or "(() => {".)'
+        : ''),
+  );
+}
 component.sha = hash('sha256', Buffer.from(component.body, 'utf8'));
 
 const unescapeHtml = (text) => text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
@@ -180,8 +287,7 @@ ${BEGIN_MARK}
 ${component.body}
 ${END_MARK}
 
-window.${registerFns[0]}();
-const __factory = Object.values(window.__ProductModel).find((value) => typeof value === 'function');
+${factorySource}
 
 /** The machine's record, in the shape the asset library gives its machines. */
 export const assets = {
@@ -216,6 +322,12 @@ let lights = 0;
 root.traverse((node) => {
   if (node.isLight) lights++;
 });
+// A model may keep parts hidden until it is opened or taken apart (a tool, a
+// lid stay). They are in the figures below, which count every mesh; where the
+// tour draws the machine as it stands, they are not drawn. Say how many.
+const all = sceneStats(root);
+const shown = sceneStats(root, { visibleOnly: true });
+const hidden = all.meshes - shown.meshes ? { meshes: all.meshes - shown.meshes, triangles: all.triangles - shown.triangles } : null;
 const entry = {
   id,
   module: `./${moduleFile}`,
@@ -229,8 +341,9 @@ const entry = {
     box: boxJson(box),
     // Native model size at scale 1, in millimetres: width (x), depth (z), height (y).
     mm: { w: Math.round(sx * UNIT_MM), d: Math.round(sz * UNIT_MM), h: Math.round(sy * UNIT_MM) },
-    ...sceneStats(root),
+    ...all,
     lights,
+    ...(hidden ? { hidden } : {}),
   },
   source: { ...source, componentSha256: component.sha },
 };
@@ -275,5 +388,6 @@ if (undone) console.log(`  note: the file on disk had been changed on its way he
 console.log(Object.keys(expected).length ? `  proven: the file has the ${Object.keys(expected).join(' and the ')} given for it` : `  not proven: compare the checksums with those Google Drive lists for the file (md5 ${source.md5}), or give them with --md5 / --sha256`);
 if (!instance.setExplodeFactor) console.log('  note: the model has no setExplodeFactor(), so the tour cannot take it apart');
 if (lights) console.log(`  note: the model holds ${lights} light${lights === 1 ? '' : 's'}; the tour switches lights inside machines off (js/assets/registry.js)`);
+if (hidden) console.log(`  note: ${hidden.meshes} of its ${all.meshes} meshes (${hidden.triangles} triangles) are hidden as it stands; the model shows them when it is opened or taken apart`);
 if (earlier.some((other) => other.id !== id)) console.log(`  kept in the manifest: ${earlier.filter((other) => other.id !== id).map((other) => other.id).join(', ')}`);
 console.log(`\nNext: add "${id}" to js/rooms/catalogue.js (status: 'built'), place it in js/rooms/content.js, describe it in js/rooms/knowledge.js, then npm run check.\n`);

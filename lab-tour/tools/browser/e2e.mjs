@@ -37,6 +37,13 @@ const MILLS = [
   { id: flags.mill || 'printing/imes-icore-350i-pro', apart: 'its shell, front, door, coolant drawer and chamber move away from each other' },
   { id: flags.drymill || 'printing/dgshape-dwx-52di-plus', apart: 'its cabinet, cover, drawer, chamber and tool changer move away from each other' },
 ];
+// The two injection units of the Acrylic room: from viewer files too. `lamps` is the number of lights that the
+// model brings along (the tour keeps them switched off); `hides` is the number of meshes that the model keeps out
+// of sight while it is closed, `shows` how many of those appear once it is taken apart.
+const INJECTORS = [
+  { id: flags.ivocap || 'acrylic/ivoclar-sr-ivocap', lamps: 0, hides: 0, shows: 0, apart: 'its clamping frame, flask halves, capsule, vise shank and pressure apparatus move away from each other' },
+  { id: flags.thermopress || 'acrylic/bredent-thermopress-400', lamps: 2, hides: 4, shows: 3, apart: 'its housing, lid, heating cylinder, flask and clamping tool move away from each other' },
+];
 const roomOf = (id) => id.split('/')[0];
 
 // What layout.js asks for, in the terms the checks measure.
@@ -435,7 +442,8 @@ async function desktop(browser) {
     // lab as it is drawn while a visitor looks around. The frame the tour
     // opens with is dearer: it also redraws the shadow map, which draws every
     // part that casts a shadow a second time. That one is reported, not
-    // limited (493 draw calls with eleven machines; it was 400 with nine).
+    // limited (560 draw calls with thirteen machines; it was 493 with eleven
+    // and 400 with nine).
     const cost = await page.evaluate(() => {
       const { stage } = window.labTour;
       const read = () => {
@@ -938,6 +946,75 @@ async function desktop(browser) {
       // They are large and stand in the middle of their room: nothing behind
       // them may end up out of a visitor's reach.
       for (const roomId of new Set(mills.map((mill) => roomOf(mill.id)))) {
+        await v.go(`#/${roomId}`);
+        const hidden = await page.evaluate((ids) => ids.filter((id) => !window.__t.tapPoint(id)), inRoom(roomId).map((entry) => entry.id));
+        check(`every machine in the ${roomId} room can still be tapped in the picture`, hidden.length === 0, hidden.length ? `out of reach: ${hidden.join(', ')}` : `${inRoom(roomId).length} machines`);
+      }
+    });
+  }
+
+  // The two injection units of the Acrylic room came from viewer files as well,
+  // of a second make: the model and the viewer's own page share one script
+  // there (tools/import-viewer.mjs cuts the two apart). They stand side by side
+  // on the island bench. The thermopress holds two lights, a glow at its heater
+  // and a light in its flask chamber; they stay off like the other machines'.
+  // The SR Ivocap holds none.
+  //
+  // The thermopress is also the first model that keeps parts out of sight
+  // while it is closed: the tool that tightens its flask, which appears when
+  // the machine is taken apart, and the stay that props its lid open, which
+  // the tour never shows because it never opens the lid.
+  const meshesOf = (id) =>
+    page.evaluate((key) => {
+      const holder = window.labTour.stage.scene.getObjectByName(key);
+      if (!holder) return null;
+      let all = 0;
+      let shown = 0;
+      holder.traverse((node) => {
+        if (!node.isMesh) return;
+        all++;
+        let visible = true;
+        for (let at = node; at && at !== holder.parent; at = at.parent) visible = visible && at.visible;
+        if (visible) shown++;
+      });
+      return { all, shown };
+    }, id);
+  const injectors = INJECTORS.filter((unit) => facts.items.some((entry) => entry.id === unit.id && entry.status === 'built'));
+  if (injectors.length) {
+    await step(`The injection unit${injectors.length > 1 ? 's' : ''} from viewer files, models like the other machines`, async () => {
+      for (const unit of injectors) {
+        await v.go(`#/${roomOf(unit.id)}`);
+        const inRoomView = await lamps();
+        await likeTheOthers(unit.id, unit.apart);
+        const opened = await lamps();
+        const kind = await page.$eval('#panel .eyebrow', (element) => element.textContent.trim()).catch(() => '');
+        check('the panel says that it injects', /injection/i.test(kind), `"${kind}"`);
+        check(
+          unit.lamps ? `the ${unit.lamps} lights inside it stay off: the lab is lit as before` : 'it brings no light of its own: the lab is lit as before',
+          opened.all === inRoomView.all + unit.lamps && opened.on === inRoomView.on,
+          `in the room ${inRoomView.on} of ${inRoomView.all} lamps on; with the machine open ${opened.on} of ${opened.all}`,
+        );
+
+        const closed = await meshesOf(unit.id);
+        await page.focus('#panel [data-explode]');
+        await page.keyboard.press('End');
+        await v.rest();
+        const apart = await meshesOf(unit.id);
+        await page.keyboard.press('Home');
+        await v.rest();
+        const again = await meshesOf(unit.id);
+        const told = `closed ${closed?.shown} of ${closed?.all} meshes shown, apart ${apart?.shown}, closed again ${again?.shown}`;
+        if (unit.hides) {
+          check(`closed, the ${unit.hides} meshes that the model hides are not drawn`, closed && closed.all - closed.shown === unit.hides, told);
+          check(`taken apart, ${unit.shows} of them appear; put together again, they are gone`, apart && again && apart.shown - closed.shown === unit.shows && again.shown === closed.shown, told);
+        } else {
+          check('it hides nothing: every part is drawn, closed or apart', closed && apart && again && closed.shown === closed.all && apart.shown === apart.all && again.shown === again.all, told);
+        }
+        await leave(unit.id);
+      }
+      // Two more machines in a room that held only placeholders: none of them
+      // may end up out of a visitor's reach.
+      for (const roomId of new Set(injectors.map((unit) => roomOf(unit.id)))) {
         await v.go(`#/${roomId}`);
         const hidden = await page.evaluate((ids) => ids.filter((id) => !window.__t.tapPoint(id)), inRoom(roomId).map((entry) => entry.id));
         check(`every machine in the ${roomId} room can still be tapped in the picture`, hidden.length === 0, hidden.length ? `out of reach: ${hidden.join(', ')}` : `${inRoom(roomId).length} machines`);

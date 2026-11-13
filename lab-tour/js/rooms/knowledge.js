@@ -56,7 +56,7 @@ export const ROOM_INFO = {
     about: 'Where restorations get their final material and colour. Ceramic is fired and glazed in furnaces at up to about 1,200 °C, then finished by hand.',
   },
   acrylic: {
-    about: 'Where removable prostheses are made. Dentures are processed in acrylic, cured under pressure, then trimmed and polished.',
+    about: 'Where removable prostheses are made. Dentures are formed in a mould, from acrylic that hardens under pressure or from plastic that is melted and injected, then trimmed and polished.',
   },
 };
 
@@ -108,8 +108,22 @@ export const BRANDS = {
     place: 'Schaan, Liechtenstein',
     since: 1923,
     about:
-      'Ivoclar is one of the large dental manufacturers. It makes materials for dentists and dental technicians, among them the IPS e.max ceramics, and equipment such as the Programat furnaces. It was formerly called Ivoclar Vivadent, the name printed on this furnace.',
-    sources: [{ label: 'Ivoclar, company history', url: 'https://www.ivoclar.com/en_li/media-release/2023/a-tour-through-the-company-s-history' }],
+      'Ivoclar is one of the large dental manufacturers. It makes materials for dentists and dental technicians, among them the IPS e.max ceramics and the teeth and acrylics for dentures, and equipment such as the Programat furnaces. It was formerly called Ivoclar Vivadent, the name printed on its machines in this lab.',
+    sources: [
+      { label: 'Ivoclar, company history', url: 'https://www.ivoclar.com/en_li/media-release/2023/a-tour-through-the-company-s-history' },
+      { label: 'Ivoclar Vivadent, BPS brochure (teeth and denture base materials)', url: 'https://ivodent.hu/__docs/473_1135ffecbda8ce03e9486b852d8f79c3.pdf' },
+    ],
+  },
+  bredent: {
+    name: 'bredent',
+    place: 'Senden, Germany',
+    since: 1974,
+    about:
+      'bredent is a family-owned group of companies based in Senden in Germany. Peter and Brigitte Brehm founded it in 1974. Today it supplies dental laboratories, practices and clinics with laboratory products and materials, with implant systems, and with milling machines and their software. The thermopress 400 and the plastics that it injects belong to its range for the laboratory.',
+    sources: [
+      { label: 'European Business, interview with the CEO of the bredent group (2026)', url: 'https://www.european-business.com/en/interviews/bredent-group/rethinking-dental-technology-through-integrated-innovation' },
+      { label: 'bredent, thermopress 400 brochure (2021)', url: 'https://bredent-group.com/wp-content/uploads/2021/09/thermopress-400_210x297mm_000626GB-20210914_low.pdf' },
+    ],
   },
   'imes-icore': {
     name: 'imes-icore',
@@ -416,6 +430,71 @@ export const MACHINE_INFO = {
     ],
     confirm:
       "(1) Is the lab's machine the DWX-52Di Plus (released in March 2025), or the earlier DWX-52Di or DWX-52D Plus? The figures shown are DGSHAPE's for the DWX-52Di Plus. (2) The ionizer, and that the machine cannot mill without a dust collector, are taken from DGSHAPE's Setup Guide for the DWX-52Di. That guide names the spindle unit of the Plus (ZS-52D) but not the name 'Plus'; DGSHAPE's page and brochure for the Plus list dust hoses among the included items and do not mention an ionizer. (3) DGSHAPE also advertises a 90-degree milling range for the C-type clamp, with a footnote that this depends on the region; the tour leaves it out. (4) The 3D model in the Drive has a drawer at the bottom front, called a dust drawer in its file. DGSHAPE's Setup Guide shows a bottom cover there with storage behind it, and the dust leaving through a port at the back. The tour's texts do not call it a dust drawer. (5) On the 3D model and not checked against a DGSHAPE document: the type plate (a serial number, an address in Hamamatsu, 'Made in Japan'), and the chamber light that turns blue while milling (the tour shows neither that light nor the milling).",
+  },
+
+  // ── Acrylic & Prosthodontic Room ───────────────────────────────────────────
+  'ivoclar-sr-ivocap': {
+    brand: 'ivoclar',
+    summary:
+      'An injection system for dentures. It presses acrylic out of a capsule into a closed mould and keeps pressing while the acrylic hardens in boiling water, so that fresh material flows in where the hardening acrylic shrinks. Its acrylic, SR Ivocap High Impact, is one of the denture base materials of BPS, Ivoclar’s Biofunctional Prosthetic System.',
+    how: 'The denture, modelled in wax, is embedded in plaster inside a two-part flask, and the wax is boiled out: what is left is a mould. The closed flask goes into the clamping frame, and a hydraulic press loads the frame with 3 tons; a ratchet on the frame keeps that load when the press lets go. A capsule of freshly mixed acrylic is put into the flask, and the pressure apparatus is fastened on top of it. Compressed air at 6 bar then drives its plunger into the capsule. After 5 minutes the whole unit goes into boiling water for 35 minutes, and from there into cold water for at least 30.',
+    features: [
+      { label: 'Injection pressure', value: '6 bar', note: 'compressed air' },
+      { label: 'Clamping load', value: '3 tons', note: 'on the flask' },
+      { label: 'Injection', value: '5 min', note: 'before the water bath' },
+      { label: 'Polymerisation', value: '35 min', note: 'in boiling water' },
+      { label: 'Cooling', value: '30 min', note: 'in cold water' },
+      { label: 'Weight', value: '5.6 kg', note: 'frame 2.3 + flask 1.3 + pressure apparatus 2.0' },
+    ],
+    featuresNote: 'It works together with a hydraulic press, a bath of boiling water, a compressed-air supply and a vibrator that mixes the capsules. None of them is part of it.',
+    capabilities: [
+      'Makes up for shrinkage. Acrylic shrinks as it hardens; because the plunger keeps pressing, material from the capsule flows in and fills the gap.',
+      'The acrylic is injected into a flask that is already closed. Ivoclar names as the results: no increase in the height of the bite, and an even denture base.',
+      'For complete and partial dentures, relines, orthodontic appliances and bite splints.',
+      'The acrylic comes in capsules: each holds the powder, and a small container with the liquid. The liquid is poured onto the powder, and a vibrator mixes the two inside the capsule for 5 minutes.',
+      'A red mark on the clamping frame shows how high the boiling water must stand. If it stands higher, the acrylic left in the capsule hardens too and can no longer flow into the mould; if it stands lower, parts of the denture do not harden fully.',
+      'A locking valve on the pressure apparatus holds the pressure by itself. The unit can be carried to the cold bath without its air hose, and stays under pressure there for the first 20 minutes.',
+    ],
+    sources: [
+      { label: 'Ivoclar Vivadent, SR Ivocap Equipment System operating instructions (2009)', url: 'https://ivodent.hu/__docs/958_44161712b301d27e62d14898f151e965.pdf' },
+      { label: 'Ivoclar Vivadent, SR Ivocap System instructions for use (2016)', url: 'https://ivodent.hu/__docs/960_d9b74a5c693d5baed4ac46fd8a9830af.pdf' },
+      { label: 'Ivoclar, SR Ivocap Equipment Complete, product page', url: 'https://www.ivoclar.com/en_us/shop/p/removable/srivocapequipmentcomplete/p/530608en' },
+      { label: 'Ivoclar Vivadent, BPS brochure', url: 'https://ivodent.hu/__docs/473_1135ffecbda8ce03e9486b852d8f79c3.pdf' },
+    ],
+    confirm:
+      "(1) 'Ivoclar BPS' was read as the SR Ivocap: the Drive holds a viewer of that name and none called BPS. BPS is Ivoclar's system for dentures as a whole (teeth, base materials, articulators); the SR Ivocap is the equipment that injects one of its base materials. Is that the machine meant? (2) Which pressure apparatus does the lab have? Ivoclar's operating instructions (2009) call it 'ID3', its instructions for use (2016) 'ID2'; the tour names no type. (3) Ivoclar's documents give weights and no dimensions. The 3D model measures 165 × 177 × 519 mm with its air hose; the page shows no size. (4) The amounts in a capsule (20 g of polymer, 30 ml of monomer) stand on the model's capsule label and on dealers' pages. No Ivoclar document read for the tour states them, so the page leaves them out. (5) Ivoclar gives the clamping load as '3 tons / 6000 lbs'; the page says '3 tons'. (6) In the tour the unit stands assembled on a bench, as in its viewer. In use it stands in a water bath, and it needs a hydraulic press, a polymerisation bath and a capsule vibrator: the room has a placeholder for a flask press and none for the other two. (7) On the 3D model and not checked against an Ivoclar document: the face of the manometer ('6 bar BPS', 'EN 837-1'), the capsule label ('CE 0123', 'BPS Prosthetic System'), the twelve disc springs in the clamping frame, the blue valve and the coiled air hose.",
+  },
+  'bredent-thermopress-400': {
+    brand: 'bredent',
+    summary:
+      'An injection moulding unit for dentures, clasps and splints made of thermoplastics: plastics that turn soft when they are heated and firm again when they cool. It melts the plastic in a cartridge and presses it into a mould. Nothing is mixed from powder and liquid, and the unit needs no compressed air: an electric drive does the pressing.',
+    how: 'The work is modelled in wax and embedded in hard plaster inside a metal flask; the wax is boiled out and leaves a mould. The plastic comes as granules in an aluminium cartridge. The unit heats up to the temperature that its program sets for the material, about 200 to 280 °C. The cartridge is pushed into one of the two heating chambers, and the plastic melts for 10 to 15 minutes. Then the warm flask is clamped in the flask chamber, its opening towards the cartridge, the protective lid is closed, and a piston presses the melted plastic into the mould.',
+    features: [
+      { label: 'Temperature', value: 'up to 400 °C' },
+      { label: 'Injection force', value: 'up to 17 kN', note: 'as much as 1.7 tonnes weigh' },
+      { label: 'Heating chambers', value: '2' },
+      { label: 'Programs', value: '30', note: 'some set at the factory' },
+      { label: 'Heating up', value: 'about 10 min', note: 'to 260 °C' },
+      { label: 'Power', value: '0.5 – 1.6 kW', note: 'at most 2.2 kW · 220 – 230 V' },
+      { label: 'Size', value: '650 × 300 × 250 mm', note: 'width × depth × height' },
+      { label: 'Weight', value: '40 kg' },
+    ],
+    featuresNote: 'Its flasks come in two sizes: 122 × 102 × 72 mm and 140 × 102 × 72 mm.',
+    capabilities: [
+      'Electric instead of pneumatic. It needs no compressed air and no gas bottle; bredent says that the electric drive passes on its force evenly.',
+      'Two heating chambers, which can be loaded and heated at the same time. A lever sets which of the two is in use.',
+      'A program for each material: temperature, melting time, pressing time, speed and force. bredent’s own plastics have theirs stored at the factory; 30 programs fit, and each can be changed.',
+      'Holds the force after the injection: the stored programs keep the piston pressing for 60 to 120 seconds. According to bredent this gives the fit and prevents pores.',
+      'Three kinds of plastic: PMMA for complete dentures and splints (Polyan IC), nylon for partial dentures and their clasps (bre.flex 2nd edition), and acetal in tooth shades for clasps and frames (Bio Dentaplast).',
+      'Very little monomer. Nothing is mixed from powder and liquid, and bredent states that these plastics hold only a minimum of residual monomer, or none: of use for patients with allergies.',
+      'Injects only when the protective lid over the flask is closed.',
+    ],
+    sources: [
+      { label: 'bredent, thermopress 400 brochure (2021)', url: 'https://bredent-group.com/wp-content/uploads/2021/09/thermopress-400_210x297mm_000626GB-20210914_low.pdf' },
+      { label: 'bredent, instructions for use of the thermopress 400 system (2025)', url: 'https://bredent-group.com/wp-content/uploads/2025/07/Thermopress-400-Verarbeitungsanleitung_009830GB_20250314_web.pdf' },
+    ],
+    confirm:
+      "(1) Which plastics does the lab inject with it? bredent's 2021 brochure offers five (Bio Dentaplast, Bio Dentaplast 2, bre.flex, bre.flex 2nd edition, Polyan IC). Its 2025 instructions describe three (Polyan IC, bre.flex 2nd Edition, Bio Dentaplast) and mark bre.flex, bre.dentan HP and Bio XS as discontinued; the page names those three. (2) The two documents differ on Bio Dentaplast: 220 °C and force level 80 (2021), 195 °C and force level 100 (2025). The page says 'about 200 to 280 °C' and gives no setting per material. (3) The operation and maintenance manual of the unit itself (bredent REF 009183EX) was not found online. What the page says about working the unit comes from the part of that manual that bredent reprints in its 2025 instructions for use. (4) 'As much as 1.7 tonnes weigh' is 17 kN converted for the reader, not a bredent figure. (5) The Drive file's notes give the injection force as '5 / 10 / 17 kN'. bredent prints a table of force levels that ends at 17.0 kN; the page says 'up to 17 kN'. (6) On the 3D model and not checked against a bredent document: the type plate ('REF 540 0000 5', where the brochure gives REF 11000400 for the unit; a serial number; 'max. 2.2 kW'; the address in Senden), and the display, which shows 'Prog 04 bre.flex 2nd' at 265 °C where bredent's table has 280 °C for that program. (7) The model holds two lamps, a glow at the heater and a light in the flask chamber. The tour switches them off like those of the other machines, and shows neither the lid opening nor the injection that the viewer can play.",
   },
 
   // ── Not modelled yet: what this kind of machine is for ─────────────────────

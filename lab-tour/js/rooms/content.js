@@ -133,6 +133,20 @@ export const ROOM_CONTENT = {
 
   // 5.0 × 4.0 m · door from the corridor at x = 0.7 on the north side
   acrylic: [
+    // The island bench in the middle of the room. Its east half carries the two
+    // injection units, side by side, fronts to the south like the seats; the two
+    // seats are on its west half. (It comes first so that the room's list starts
+    // with its two real machines.)
+    {
+      kit: 'bench',
+      at: [3.0, 2.6],
+      params: { length: 2400, height: 780, pedestals: 'right' },
+      seats: [-850, -250],
+      on: [
+        { equipment: 'ivoclar-sr-ivocap', x: 150, z: 0 },
+        { equipment: 'bredent-thermopress-400', x: 800, z: 0 },
+      ],
+    },
     {
       kit: 'bench',
       at: [3.15, 0.43],
@@ -157,7 +171,6 @@ export const ROOM_CONTENT = {
         { equipment: 'micromotor', x: 700 },
       ],
     },
-    { kit: 'bench', at: [3.0, 2.6], params: { length: 2400, height: 780, pedestals: 'both' }, seats: [-350, 350] },
   ],
 };
 

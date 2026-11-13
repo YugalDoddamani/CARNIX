@@ -48,7 +48,7 @@ The tour is meant for education and awareness, so it now explains itself:
   the machine about its own middle and nothing else; it can be taken apart.
 - **A page per machine** with up to four pills: the machine, About (its
   maker), Features (key figures, with links to their sources) and Capabilities.
-  The nine real machines have all four; the two workstation PCs have a
+  The eleven real machines have all four; the two workstation PCs have a
   description and capabilities; placeholders have a description of their kind.
 - **An opening** (added later): when the page opens, the lab comes up part by
   part in about two seconds. See "The opening" under phase 5.
@@ -93,6 +93,8 @@ What could not be settled from documents alone:
 | Medit Identica T500 | Medit's T-Series brochures (2018 and 2019 editions, dealers' copies) and a dealer's page | **The name:** Medit's brochures say "Medit T500"; dealers and the badge on the 3D model say "Identica T500". **The accessories:** the 2019 brochure lists the multi-die, colour texture and articulator modules as included and the 3-axis arm for impressions as optional; which does the lab have? What the texture and articulator modules are for is described from general use; the brochure only lists them. |
 | imes-icore CORiTEC 350i PRO | imes-icore's product page for the 350i series and its brochure for the 350i PRO series | **PRO, PRO+ or a Loader?** The same body is sold with a 2.6 kW water-cooled spindle (PRO+) and with a changer for 12 blanks (Loader, 300 mm wider); the figures shown are for the PRO. imes-icore's two documents differ on the weight (205 kg, or 180 to 210 kg), on the air pressure and on the size of the screen; the page gives what both agree on, and the brochure's 205 kg. **What it stands on:** imes-icore sells machine tables for it; in the tour it shares a table with the other mill. |
 | DGSHAPE DWX-52Di Plus | DGSHAPE's product page and brochure for the DWX-52Di Plus; its Setup Guide for the DWX-52Di | **Which model exactly:** DWX-52Di Plus (2025), or the earlier DWX-52Di or DWX-52D Plus? **The ionizer and the dust collector** are taken from the Setup Guide of the DWX-52Di, which names the spindle of the Plus but not the name "Plus"; DGSHAPE's page for the Plus does not mention an ionizer. The 3D model has a drawer that its file calls a dust drawer; DGSHAPE shows a storage compartment there. |
+| Ivoclar SR Ivocap | Ivoclar Vivadent's operating instructions for the SR Ivocap equipment (2009), its instructions for use of the SR Ivocap system (2016) and its BPS brochure, all three read as copies on a dealer's site; Ivoclar's own product page | **Is this the machine that "Ivoclar BPS" meant?** BPS is Ivoclar's system for dentures as a whole (teeth, base materials, articulators); the SR Ivocap is the equipment that injects one of its base materials, and the Drive holds a viewer of that name and none called BPS. **Which pressure apparatus:** the 2009 document calls it ID3, the 2016 one ID2; the page names no type. **Its size:** Ivoclar's documents give weights and no dimensions, so the page shows none. **What a capsule holds** (20 g, 30 ml) stands on dealers' pages and on the model's label only; the page leaves it out. **What stands around it:** in use it needs a hydraulic press, a polymerisation bath and a capsule vibrator; the room has a placeholder for the press and none for the other two. |
+| bredent thermopress 400 | bredent's brochure for the thermopress 400 (2021) and its instructions for use of the thermopress 400 system (2025) | **Which plastics the lab injects.** The brochure offers five; the 2025 instructions describe three (Polyan IC, bre.flex 2nd Edition, Bio Dentaplast) and mark others as discontinued; the page names the three. The two documents differ on the settings for Bio Dentaplast (220 °C and force level 80; 195 °C and force level 100), so the page gives a range of temperatures and no setting per material. The operation manual of the unit itself (REF 009183EX) was not found online: what the page says about working the unit comes from the part of it that bredent reprints in the 2025 instructions. The model's type plate and display were not checked (a REF number other than the brochure's; a program at 265 °C where bredent's table has 280 °C). |
 
 `npm run check` prints these notes every time it runs, from the `confirm`
 fields in `knowledge.js`; they are never shown to visitors.
@@ -121,7 +123,11 @@ Suggested order:
 2. **Ceramic Room** — its three furnaces are done; four small bench units
    finish the room.
 3. **Plaster Room** — five machines, all simple shapes.
-4. **Acrylic & Prosthodontic Room** — the largest backlog (six types).
+4. **Acrylic & Prosthodontic Room** — its two injection units, an **Ivoclar SR
+   Ivocap** and a **bredent thermopress 400**, are in as 3D models (see "The
+   two injection units' 3D models" below). It still has the largest backlog:
+   six types of its own, among them the flask press that the SR Ivocap needs.
+   Open: which of those the lab really has, and where the two units stand.
 5. **Clinic Reception** — mostly furniture and atmosphere; one scanner cart.
 
 The Design Room already has all its machines.
@@ -196,7 +202,7 @@ header rules described in the README.
 
 ## Inventory
 
-33 machines are placed: **11 are 3D models, 22 are placeholders** (19 different
+35 machines are placed: **13 are 3D models, 22 are placeholders** (19 different
 types still to identify and model). Sizes are width × depth × height in mm.
 
 ### Design Room — CAD Design & Planning · 5.2 × 4.0 m
@@ -496,25 +502,200 @@ Furniture: the library's furnace table, technician's bench with chair, 1.8 m ben
 
 ### Acrylic & Prosthodontic Room — Final Prosthesis · 5.0 × 4.0 m
 
-| Machine | State | Size (draft) |
+| Machine | State | Size |
 |---|---|---|
-| Boil-out / dewaxing unit | ◻ placeholder | 460 × 400 × 420 |
-| Hydraulic flask press | ◻ placeholder | 260 × 260 × 520 |
-| Pressure polymerisation unit | ◻ placeholder | 330 × 330 × 400 |
-| Vacuum / pressure former | ◻ placeholder | 320 × 360 × 480 |
-| Polishing lathe with dust hood | ◻ placeholder | 620 × 420 × 460 |
-| Dust extractor | ◻ placeholder | 230 × 560 × 580 |
-| Micromotor & handpiece × 2 | ◻ placeholder | 120 × 240 × 90 |
+| Ivoclar SR Ivocap | ✅ 3D model | 165 × 177 × 519 (the maker gives no size) |
+| bredent thermopress 400 | ✅ 3D model | 658 × 314 × 263 (maker: 650 × 300 × 250) |
+| Boil-out / dewaxing unit | ◻ placeholder | 460 × 400 × 420 (draft) |
+| Hydraulic flask press | ◻ placeholder | 260 × 260 × 520 (draft) |
+| Pressure polymerisation unit | ◻ placeholder | 330 × 330 × 400 (draft) |
+| Vacuum / pressure former | ◻ placeholder | 320 × 360 × 480 (draft) |
+| Polishing lathe with dust hood | ◻ placeholder | 620 × 420 × 460 (draft) |
+| Dust extractor | ◻ placeholder | 230 × 560 × 580 (draft) |
+| Micromotor & handpiece × 2 | ◻ placeholder | 120 × 240 × 90 (draft) |
 
-Furniture: 3.4 m bench, technicians' benches with chairs.
+Furniture: a 3.4 m bench on the corridor wall, a technicians' bench with two
+chairs on the west wall, and an island bench in the middle of the room (2.4 m
+long, 780 mm high). The island bench was a technicians' bench with two seats.
+Now the two injection units stand on its east half, side by side, fronts to
+the south, and its two seats are on the west half.
+
+#### The two injection units' 3D models
+
+Neither machine is in the asset library. Each lies in Google Drive as a viewer
+of its own, and was imported from that file with `npm run import-viewer`, as
+the Medit scanner and the two milling machines were:
+
+| | Ivoclar SR Ivocap | bredent thermopress 400 |
+|---|---|---|
+| Folder in Drive | Ivoclar SR Ivocap — Three.js Viewer | bredent thermopress 400 — Three.js Viewer |
+| File | `Ivoclar_SR_Ivocap_Viewer.html` | `Bredent_Thermopress_400_Viewer.html` |
+| Size | 732,568 bytes | 740,001 bytes |
+| MD5 in Drive | `ae3f047dab8f17111f247bcc54747df8` | `2f7c1e3d367d0467703d226903479a5e` |
+| In the tour as | `ivoclar-sr-ivocap` | `bredent-thermopress-400` |
+| Meshes, triangles, materials | 88 · 24,004 · 19 | 77 · 11,284 · 19 |
+| Parts it comes apart into | 8 | 7 |
+| As modelled | 165 × 177 × 519 mm | body 650 × 300 × 250 mm |
+
+**"Ivoclar BPS" was read as the SR Ivocap.** The request named "the ivoclar
+bps". BPS, the Biofunctional Prosthetic System, is Ivoclar's name for its way
+of making dentures as a whole: teeth, denture base materials, articulators.
+The machine in it is the SR Ivocap, which injects one of those base materials.
+The Drive holds a viewer called SR Ivocap and none called BPS, and the notes
+beside that viewer are headed "SR Ivocap System — 3D Three.js BPS Denture
+Injection Viewer". The machine's page says in its first paragraph how the two
+names belong together.
+
+**The copies the tour was built from are the files in Drive, byte for byte.**
+Both files were downloaded whole, and arrived changed in the way the milling
+machines' files had (see above): each was 238 bytes longer, with a `type`
+attribute on both of its `<script>` tags (48 bytes each) and one added tag
+before `</body>` (142 bytes). With those taken out, the size, the MD5 and the
+SHA-256 are the ones Drive lists, for both files. They are in
+`js/assets/viewers/manifest.js` and at the top of each model's module. The
+two files were fetched a second time at the end and imported just as they
+arrived: the importer took the additions out by itself, and wrote the same
+modules and the same manifest, byte for byte. (The two READMEs arrived
+untouched. The files in Drive were only read.)
+
+**These two files are laid out differently, and the importer learned a second
+way to cut.** In the three earlier files the model is a script of its own,
+which sets `window.__ProductModel`. Here a file has two scripts: three.js, and
+one that holds the model's functions first and the viewer's own page after
+them (its buttons, its camera, its render loop). Nothing registers the model;
+it is a plain function, `createSrIvocapProduct(THREE)` or
+`createThermopress400Product(THREE)`. So the importer
+
+- looks for the script that declares a `function create…Product(THREE)`,
+- takes that script from its start up to the line on which the page's code
+  starts: the first line, after the model, that opens a function which is
+  called on the spot (`(function initStudioViewer() {`), and before which the
+  text is complete code,
+- loads the part it took in a place with no page, no three.js and nothing
+  else: declaring functions works there, doing anything fails. The import
+  stops unless that part loads cleanly and declares exactly one
+  `create…Product(THREE)`.
+
+What it took is written byte for byte, as before: the first 1,099 lines of
+the SR Ivocap's script (37,486 bytes) and the first 1,333 of the thermopress's
+(44,932 bytes). Each was compared afterwards with the file from Drive, apart
+from the importer: what stands in the module is the start of that script, and
+the script goes on with `(function initStudioViewer() {`. The module then
+calls the function with the tour's three.js.
+
+How that was tried:
+
+- **The three earlier files must come out as before.** The scanner's and the
+  two milling machines' viewers were fetched from Drive again, proven against
+  Drive's checksums, and imported again with the changed importer: not one
+  byte of their three modules or of their entries in the manifest changed.
+- **Files that must be refused.** Copies of the SR Ivocap's file, each changed
+  in one way: a statement between the model and the page that sets something
+  on `window`, or one that reads `document`; a second `create…Product(THREE)`,
+  once at the start of a line and twice indented; the function renamed, so
+  that none is left; the page's code turned into a function that is not called
+  on the spot, so that there is nowhere to cut. And the true file with a wrong
+  MD5, and with a wrong SHA-256. The importer refused all nine, said why, and
+  wrote nothing. (An indented second factory went through at first: the
+  importer looked for the function at the start of a line only. It now counts
+  the functions that loading the script really declares.)
+- **Files that must still go through.** A copy with a function of the same
+  shape nested inside another, one with a `create…Product` that takes
+  something other than `THREE`, and one that ends where the model ends: all
+  three were imported, with the same model.
+
+**The thermopress keeps two parts out of sight while it is closed:** the tool
+that tightens its flask, and the stay that props its lid open (4 meshes, 104
+triangles). No model before it did that, and `npm run check` failed on it:
+the baked form that stands in the lab leaves out what is hidden, so it had
+fewer triangles than the model. The check now measures a model as it stands,
+says how much is hidden, and fails only if a hidden part reaches outside the
+closed machine. In the tour the tool appears when the machine is taken apart;
+the stay never does, because the tour never opens the lid. `npm run e2e`
+checks both, and that the tool is gone again when the machine is put together.
+
+**Sizes.** The thermopress's body has the maker's size exactly. What sticks
+out is measured with it, hence 658 × 314 × 263 mm: the knob of the lever on
+top (13 mm), the handle of the lid at the front (14 mm) and the mains switch on
+the right (8 mm). For the SR Ivocap, Ivoclar's documents give weights and no
+dimensions; the model stands 519 mm high to the top of its coiled air hose.
+(The READMEs give 24,000 and 11,278 triangles; the importer counts 24,004 and
+11,284.)
+
+**Where they stand is a choice made here.** No room was named. Both machines
+make dentures, so they stand in the Acrylic & Prosthodontic Room, and the
+room's paragraph now mentions both ways of working (acrylic that hardens under
+pressure, plastic that is melted and injected). One entry in
+`js/rooms/content.js` moves them.
+
+- They stand on the island bench, which was there already, at sitting height
+  (780 mm). The bench's two seats moved to its west half; the drawers under
+  its west end went, so that there is room for knees. A real bench has to
+  carry the thermopress's 40 kg.
+- The wall bench with its five placeholders is as it was. Every machine in
+  the room can be seen and tapped from where the visitor stands (`npm run
+  e2e` checks it). The two new ones head the room's list.
+- The two markers stood on top of each other on a phone at first. The SR
+  Ivocap now stands 650 mm from the thermopress instead of 500, and the
+  markers are clear of each other.
+- The SR Ivocap stands on the bench assembled, as in its viewer. At work it
+  stands in a bath of boiling water.
+
+Three things differ from the stand-alone viewers:
+
+- **The thermopress's two lights are off:** an orange one at its heater and a
+  white one in its flask chamber. The tour switches off any light inside a
+  machine (`js/assets/registry.js`). The heater's orange glow is its
+  material's own and stays. The SR Ivocap holds no light.
+- **Nothing opens and nothing is injected.** The viewers have a button for
+  each ("Release Yoke" and "6-Bar Inject"; "Open Press Lid" and "400 °C
+  Inject"). The tour has no such buttons for any machine yet; the models'
+  functions for it are imported and unused.
+- **The name on the first pill is "thermopress", without the 400.** The full
+  name is in the heading. With "thermopress 400" there, the fourth pill,
+  "Capabilities", was pushed out of the row: 14 letters fit, and `npm run
+  check` now warns about a longer one.
+
+**What the makers' documents say, against the notes in Drive.** The figures on
+the two pages were taken from the makers' own documents, not from the READMEs
+that lie beside the viewers. Ivoclar's two instructions and its BPS brochure
+were read as copies on a dealer's site (ivodent.hu), its product page on
+ivoclar.com; bredent's two documents on bredent-group.com. Where the notes (or
+the model) and the makers disagree, or the makers say nothing:
+
+| | Note in Drive, or the model | Maker |
+|---|---|---|
+| SR Ivocap, size | 165 × 177 × 520 mm, listed as an official specification | weights only (5.6 kg in three parts), no dimensions |
+| SR Ivocap, pressure apparatus | "ID2" | "ID3" in the instructions of 2009, "ID2" in those of 2016 |
+| SR Ivocap, clamping load | 3 tons (30 kN / 6,000 lbs) | "3 tons / 6000 lbs"; no figure in kN |
+| SR Ivocap, what a capsule holds | 20 g of polymer, 30 ml of monomer | not in the documents read; on dealers' pages |
+| SR Ivocap, springs in the frame | twelve disc springs | a set of spring washers, no number |
+| thermopress, injection force | 5, 10 or 17 kN | a table of force levels that ends at 17.0 kN |
+| thermopress, height | 260 mm with the lever's knob | 250 mm (the model: 263 mm with the knob) |
+| thermopress, display | program 04, "bre.flex 2nd", at 265 °C | 280 °C for bre.flex 2nd Edition in bredent's table |
+| thermopress, type plate (model only) | REF 540 0000 5 | REF 11000400 for the unit in the brochure |
+
+Everything else in the notes that was checked agrees with the makers: 6 bar
+(6.5 at most), 35 minutes in boiling water, the SR Ivocap's three weights;
+650 × 300 × 250 mm, 40 kg, 400 °C, the power figures and the two flask sizes
+of the thermopress.
+
+What they cost: the lab's frame went from 270 to 307 draw calls (the budget is
+400) and from 283,000 to 317,000 triangles (450,000); the frame that also
+redoes the shadows from 493 to 560 draw calls; the download from 400 to 428 KB.
+The SR Ivocap has 24,004 triangles, just under the 25,000 the README asks a
+machine to stay under. The views of the other eleven machines cost what they
+did before, to the draw call.
+
 
 ## What was found in the asset library
 
 The first seven machines and the workbench were imported unchanged; the
 importer measures each one. (The eighth, the UniFormation GK3, came later: see
-"The GK3's 3D model" above. The Medit T500 and the two milling machines are not
-from the library but from viewer files of their own: see "The Medit T500's 3D
-model" and "The two milling machines' 3D models".) Things worth knowing:
+"The GK3's 3D model" above. The Medit T500, the two milling machines and the
+two injection units are not from the library but from viewer files of their
+own: see "The Medit T500's 3D model", "The two milling machines' 3D models" and
+"The two injection units' 3D models".) Things worth knowing:
 
 1. **DS-EX Pro is about twice as wide and deep as stated.** The library gives
    the real machine as 260 × 270 × 420 mm; the model measures 470 × 627 × 429 mm,
@@ -567,3 +748,9 @@ model" and "The two milling machines' 3D models".) Things worth knowing:
    are? Which models exactly (CORiTEC 350i PRO or PRO+; DWX-52Di Plus or an
    earlier DWX-52)? And should the tour show them at work, with the cover open
    and the spindle moving, as their own viewers can?
+9. **The injection units.** "Ivoclar BPS" was read as the SR Ivocap; is that
+   the machine? It and the thermopress 400 stand on the island bench of the
+   Acrylic & Prosthodontic Room: is that where they are? Which plastics does
+   the lab inject with the thermopress? And the SR Ivocap works with a
+   hydraulic press, a polymerisation bath and a capsule vibrator: does the lab
+   have them, and should they be modelled next?

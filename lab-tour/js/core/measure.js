@@ -39,10 +39,24 @@ export function preciseBox(root, { space = null, filter = null } = {}) {
 const TEXTURE_SLOTS = ['map', 'emissiveMap', 'alphaMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'bumpMap', 'aoMap'];
 
 /**
- * What it costs to draw `root`: draw calls, triangles, unique materials and an
- * estimate of GPU texture memory (RGBA8 + mip chain).
+ * Is `obj` shown when `root` is drawn? Not if it, or anything between it and
+ * `root`, is switched off. (A model may keep a part hidden until it is opened:
+ * the thermopress 400 holds a tool and a lid stay that way.)
  */
-export function sceneStats(root) {
+export function isShown(obj, root) {
+  for (let node = obj; node; node = node.parent) {
+    if (!node.visible) return false;
+    if (node === root) break;
+  }
+  return true;
+}
+
+/**
+ * What it costs to draw `root`: draw calls, triangles, unique materials and an
+ * estimate of GPU texture memory (RGBA8 + mip chain). It counts every mesh that
+ * `root` holds; with `visibleOnly`, those that are shown as it stands.
+ */
+export function sceneStats(root, { visibleOnly = false } = {}) {
   const geometries = new Set();
   const materials = new Set();
   const textures = new Set();
@@ -54,6 +68,7 @@ export function sceneStats(root) {
 
   root.traverse((obj) => {
     if (!obj.isMesh) return;
+    if (visibleOnly && !isShown(obj, root)) return;
     const geo = obj.geometry;
     const pos = geo.attributes.position;
     if (!pos) return;

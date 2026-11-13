@@ -24,7 +24,14 @@ export const ROOM_CONTENT = {
   // 5.2 × 4.0 m · door to the corridor at x = 4.55 on the south side
   design: [
     { station: 'scanners', at: [1.6, 0.48], seats: [-404, 916] },
-    { kit: 'bench', at: [4.1, 0.43], params: { ...desk, length: 1800 }, seats: [-450, 450], on: [monitorAt(-450), monitorAt(450)] },
+    // The third lab scanner stands between the two design places of the next desk along the same wall.
+    {
+      kit: 'bench',
+      at: [4.1, 0.43],
+      params: { ...desk, length: 1800 },
+      seats: [-520, 520],
+      on: [monitorAt(-520), { equipment: 'medit-t500', x: 25 }, monitorAt(520)],
+    },
     { kit: 'wall-display', at: [4.1, 0.07], y: 1.15, params: { width: 1300, height: 700 } },
     { kit: 'bench', at: [0.43, 2.5], face: 'E', params: { ...desk, length: 1800 }, seats: [-450, 450], on: [monitorAt(-450), monitorAt(450)] },
     { kit: 'bench', at: [3.0, 2.45], params: { ...desk, length: 1800 }, seats: [-450, 450], on: [monitorAt(-450), monitorAt(450)] },

@@ -27,7 +27,7 @@ then filled in by editing a list.
 
 | Phase | What | State |
 |---|---|---|
-| 0 | Foundations: one unit system, importer for the asset library, furniture kit, floor plan as data, automatic checks | ✅ done |
+| 0 | Foundations: one unit system, importers for the asset library and for single-machine viewer files, furniture kit, floor plan as data, automatic checks | ✅ done |
 | 1 | The whole floor, walkable: building, six furnished rooms, overview → room → machine, shareable links, phone layout | ✅ done |
 | 1b | A tour that teaches: navigation bar, guided route, welcome guide, machines that come forward and turn on their own, a page of facts per machine | ✅ done |
 | 2 | Make it true: real floor plan, real equipment list, real name, the lab's own words | ⏳ needs your input |
@@ -89,6 +89,8 @@ What could not be settled from documents alone:
 | UPCERA A7+ | UPCERA's product page | Its heating rate is printed without a unit of time (read as per minute); dealers quote a slightly different vacuum figure. |
 | Ivoclar Programat P300 | Ivoclar's operating instructions, 2006 | The later P300/G2 holds more programs. Which one is in the lab? |
 | UniFormation GK3 | UniFormation's GK3 product page | **GK3 (T), GK3 (B) or GK3 Pro?** T and B differ only in the screw that lifts the platform, and the figures shown hold for both. The GK3 Pro uses 385 nm light instead of 405 nm, and UniFormation's own page points dental work to the Pro. The 3D model shows a ball screw and a 405 nm hood, which would be the GK3 (B). |
+
+| Medit Identica T500 | Medit's T-Series brochures (2018 and 2019 editions, dealers' copies) and a dealer's page | **The name:** Medit's brochures say "Medit T500"; dealers and the badge on the 3D model say "Identica T500". **The accessories:** the 2019 brochure lists the multi-die, colour texture and articulator modules as included and the 3-axis arm for impressions as optional; which does the lab have? What the texture and articulator modules are for is described from general use; the brochure only lists them. |
 
 `npm run check` prints these notes every time it runs, from the `confirm`
 fields in `knowledge.js`; they are never shown to visitors.
@@ -191,7 +193,7 @@ header rules described in the README.
 
 ## Inventory
 
-30 machines are placed: **8 are 3D models, 22 are placeholders** (19 different
+31 machines are placed: **9 are 3D models, 22 are placeholders** (19 different
 types still to identify and model). Sizes are width × depth × height in mm.
 
 ### Design Room — CAD Design & Planning · 5.2 × 4.0 m
@@ -202,9 +204,78 @@ types still to identify and model). Sizes are width × depth × height in mm.
 | DS-EX Post-Processing PC | ✅ 3D model | 597 × 343 × 410 |
 | 3Shape E4 | ✅ 3D model | 374 × 337 × 336 |
 | 3Shape Design & Post-Processing PC | ✅ 3D model | 597 × 343 × 410 |
+| Medit Identica T500 | ✅ 3D model | 291 × 298 × 341 (maker: 290 × 290 × 340) |
 
 Furniture: the library's scanner table, three CAD desks with two monitors each,
-eight chairs, wall display, shelf rack, plant.
+eight chairs, wall display, shelf rack, plant. The Medit scanner stands on the
+desk under the wall display, between its two monitors: along the same wall as
+the library's scanner table, so the three lab scanners are in one row. (One
+line in `js/rooms/content.js` moves it.)
+
+#### The Medit T500's 3D model
+
+The scanner is not in the asset library. Its model lies in Google Drive as a
+viewer of its own, `Medit Identica T500 — Three.js Viewer /
+Medit_T500_Scanner_Viewer.html` (761,681 bytes), and was imported from that
+file with `npm run import-viewer` (README, "Add a machine from its own viewer
+file").
+
+**The copy the tour was built from is the file in Drive, byte for byte.** The
+connection to Drive does not put a file on disk. It shows a file's text to the
+assistant, and of a long file only the start and the last few thousand
+characters before a chosen cut. (It also has a plain download; that was not
+tried, because it has no such cut to move along the file.) So the file was put
+together again here:
+
+- its first 81,700 characters (the page, the viewer's own code and the model's
+  55,841 characters) were read in 22 readings, each cut a little further on,
+  and typed across;
+- the 679,874 characters of three.js that follow were not read. They were
+  taken from the asset library file that was attached to this chat earlier, on
+  the guess that both files carry the same three.js;
+- the last 79 characters were read like the first. (The line break that ends
+  the file does not show in a reading; the file's size called for it.)
+
+Drive keeps a checksum (MD5) of every file. The rebuilt file has Drive's own:
+`afbd1bce3b5f6c229a09cda4b58469e6`, and the same 761,681 bytes. A single wrong
+character anywhere, typed or guessed, would have given a different one. The
+checksum is written into `js/assets/viewers/manifest.js` and at the top of
+`js/assets/viewers/medit-t500.js`.
+
+The model has 150 meshes, as its README says, 13,307 triangles and 22
+materials. Its body is 290 × 290 × 340 mm as stated; the vents, the sockets at
+the back, a badge and a tag on the roof stand out by up to 6 mm, which gives
+the measured 291 × 298 × 341.
+
+Two things differ from the stand-alone viewer:
+
+- **Its blue lamp is off.** The model holds a point light in its scan bay,
+  lit all the time in the viewer. The tour lights everything itself and
+  switches off any light inside a machine (`js/assets/registry.js`). For this
+  one the choice was measured, in the test browser:
+  - What the lamp adds to the picture is a faint blue cast on the bay's inner
+    walls (5 of 255 steps of blue on average, 18 at most); the dies on the
+    plate look the same.
+  - The first time the scanner is opened, four shader programs are built
+    instead of two. Nothing more on leaving or on coming back.
+  - A machine on show is drawn in a pass of its own, so the lamp would be
+    there in one pass and not in the other. three.js then looks up the shader
+    program of every lit material again on every frame: 40 look-ups a frame in
+    the scanner's view, none with the lamp off. A frame took about 1 ms more
+    of script time there (2.1 and 2.9 ms against 1.2 and 2.0 ms). That is two
+    runs with software rendering: it shows the direction, not what a phone
+    would lose.
+
+  It is three lines in `createEquipment()`, and one check in
+  `tools/browser/e2e.mjs` that expects the lamp to be off.
+- **It does not scan.** The viewer can tilt the arm and turn the plate ("Active
+  Scan"). The tour has no such button for any machine yet; the model's function
+  for it is imported and unused.
+
+The GK3 (below) could be settled the same way. Its own viewer file is in Drive
+with a checksum too, so that file could be rebuilt and proven like this one,
+and the printer imported from it in place of the hand copy. That was not done
+here; it takes about as many readings again.
 
 ### Printing Room — 3D Printing · 4.0 × 4.0 m
 
@@ -328,7 +399,9 @@ Furniture: 3.4 m bench, technicians' benches with chairs.
 
 The first seven machines and the workbench were imported unchanged; the
 importer measures each one. (The eighth, the UniFormation GK3, came later: see
-"The GK3's 3D model" above.) Three things worth knowing:
+"The GK3's 3D model" above. The ninth, the Medit T500, is not from the library
+but from its own viewer file: see "The Medit T500's 3D model".) Things worth
+knowing:
 
 1. **DS-EX Pro is about twice as wide and deep as stated.** The library gives
    the real machine as 260 × 270 × 420 mm; the model measures 470 × 627 × 429 mm,
@@ -346,7 +419,7 @@ importer measures each one. (The eighth, the UniFormation GK3, came later: see
    parts, where the README asks for under 100 per machine (the 3Shape E4, the
    next, has 114). In the lab it is baked down to 22 like the others; in its
    own view a frame that redoes the shadows takes 384 draw calls, against
-   156–330 for the other seven. Its triangle count (23,176) is within the aim.
+   156–346 for the other eight. Its triangle count (23,176) is within the aim.
    The picture its touch screen shows is drawn with a canvas call that browsers
    older than Chrome 99 and Firefox 112 lack; `js/assets/registry.js` supplies
    it there.

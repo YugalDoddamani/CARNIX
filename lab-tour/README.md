@@ -7,11 +7,12 @@ explanation at every step.
 It is one static page. There is no build step, nothing to install and no CDN:
 three.js is served from `vendor/`, and everything else is plain ES modules.
 
-**Status:** the building, six furnished rooms, the 8 machines from the asset
-library (the latest is the UniFormation GK3 resin printer), and 22 placeholders
-for machines that are not modelled yet; on top of that a guided route through
-the rooms, a page that explains each machine, with sourced figures for the six
-real ones, and an opening in which the lab comes up part by part.
+**Status:** the building, six furnished rooms, 9 machines as 3D models (8 from
+the asset library; the Medit Identica T500 lab scanner from its own viewer
+file), and 22 placeholders for machines that are not modelled yet; on top of
+that a guided route through the rooms, a page that explains each machine, with
+sourced figures for the seven real ones, and an opening in which the lab comes
+up part by part.
 What comes next, and why it is built in this order, is in
 [`docs/PLAN.md`](docs/PLAN.md).
 
@@ -43,8 +44,9 @@ npm run check     # validates the data and the texts, and the drawing budget (no
 npm run e2e       # walks through the tour in a headless browser (see "Testing")
 ```
 
-The page itself needs nothing but a static file server. `check` and
-`import-assets` need Node 20.6 or newer and have no dependencies.
+The page itself needs nothing but a static file server. `check`,
+`import-assets` and `import-viewer` need Node 20.6 or newer and have no
+dependencies.
 
 Useful addresses while working:
 
@@ -136,11 +138,13 @@ says "Model coming" instead of "Planned" and shows its maker and figures.
 ### Replace a placeholder with a real model
 
 1. Model the machine in the asset library, following the same contract as the
-   existing eight (below).
+   existing ones (below).
 2. Re-import the library:
    `npm run import-assets -- "path/to/Dental_Lab_Equipment_Asset_Library.html"`
    The importer reads a file on disk. A library that lives in Google Drive has
    to be downloaded (or attached to the chat) first.
+   If the machine exists only as its own viewer file so far, import that
+   instead: see the next recipe.
 3. In `catalogue.js`, change the entry to
    `'<asset id>': { status: 'built', icon: '…', shortName: '…', kind: '…' }`
    (drop `name`, `sizeMm`, `mount` and `known`: a built machine takes its name
@@ -150,6 +154,30 @@ says "Model coming" instead of "Planned" and shows its maker and figures.
 
 Nothing else changes: the marker turns solid, the panel says "3D model", and
 the machine gets the close-up and exploded view automatically.
+
+### Add a machine from its own viewer file
+
+A machine that is not in the asset library yet usually exists as a viewer of
+its own: one HTML file that shows that machine alone
+(`<Machine>_Viewer.html`). Its model can be imported straight from that file.
+
+1. `npm run import-viewer -- "path/to/Machine_Viewer.html" --id <asset id> [--size <w>x<d>x<h>] [--name "<name>"]`
+   `--id` is the id the machine will have in the tour (and, later, in the
+   library). `--size` is the maker's size in mm; it is kept in the manifest
+   beside the size the importer measures. `--name` overrides the name, which
+   is otherwise the viewer's own title. The importer takes the model component
+   out of the file (not the viewer's camera, lights and buttons), writes
+   `js/assets/viewers/<id>.js`, measures the model and adds it to
+   `js/assets/viewers/manifest.js`, together with the checksums of the file.
+   Machines imported earlier are left alone. Like the library's importer it
+   reads a file on disk.
+2. Add it to `catalogue.js` as `status: 'built'`, place it in `content.js` and
+   describe it in `knowledge.js`, as for any other machine.
+3. `npm run check`, then look at it in the browser.
+
+When the machine later arrives in the asset library under the same id, the
+library's copy is used, and `npm run check` fails until the viewer's copy is
+removed.
 
 ### Write about a machine
 
@@ -190,9 +218,10 @@ is its `tab` in `layout.js`; icons are picked by name from
 
 ### Update an existing model
 
-Change it in the asset library and re-run the import. Never edit the files in
-`js/assets/legacy/` — they are generated and will be overwritten. If an imported
-model needs a correction on the tour's side, it belongs in
+Change it in the asset library (or in the machine's viewer file) and re-run
+the import. Never edit the files in `js/assets/legacy/` and
+`js/assets/viewers/` — they are generated and will be overwritten. If an
+imported model needs a correction on the tour's side, it belongs in
 [`js/assets/registry.js`](js/assets/registry.js).
 
 ## The asset contract
@@ -212,6 +241,8 @@ Rules for new models, so they drop in without adjustment:
 - **Scale:** 1 unit = 80 mm (the library's existing scale). Model to the
   datasheet size; the importer measures every asset and prints both numbers.
 - **No lights, cameras or scene setup inside an asset.** The tour owns those.
+  A light that a model brings anyway is switched off (`registry.js`). The Medit
+  scanner has one, a blue lamp in its scan bay.
 - **Budget per machine:** aim for under 25,000 triangles and 100 draw calls in
   full detail. The tour bakes each machine down to a few draw calls when it is
   not the one being inspected, but triangles are drawn either way.
@@ -246,9 +277,9 @@ flying around a room, and both are easy to break:
   the scene changes.
 - **Machine code is loaded lazily**, after the building is on screen.
 - **Budget:** 400 draw calls and 450,000 triangles for the overview, enforced
-  by `npm run check`. Current use: 197 draw calls, 241,000 triangles.
-- **A machine view** draws the picture in three passes. Measured for the eight
-  models: 90–226 draw calls per frame while a machine is turned, 156–385 on the
+  by `npm run check`. Current use: 219 draw calls, 255,000 triangles.
+- **A machine view** draws the picture in three passes. Measured for the nine
+  models: 90–242 draw calls per frame while a machine is turned, 156–384 on the
   frames that also redo the shadows (arriving, and each step of the take-apart
   slider). The resin printer is the costliest on those frames: its model has
   178 separate parts.
@@ -261,8 +292,8 @@ flying around a room, and both are easy to break:
   24 MB (above six megapixels the lab comes up in one plain fade, with no
   pictures kept). If the browser will not hand one out, or anything else in
   the opening fails, the tour opens without it.
-- **Download:** about 344 KB compressed in total (three.js 178 KB, machine
-  models 78 KB, tour code and texts 88 KB). No images, no fonts.
+- **Download:** about 363 KB compressed in total (three.js 177.8 KB, machine
+  models 95.6 KB, tour code and texts 89.5 KB). No images, no fonts.
 
 ## Folder map
 
@@ -274,11 +305,13 @@ js/shell/               layout.js (floor-plan DATA) · build-shell.js (walls, fl
 js/rooms/               catalogue.js, content.js, knowledge.js (DATA) · build-rooms.js (places everything)
 js/assets/registry.js   one contract over all machine models
 js/assets/legacy/       GENERATED from the asset library — do not edit
+js/assets/viewers/      GENERATED from single-machine viewer files — do not edit
+                        (except _viewer-window.js, which is written by hand)
 js/assets/kit/          furniture: bench, shelves, chair, sofa, monitor, display, desk, plant
 js/core/                units, stage (renderer, lights, spotlight), camera, picking, baking, palette,
                         motion (the opening; a model fading in when it is ready)
 js/ui/                  panel (rooms, machines, pills) · dock (the bar) · guide · labels · icons
-tools/                  serve.mjs · check.mjs · import-asset-library.mjs
+tools/                  serve.mjs · check.mjs · import-asset-library.mjs · import-viewer.mjs
 tools/browser/          e2e.mjs (the walk-through test) · shots.mjs · film.mjs · lib.mjs
 vendor/three-r160/      three.js 0.160.0, unmodified (see its README for why this version)
 ```
@@ -291,7 +324,7 @@ vendor/three-r160/      three.js 0.160.0, unmodified (see its README for why thi
 with a mouse, on a 390 × 844 phone with a finger, on a first visit, with
 "reduce motion" switched on, one who watches the opening, and one with a
 browser from 2021–22 — with real clicks, taps, drags and key presses, and
-checks what happens (361 checks, about 9 minutes; `--only=entrance,older` runs
+checks what happens (376 checks, 10 to 13 minutes; `--only=entrance,older` runs
 some of them). Among them: a drag turns the machine about its own middle and
 leaves the lab behind it unchanged, pixel for pixel; a machine fits the area
 the panel leaves free, in a wide window, a small one and on a phone; leaving a
@@ -299,7 +332,9 @@ machine clears the spotlight; Back, Forward, Escape and shared links work; the
 opening shows the lab's parts in order, ends at once on a tap or a resize,
 leaves the same picture as opening without it, and never costs a visitor the
 tour: in a browser that cannot supply the pictures it is made of, the tour
-opens without it.
+opens without it; the two models that came later (the resin printer, and the
+lab scanner from its viewer file) are shown, fill the view and come apart like
+the first seven, and the scanner's own lamp stays off.
 
 It needs the tour running (`npm run serve`) and a headless Chromium, which is
 not part of the repository. Install it once, anywhere outside the repo:
@@ -380,5 +415,10 @@ Things to know — none of the existing CARNIX files have been changed:
   the size and the number of parts its own description gives, and was looked
   at from every side; it is not proven to be identical to the file, character
   for character. `docs/PLAN.md` ("The GK3's 3D model") says how to settle that.
+- The Medit scanner's model has a blue lamp of its own in its scan bay, lit
+  in the scanner's own viewer. The tour switches it off, as it does with any
+  light inside a machine; with it, the bay's inner walls would have a faint
+  blue cast. `docs/PLAN.md` ("The Medit T500's 3D model") has the measurements
+  behind that choice.
 - The opening plays on every visit, not only the first.
 - See `docs/PLAN.md` for everything in the concept image that is not built yet.

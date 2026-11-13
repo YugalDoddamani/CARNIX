@@ -19,6 +19,7 @@ const THREE = await import('three');
 const { KIT } = await import(js('assets/kit/index.js'));
 const { createEquipment, createWorkbench, describeEquipment } = await import(js('assets/registry.js'));
 const { LEGACY_ASSETS } = await import(js('assets/legacy/manifest.js'));
+const { VIEWER_ASSETS } = await import(js('assets/viewers/manifest.js'));
 const { bakeLite } = await import(js('core/batch.js'));
 const { preciseBox, sceneStats } = await import(js('core/measure.js'));
 const { m, toM, toMm } = await import(js('core/units.js'));
@@ -59,14 +60,19 @@ for (const [id, piece] of Object.entries(KIT)) {
 
 // ── 2. Catalogue and content references ──────────────────────────────────────
 section('Catalogue');
-const libraryIds = new Set(LEGACY_ASSETS.map((asset) => asset.id));
+// Models come from the asset library and from single-machine viewer files.
+const libraryIds = new Set([...LEGACY_ASSETS, ...VIEWER_ASSETS].map((asset) => asset.id));
+for (const asset of VIEWER_ASSETS) {
+  if (LEGACY_ASSETS.some((other) => other.id === asset.id)) fail(`"${asset.id}" was imported twice: from the asset library and from the viewer ${asset.source?.file}. The tour uses the library's; remove the entry from js/assets/viewers/manifest.js and delete js/assets/viewers/${asset.id}.js`);
+  if (!asset.source?.file || !/^[0-9a-f]{64}$/.test(asset.source?.sha256 ?? '')) fail(`viewer model "${asset.id}" does not say which file it came from`);
+}
 for (const [id, entry] of Object.entries(EQUIPMENT)) {
   if (entry.known !== undefined && entry.known !== true) fail(`catalogue "${id}": \`known\` is either true or left out`);
   if (entry.status === 'built') {
-    if (!libraryIds.has(id)) fail(`catalogue "${id}" is marked built but is not in the imported asset library`);
+    if (!libraryIds.has(id)) fail(`catalogue "${id}" is marked built but its 3D model has not been imported (not in the asset library, nor from a viewer file)`);
     if (entry.known) fail(`catalogue "${id}": \`known\` is for machines without a 3D model; a built machine does not need it`);
   } else if (entry.status === 'planned') {
-    if (libraryIds.has(id)) warn(`catalogue "${id}" is still marked planned, but its 3D model is in the imported library: set status: 'built'`);
+    if (libraryIds.has(id)) warn(`catalogue "${id}" is still marked planned, but its 3D model has been imported: set status: 'built'`);
     if (!entry.name || !entry.kind) fail(`catalogue "${id}" needs a name and a kind`);
     if (!entry.sizeMm || !(entry.sizeMm.w > 0 && entry.sizeMm.d > 0 && entry.sizeMm.h > 0)) fail(`catalogue "${id}" needs sizeMm { w, d, h }`);
     if (!['bench', 'floor'].includes(entry.mount)) fail(`catalogue "${id}" needs mount: 'bench' or 'floor'`);
@@ -74,7 +80,7 @@ for (const [id, entry] of Object.entries(EQUIPMENT)) {
     fail(`catalogue "${id}" has unknown status "${entry.status}"`);
   }
 }
-for (const id of libraryIds) if (!EQUIPMENT[id]) warn(`library asset "${id}" is not in the catalogue, so it cannot be placed`);
+for (const id of libraryIds) if (!EQUIPMENT[id]) warn(`imported model "${id}" is not in the catalogue, so it cannot be placed`);
 
 const used = new Set();
 const roomIds = new Set(ROOMS.map((room) => room.id));

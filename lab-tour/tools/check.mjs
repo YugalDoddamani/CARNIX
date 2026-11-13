@@ -21,7 +21,7 @@ const { createEquipment, createWorkbench, describeEquipment } = await import(js(
 const { LEGACY_ASSETS } = await import(js('assets/legacy/manifest.js'));
 const { VIEWER_ASSETS } = await import(js('assets/viewers/manifest.js'));
 const { bakeLite } = await import(js('core/batch.js'));
-const { preciseBox, sceneStats } = await import(js('core/measure.js'));
+const { isShown, preciseBox, sceneStats } = await import(js('core/measure.js'));
 const { m, toM, toMm } = await import(js('core/units.js'));
 const { EQUIPMENT } = await import(js('rooms/catalogue.js'));
 const { ROOM_CONTENT, STATIONS } = await import(js('rooms/content.js'));
@@ -36,6 +36,7 @@ const { BUILDING, ROOMS, WALL, WALLS } = await import(js('shell/layout.js'));
 const BUDGET = { drawCalls: 400, triangles: 450_000 };
 const SIZE_TOLERANCE_MM = 15;
 const DOOR_CLEARANCE_M = 0.8;
+const SHORT_NAME_FITS = 14; // letters of a machine's short name that fit on the first pill of its panel
 const EPS = m(0.005);
 
 const failures = [];
@@ -238,6 +239,12 @@ for (const [id, entry] of Object.entries(EQUIPMENT)) {
     needText(info.confirm, `${where} confirm`);
     toConfirm.push([EQUIPMENT[id].shortName ?? EQUIPMENT[id].name ?? id, info.confirm]);
   }
+  // The short name is the first of up to four pills in the machine's panel.
+  // Measured in the browser: 14 letters just fit beside the other three; one
+  // more and "Capabilities" is cut off.
+  if (info.brand && info.features?.length && info.capabilities?.length && (entry.shortName?.length ?? 0) > SHORT_NAME_FITS) {
+    warn(`catalogue "${id}": short name "${entry.shortName}" has ${entry.shortName.length} letters; with all four pills in the panel, ${SHORT_NAME_FITS} fit`);
+  }
 }
 for (const id of Object.keys(BRANDS)) if (!usedBrands.has(id)) warn(`brand "${id}" is not used by any machine`);
 const types = Object.keys(EQUIPMENT).length;
@@ -358,15 +365,25 @@ async function checkBuiltLab() {
   for (const item of builtInstances) {
     const asset = await createEquipment(item.typeId);
     const lite = bakeLite(asset.root);
-    const hero = sceneStats(asset.root);
+    // The baked form is the machine as it stands. A part that the model keeps
+    // hidden until it is opened or taken apart is not in it, and is not counted.
+    const whole = sceneStats(asset.root);
+    const hero = sceneStats(asset.root, { visibleOnly: true });
     const baked = sceneStats(lite);
-    const sizeDelta = preciseBox(asset.root).getSize(new THREE.Vector3()).sub(preciseBox(lite).getSize(new THREE.Vector3())).length();
+    const shownBox = preciseBox(asset.root, { filter: (obj) => isShown(obj, asset.root) });
+    const sizeDelta = shownBox.getSize(new THREE.Vector3()).sub(preciseBox(lite).getSize(new THREE.Vector3())).length();
     if (hero.triangles !== baked.triangles) fail(`"${item.typeId}": baking changed the triangle count (${hero.triangles} → ${baked.triangles})`);
     if (sizeDelta > 1e-4) fail(`"${item.typeId}": baked form is a different size from the original`);
+    // What stands on the bench is measured over every part, hidden ones too
+    // (the manifest's box). A hidden part must not make the machine look larger.
+    const stowedDelta = preciseBox(asset.root).getSize(new THREE.Vector3()).sub(shownBox.getSize(new THREE.Vector3())).length();
+    if (stowedDelta > 1e-4) fail(`"${item.typeId}": a part that is hidden while the machine is closed reaches outside it, so the size on record is not the size on show`);
     if (Object.keys(asset.parts).length === 0) fail(`"${item.typeId}": no sub-assemblies found`);
     liteDraws += baked.drawCalls;
     machineTriangles += baked.triangles;
-    console.log(`  ${item.typeId.padEnd(24)} ${String(hero.drawCalls).padStart(3)} → ${String(baked.drawCalls).padStart(2)} draw calls   ${fmt(baked.triangles).padStart(7)} triangles`);
+    const stowed = whole.meshes - hero.meshes;
+    const stowedNote = stowed ? `   (+ ${fmt(whole.triangles - hero.triangles)} in ${stowed} part${stowed === 1 ? '' : 's'} hidden until it is opened)` : '';
+    console.log(`  ${item.typeId.padEnd(24)} ${String(hero.drawCalls).padStart(3)} → ${String(baked.drawCalls).padStart(2)} draw calls   ${fmt(baked.triangles).padStart(7)} triangles${stowedNote}`);
     asset.dispose();
   }
   let tableDraws = 0;

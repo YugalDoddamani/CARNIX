@@ -8,6 +8,103 @@
 
 export const VIEWER_ASSETS = [
   {
+    "id": "bredent-thermopress-400",
+    "module": "./bredent-thermopress-400.js",
+    "component": "script 2 of 2, before the viewer app",
+    "meta": {
+      "id": "bredent-thermopress-400",
+      "name": "bredent thermopress 400",
+      "realDimensionsMm": "650 × 300 × 250 mm"
+    },
+    "datasheetMm": [
+      650,
+      300,
+      250
+    ],
+    "instanceKeys": [
+      "productRoot",
+      "setCoverOpenFactor",
+      "setExplodeFactor",
+      "setLiveInjectionCycle",
+      "dispose"
+    ],
+    "partsKey": null,
+    "parts": [
+      "lowerChassisAssembly",
+      "upperMainHoodAssembly",
+      "controlPanelAssembly",
+      "dualHeaterAndPlungerAssembly",
+      "hingedPressLidAssembly",
+      "flaskPressCradleAssembly",
+      "dentalFlaskAssembly"
+    ],
+    "measured": {
+      "box": {
+        "min": [
+          -4.063,
+          0,
+          -1.879
+        ],
+        "max": [
+          4.167,
+          3.287,
+          2.047
+        ]
+      },
+      "mm": {
+        "w": 658,
+        "d": 314,
+        "h": 263
+      },
+      "meshes": 77,
+      "drawCalls": 77,
+      "triangles": 11284,
+      "vertices": 18477,
+      "materials": 19,
+      "geometries": 65,
+      "shadowCasters": 73,
+      "textures": [
+        [
+          512,
+          256
+        ],
+        [
+          640,
+          128
+        ],
+        [
+          128,
+          256
+        ],
+        [
+          256,
+          220
+        ],
+        [
+          768,
+          440
+        ],
+        [
+          512,
+          128
+        ]
+      ],
+      "textureMB": 3.6,
+      "lights": 2,
+      "hidden": {
+        "meshes": 4,
+        "triangles": 104
+      }
+    },
+    "source": {
+      "file": "Bredent_Thermopress_400_Viewer.html",
+      "bytes": 740001,
+      "md5": "2f7c1e3d367d0467703d226903479a5e",
+      "sha256": "3cfd9145631757feb57d85431e3b2ba6bfb0f70ed43191bcab2f089a98fbcb77",
+      "componentSha256": "513f70c5fd3530f6ee467608dd53262d33e9d0911c67b0df24e04d7cd3944a05"
+    }
+  },
+  {
     "id": "dgshape-dwx-52di-plus",
     "module": "./dgshape-dwx-52di-plus.js",
     "component": "script 2 of 5",
@@ -207,6 +304,87 @@ export const VIEWER_ASSETS = [
       "md5": "c8ba37b9d304323ead54821f743533ce",
       "sha256": "ef170392b8957ca90cb9eea00206aadc28545fa369a07d6ee95604149a9df38d",
       "componentSha256": "2447ea856d73ffa6b05b08ed8916748777e2ab8e1212d69b0beb08613c50b5b0"
+    }
+  },
+  {
+    "id": "ivoclar-sr-ivocap",
+    "module": "./ivoclar-sr-ivocap.js",
+    "component": "script 2 of 2, before the viewer app",
+    "meta": {
+      "id": "ivoclar-sr-ivocap",
+      "name": "Ivoclar SR Ivocap"
+    },
+    "datasheetMm": null,
+    "instanceKeys": [
+      "productRoot",
+      "setCoverOpenFactor",
+      "setExplodeFactor",
+      "setLiveInjectionCycle",
+      "dispose"
+    ],
+    "partsKey": null,
+    "parts": [
+      "clampingFrameAssembly",
+      "springAndRatchetAssembly",
+      "flaskLowerHalfAssembly",
+      "flaskUpperHalfAssembly",
+      "ivocapCapsuleAssembly",
+      "viseShankAssembly",
+      "pneumaticCylinderAssembly",
+      "manometerAndHoseAssembly"
+    ],
+    "measured": {
+      "box": {
+        "min": [
+          -1.031,
+          0,
+          -1.053
+        ],
+        "max": [
+          1.031,
+          6.483,
+          1.164
+        ]
+      },
+      "mm": {
+        "w": 165,
+        "d": 177,
+        "h": 519
+      },
+      "meshes": 88,
+      "drawCalls": 88,
+      "triangles": 24004,
+      "vertices": 39111,
+      "materials": 19,
+      "geometries": 51,
+      "shadowCasters": 85,
+      "textures": [
+        [
+          512,
+          112
+        ],
+        [
+          512,
+          512
+        ],
+        [
+          512,
+          256
+        ],
+        [
+          512,
+          512
+        ]
+      ],
+      "textureMB": 3.6,
+      "lights": 0
+    },
+    "source": {
+      "file": "Ivoclar_SR_Ivocap_Viewer.html",
+      "bytes": 732568,
+      "md5": "ae3f047dab8f17111f247bcc54747df8",
+      "sha256": "1c8b14a67bb98e87924742d089b1f7cb28623103fb39e881871b23254e94aefb",
+      "componentSha256": "fe59061a0410cf5e8e49719df16c1d45a16e80819fa40eeafdf6179047144b87"
     }
   },
   {

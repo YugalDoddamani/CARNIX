@@ -18,6 +18,9 @@
 //
 // mount: 'bench' sits on a worktop · 'floor' stands on the floor.
 // icon:  a name from js/ui/icons.js, shown beside the machine's name.
+// shortName: the machine's name on the first pill of its panel, beside "About",
+//        "Features" and "Capabilities". Keep it to 14 letters or fewer, or the
+//        last pill is pushed out of sight (`npm run check` says so).
 //
 // What the visitor READS about a machine (what it does, who makes it, its key
 // figures) is not here but in knowledge.js, under the same id.
@@ -37,6 +40,9 @@ export const EQUIPMENT = {
   // (these two from their own viewer files too)
   'imes-icore-350i-pro': { status: 'built', icon: 'mill', shortName: '350i PRO', kind: 'Milling machine' },
   'dgshape-dwx-52di-plus': { status: 'built', icon: 'mill', shortName: 'DWX-52Di Plus', kind: 'Milling machine' },
+  // (and these two: the injection units of the Acrylic & Prosthodontic Room)
+  'ivoclar-sr-ivocap': { status: 'built', icon: 'press', shortName: 'SR Ivocap', kind: 'Denture injection system' },
+  'bredent-thermopress-400': { status: 'built', icon: 'press', shortName: 'thermopress', kind: 'Injection moulding unit' },
 
   // ── Planned · Printing Room ────────────────────────────────────────────────
   'resin-printer': { status: 'planned', icon: 'printer', name: 'Resin 3D printer', kind: '3D printer', mount: 'bench', sizeMm: { w: 400, d: 400, h: 580 } },

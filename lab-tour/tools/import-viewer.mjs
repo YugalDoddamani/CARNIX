@@ -7,12 +7,18 @@
 //   node tools/import-viewer.mjs <path/to/Machine_Viewer.html> --id medit-t500
 //        [--name "Medit Identica T500"]   default: the viewer's own product title
 //        [--size 290x290x340]             the maker's size, w × d × h in mm
+//        [--md5 <hex>] [--sha256 <hex>]   what Google Drive lists for the file: the
+//                                         import stops unless the file on disk is that file
 //
 // A viewer file holds three components and the inlined three.js:
-//   component-1-scene-core      the viewer's own renderer, camera and lights    (left out)
-//   component-2-product-model   the machine: window.__registerProductModel() sets
-//                               window.__ProductModel = { create…Product }      (imported)
-//   component-3-viewer-app      buttons, keyboard, render loop                   (left out)
+//   1  scene core      the viewer's own renderer, camera and lights             (left out)
+//   2  product model   the machine: window.__registerProductModel() sets
+//                      window.__ProductModel = { create…Product }               (imported)
+//   3  viewer app      buttons, keyboard, render loop                            (left out)
+// Viewer files name these in two ways: on the tag (<script id="component-2-product-model">,
+// as in the Medit T500's file) or in a comment above a bare <script> ("COMPONENT 2 OF 3:
+// PRODUCT MODEL (…)", as in the two milling machines' files). The importer goes by
+// what a script does, not by its name: the model is the one that sets window.__ProductModel.
 //
 // It writes
 //   js/assets/viewers/<id>.js       the model component, byte for byte, in a module wrapper
@@ -46,7 +52,7 @@ function fail(message) {
 }
 
 // ── 0. What was asked for ────────────────────────────────────────────────────
-const USAGE = 'Usage: node tools/import-viewer.mjs <path/to/Machine_Viewer.html> --id <asset-id> [--name "<name>"] [--size <w>x<d>x<h>]';
+const USAGE = 'Usage: node tools/import-viewer.mjs <path/to/Machine_Viewer.html> --id <asset-id> [--name "<name>"] [--size <w>x<d>x<h>] [--md5 <hex>] [--sha256 <hex>]';
 const args = process.argv.slice(2);
 const options = {};
 let inputArg = null;
@@ -54,7 +60,7 @@ for (let i = 0; i < args.length; i++) {
   const arg = args[i];
   if (arg.startsWith('--')) {
     const [key, inline] = arg.slice(2).split('=');
-    if (!['id', 'name', 'size'].includes(key)) fail(`Unknown option --${key}\n  ${USAGE}`);
+    if (!['id', 'name', 'size', 'md5', 'sha256'].includes(key)) fail(`Unknown option --${key}\n  ${USAGE}`);
     options[key] = inline ?? args[++i];
   } else if (inputArg === null) inputArg = arg;
   else fail(`Unexpected argument "${arg}"\n  ${USAGE}`);
@@ -70,21 +76,70 @@ if (options.size !== undefined) {
   datasheetMm = numbers;
 }
 
+const expected = {};
+for (const [algorithm, length] of [['md5', 32], ['sha256', 64]]) {
+  if (options[algorithm] === undefined) continue;
+  expected[algorithm] = String(options[algorithm]).trim().toLowerCase();
+  if (!new RegExp(`^[0-9a-f]{${length}}$`).test(expected[algorithm])) fail(`--${algorithm} "${options[algorithm]}": give the ${length} hexadecimal digits that Google Drive lists for the file`);
+}
+
 const inputPath = path.resolve(process.cwd(), inputArg);
-const bytes = await readFile(inputPath).catch(() => fail(`Cannot read ${inputPath}`));
-const html = bytes.toString('utf8');
 const sourceName = path.basename(inputPath);
+const onDisk = await readFile(inputPath).catch(() => fail(`Cannot read ${inputPath}`));
+
+// A file that was changed on its way here. A web page fetched through a proxy
+// that "speeds pages up" by loading their scripts late (Cloudflare's Rocket
+// Loader) does not arrive as it was sent:
+//   · every <script> tag has been given  type="<token>-text/javascript", and
+//   · one more <script> tag, which loads the proxy's own script, stands before </body>.
+// Both are taken out again, so that what is imported, and the checksums that are
+// kept, are those of the file as it lies in Drive. Whether they are is for --md5
+// or --sha256 to prove. (Bytes are handled as bytes: nothing else may change.)
+let bytes = onDisk;
+let undone = null;
+{
+  const text = onDisk.toString('latin1');
+  const added = /<script src="[^"<>]*\/rocket-loader\.min\.js" data-cf-settings="([0-9a-f]+)-\|\d+" defer><\/script>/.exec(text);
+  if (added) {
+    const typeAttribute = ` type="${added[1]}-text/javascript"`;
+    const withoutTag = text.slice(0, added.index) + text.slice(added.index + added[0].length);
+    const pieces = withoutTag.split(typeAttribute);
+    bytes = Buffer.from(pieces.join(''), 'latin1');
+    undone = { scriptTypes: pieces.length - 1, bytes: onDisk.length - bytes.length };
+  }
+}
+const html = bytes.toString('utf8');
 const source = { file: sourceName, bytes: bytes.length, md5: hash('md5', bytes), sha256: hash('sha256', bytes) };
+for (const [algorithm, wanted] of Object.entries(expected)) {
+  if (source[algorithm] !== wanted) {
+    fail(
+      `${sourceName} is not the file that was asked for: its ${algorithm} is ${source[algorithm]}, not ${wanted}` +
+        `${undone ? ` (after taking out what a proxy had added: ${undone.scriptTypes} script types and 1 script tag, ${undone.bytes} bytes)` : ''}. Nothing was imported.`,
+    );
+  }
+}
 
 // ── 1. Find the model component ──────────────────────────────────────────────
+const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)];
 const candidates = [];
-for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
-  const componentId = /\bid="([^"]+)"/.exec(match[1])?.[1];
-  if (!componentId || !componentId.startsWith('component-')) continue;
-  if (/\bwindow\.__ProductModel\s*=/.test(match[2])) candidates.push({ id: componentId, body: match[2] });
-}
-if (candidates.length === 0) fail(`${sourceName} has no component that sets window.__ProductModel: is this a single-machine viewer? (The asset library is imported with import-asset-library.mjs.)`);
-if (candidates.length > 1) fail(`${sourceName} has ${candidates.length} components that set window.__ProductModel (${candidates.map((c) => c.id).join(', ')}); expected one`);
+scripts.forEach((match, index) => {
+  if (!/\bwindow\.__ProductModel\s*=(?!=)/.test(match[2])) return;
+  const tagId = /\bid="([^"]+)"/.exec(match[1])?.[1];
+  if (tagId) {
+    candidates.push({ id: tagId, where: `<script id="${tagId}">`, body: match[2] });
+    return;
+  }
+  // A bare <script>: say which one it is, and quote the comment that ends right above it.
+  const before = html.slice(0, match.index);
+  const open = before.lastIndexOf('<!--');
+  const close = before.lastIndexOf('-->');
+  const directlyAbove = open !== -1 && close > open && before.slice(close + 3).trim() === '';
+  const heading = directlyAbove ? before.slice(open + 4, close).replace(/={4,}/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  const nth = `script ${index + 1} of ${scripts.length}`;
+  candidates.push({ id: nth, where: `${nth}${heading ? `, under the comment "${heading}"` : ''}`, body: match[2] });
+});
+if (candidates.length === 0) fail(`${sourceName} has no script that sets window.__ProductModel: is this a single-machine viewer? (The asset library is imported with import-asset-library.mjs.)`);
+if (candidates.length > 1) fail(`${sourceName} has ${candidates.length} scripts that set window.__ProductModel (${candidates.map((c) => c.id).join(', ')}); expected one`);
 const component = candidates[0];
 
 const registerFns = [...component.body.matchAll(/window\.(__register[A-Za-z0-9_$]+)\s*=\s*function/g)].map((m) => m[1]);
@@ -110,7 +165,7 @@ ${GENERATED_MARK} Re-create with: npm run import-viewer -- <Viewer.html> --id ${
 //
 // Source    : ${source.file}  (${source.bytes.toLocaleString('en-US')} bytes)
 //             md5 ${source.md5} · sha256 ${source.sha256}
-// Component : <script id="${component.id}">
+// Component : ${component.where}
 // sha256    : ${component.sha}
 //
 // Everything between the BEGIN/END markers is the original component source,
@@ -216,6 +271,8 @@ console.table({
     lights,
   },
 });
+if (undone) console.log(`  note: the file on disk had been changed on its way here: ${undone.scriptTypes} script tags given a type and 1 script tag added (${undone.bytes} bytes). They were taken out; the size and checksums above are those of the file without them.`);
+console.log(Object.keys(expected).length ? `  proven: the file has the ${Object.keys(expected).join(' and the ')} given for it` : `  not proven: compare the checksums with those Google Drive lists for the file (md5 ${source.md5}), or give them with --md5 / --sha256`);
 if (!instance.setExplodeFactor) console.log('  note: the model has no setExplodeFactor(), so the tour cannot take it apart');
 if (lights) console.log(`  note: the model holds ${lights} light${lights === 1 ? '' : 's'}; the tour switches lights inside machines off (js/assets/registry.js)`);
 if (earlier.some((other) => other.id !== id)) console.log(`  kept in the manifest: ${earlier.filter((other) => other.id !== id).map((other) => other.id).join(', ')}`);

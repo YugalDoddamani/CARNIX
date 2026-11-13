@@ -50,7 +50,7 @@ export const ROOM_INFO = {
     about: 'Where models become digital. Lab scanners capture a model in 3D, and technicians design crowns, bridges and other restorations on screen.',
   },
   printing: {
-    about: 'Where designs become objects. 3D printers build models, guides and try-ins from liquid resin, layer by layer. The parts are then washed and cured with light.',
+    about: 'Where designs become objects. 3D printers build models, guides and try-ins from liquid resin, layer by layer. The parts are then washed and cured with light. Milling machines work the other way round: they cut crowns and bridges out of a solid disc.',
   },
   ceramic: {
     about: 'Where restorations get their final material and colour. Ceramic is fired and glazed in furnaces at up to about 1,200 °C, then finished by hand.',
@@ -110,6 +110,28 @@ export const BRANDS = {
     about:
       'Ivoclar is one of the large dental manufacturers. It makes materials for dentists and dental technicians, among them the IPS e.max ceramics, and equipment such as the Programat furnaces. It was formerly called Ivoclar Vivadent, the name printed on this furnace.',
     sources: [{ label: 'Ivoclar, company history', url: 'https://www.ivoclar.com/en_li/media-release/2023/a-tour-through-the-company-s-history' }],
+  },
+  'imes-icore': {
+    name: 'imes-icore',
+    place: 'Eiterfeld, Germany',
+    since: 2002,
+    about:
+      'imes-icore builds computer-controlled machines that mill and grind dental restorations, for dental laboratories, clinics and milling centres. It was founded in 2002 as a spin-off from the isel Group and is based in Eiterfeld in Germany. Its dental machines are called CORiTEC; with them it offers the software, the cutting tools and the materials they work with.',
+    sources: [
+      { label: 'Ardian, press release with a profile of imes-icore (2017)', url: 'https://www.ardian.com/news-insights/press-releases/ardian-takes-majority-stake-cnc-technology-company-imes-icore' },
+      { label: 'imes-icore, CORiTEC 350i PRO series brochure', url: 'https://www.imes-icore.com/d67-en/dental/Brochure/coritec-350i-series-brochure-en.pdf' },
+    ],
+  },
+  dgshape: {
+    name: 'DGSHAPE',
+    place: 'Hamamatsu, Japan',
+    since: 2017,
+    about:
+      'DGSHAPE belongs to the Roland DG group. Roland DG set it up in 2017 as a company of its own, to develop and sell its digital fabrication machines. For dental laboratories and clinics it builds the DWX series of milling machines, which began with the DWX-50 in 2011.',
+    sources: [
+      { label: 'DGSHAPE, press release on the DWX-52Di Plus (2025)', url: 'https://dgshape.com/dwx-52di-plus-dgshapes-upgraded-dry-dental-mill/' },
+      { label: 'DGSHAPE, DWX-52Di Plus brochure', url: 'https://dgshape.com/wp-content/uploads/2026/06/DWX-52Di-Plus-brochure-en-ver.-3_r2.pdf' },
+    ],
   },
   uniformation: {
     name: 'UniFormation',
@@ -332,6 +354,68 @@ export const MACHINE_INFO = {
     sources: [{ label: 'UniFormation, GK3 product page', url: 'https://uniformation3d.com/products/uniformation-resin-3d-printer-gk3' }],
     confirm:
       "Which version does the lab have: GK3 (T) with a T-type lead screw, GK3 (B) with a ball screw, or GK3 Pro? The figures shown are UniFormation's for the GK3 (T and B are the same in all of them). The GK3 Pro uses 385 nm light instead of 405 nm, and UniFormation's own page points dental work to the Pro. The 3D model in the Drive shows a ball screw and a 405 nm hood, which would be the GK3 (B).",
+  },
+  'imes-icore-350i-pro': {
+    brand: 'imes-icore',
+    summary: 'A 5-axis milling machine. It cuts crowns, bridges, abutments and dentures out of a solid blank, following the design made on screen. It works dry or with a coolant, so it can take plastics, zirconia, glass ceramics and metals.',
+    how: 'A blank, usually a round disc, is clamped in a holder inside the chamber. The holder turns the blank and tilts it, while a spindle with the cutting tool moves over it in three directions: five axes in all, moving at the same time. The spindle turns the tool at up to 60,000 turns a minute. Twenty tools stand ready in a changer, so the machine can go from coarse cutting to fine detail without a hand in it.',
+    features: [
+      { label: 'Spindle speed', value: '60,000 rpm', note: 'at most' },
+      { label: 'Spindle power', value: '1.0 kW', note: 'air-cooled' },
+      { label: 'Axes', value: '5', note: 'A axis 360° · B axis 115°' },
+      { label: 'Tools in the changer', value: '20', note: '6 mm shaft' },
+      { label: 'Accuracy of tool measurement', value: '0.002 mm' },
+      { label: 'Coolant tank', value: '4.8 litres' },
+      { label: 'Size', value: '758 × 790 × 857 mm', note: 'width × depth × height' },
+      { label: 'Weight', value: '205 kg' },
+    ],
+    featuresNote: 'It needs compressed air from the lab’s supply: 80 litres a minute, at up to 9 bar.',
+    capabilities: [
+      'Wet and dry in one machine. Glass ceramics, composites and titanium are worked wet, with a coolant from the built-in tank; zirconia, PMMA and cobalt-chrome are milled dry.',
+      'A wide range of materials: zirconia, glass ceramic, lithium disilicate, hybrid ceramic, composite, PEEK, PMMA and wax, and the metals cobalt-chrome and titanium.',
+      'Its base is cast from polymer concrete, a heavy material that damps vibration: for more precise cuts and tools that last longer.',
+      'Zero-point clamping: a blank or an adapter is changed with one click, and sits in exactly the same position again.',
+      'A control PC and a touchscreen are built in. The machine is run from its own screen, with imes-icore’s Remote Dental software.',
+      'Keeps track of how long each tool has run, and can carry on with a spare tool so that a job is not interrupted.',
+      'Corrects for changes in temperature, and measures the position of every axis with an absolute measuring system.',
+    ],
+    sources: [
+      { label: 'imes-icore, CORiTEC 350i series product page', url: 'https://www.imes-icore.com/dental/dental-lab/coritec-350i-series' },
+      { label: 'imes-icore, CORiTEC 350i PRO series brochure', url: 'https://www.imes-icore.com/d67-en/dental/Brochure/coritec-350i-series-brochure-en.pdf' },
+    ],
+    confirm:
+      "(1) Is the lab's machine the CORiTEC 350i PRO? The same body is sold as the PRO+ (2.6 kW water-cooled spindle, 210 kg) and as Loader versions that change up to 12 blanks by themselves (1,058 mm wide). The figures shown are imes-icore's for the PRO. (2) imes-icore's two documents differ in places: weight 205 kg (brochure) or 180 to 210 kg for PRO and PRO+ together (web page); compressed air from 6.0 bar (brochure) or from 6.5 bar (web page), the tour says 'up to 9 bar'; screen 15.6 inch (brochure) or 15 inch (web page), the tour gives no size. (3) Both give the B axis as '115°' without saying from where to where. (4) What does it stand on? imes-icore sells machine tables for it (T1: 770 × 930 × 790 mm, width × height × depth). In the tour it shares a 900 mm high table with the DGSHAPE mill; a real one has to carry 205 kg. (5) On the 3D model and not checked against an imes-icore document: the type plate (item number 511003-0350, a serial number, '2.2 kW'), a German service sticker ('Wartung'), the 'Made in Germany' badge, the air regulator at the back, the door that lifts, and what the touchscreen shows.",
+  },
+  'dgshape-dwx-52di-plus': {
+    brand: 'dgshape',
+    summary: 'A 5-axis dry milling machine. It cuts crowns, bridges and other restorations out of a disc of zirconia, wax or plastic, following the design made on screen. It uses no liquid: a separate dust collector draws the milling dust away.',
+    how: 'A disc of material is held in a C-shaped clamp. The clamp turns the disc right round and tilts it by up to 30° either way, while the spindle with the milling bur moves over it in three directions: five axes in all. The spindle turns the bur at 6,000 to 30,000 turns a minute. Fifteen burs wait in a magazine beside the disc, and the machine takes the one that each step needs.',
+    features: [
+      { label: 'Spindle speed', value: '6,000 – 30,000 rpm' },
+      { label: 'Axes', value: '5', note: 'A ±360° · B ±30°' },
+      { label: 'Burs in the magazine', value: '15', note: '4 mm shank' },
+      { label: 'Disc', value: '98.5 mm', note: 'across; up to 60 mm thick' },
+      { label: 'Power drawn', value: 'about 200 W' },
+      { label: 'Size', value: '495 × 660 × 600 mm', note: 'width × depth × height' },
+      { label: 'Weight', value: '67 kg' },
+    ],
+    featuresNote: 'It needs compressed air (0.02 to 0.2 MPa) and a dust collector, both from outside the machine.',
+    capabilities: [
+      'Mills dry only. DGSHAPE builds separate machines for dry and for wet milling, to keep each one easy to use and to look after.',
+      'Materials: zirconia, wax, PMMA, composite resin, PEEK, PEKK, gypsum, glass-fibre reinforced resin, sinter metal (cobalt-chrome) and polycarbonate.',
+      'The C-shaped clamp lets the bur work right up to the rim of a disc, so that more of the material is used.',
+      'With an optional adapter it mills up to eight small pin-type blocks at a time, in place of one disc.',
+      'Intelligent Tool Control: when a bur has reached the working life the user has set for it, the machine swaps it for a fresh one by itself.',
+      'An ionizer in the chamber takes the static charge off the dust when PMMA is cut.',
+      'An open system: it works with the CAD/CAM software the lab prefers.',
+    ],
+    sources: [
+      { label: 'DGSHAPE, DWX-52Di Plus product page', url: 'https://dgshape.com/dwx-52di-plus/' },
+      { label: 'DGSHAPE, DWX-52Di Plus brochure', url: 'https://dgshape.com/wp-content/uploads/2026/06/DWX-52Di-Plus-brochure-en-ver.-3_r2.pdf' },
+      { label: 'DGSHAPE, DWX-52Di Setup Guide (ionizer, dust collector)', url: 'https://downloadcenter.rolanddg.com/contents/manuals/DWX-52Di_INS_EN.pdf' },
+    ],
+    confirm:
+      "(1) Is the lab's machine the DWX-52Di Plus (released in March 2025), or the earlier DWX-52Di or DWX-52D Plus? The figures shown are DGSHAPE's for the DWX-52Di Plus. (2) The ionizer, and that the machine cannot mill without a dust collector, are taken from DGSHAPE's Setup Guide for the DWX-52Di. That guide names the spindle unit of the Plus (ZS-52D) but not the name 'Plus'; DGSHAPE's page and brochure for the Plus list dust hoses among the included items and do not mention an ionizer. (3) DGSHAPE also advertises a 90-degree milling range for the C-type clamp, with a footnote that this depends on the region; the tour leaves it out. (4) The 3D model in the Drive has a drawer at the bottom front, called a dust drawer in its file. DGSHAPE's Setup Guide shows a bottom cover there with storage behind it, and the dust leaving through a port at the back. The tour's texts do not call it a dust drawer. (5) On the 3D model and not checked against a DGSHAPE document: the type plate (a serial number, an address in Hamamatsu, 'Made in Japan'), and the chamber light that turns blue while milling (the tour shows neither that light nor the milling).",
   },
 
   // ── Not modelled yet: what this kind of machine is for ─────────────────────

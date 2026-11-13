@@ -285,6 +285,23 @@ async function checkBuiltLab() {
     if (print.level === 'floor' && Math.abs(print.box.min.y) > EPS) fail(`${describe(print)} should stand on the floor but its base is at ${fmt(toMm(print.box.min.y))} mm`);
   }
 
+  // A machine on a bench must stand on it with its whole footprint. (Along the
+  // bench that was checked from the data above; this one is measured on the
+  // lab as built, so it also holds front to back, for a machine that was given
+  // a place of its own on the worktop with `z`, and for one that was turned.)
+  const worktops = lab.footprints.filter((print) => print.level === 'floor' && (print.what === 'bench' || print.what.startsWith('station:')));
+  let onBenches = 0;
+  for (const print of lab.footprints) {
+    if (print.level !== 'worktop' || !EQUIPMENT[print.what]) continue;
+    const bench = worktops.find(
+      (other) => other.roomId === print.roomId && Math.abs(other.box.max.y - print.box.min.y) < m(0.02) && print.box.max.x > other.box.min.x && print.box.min.x < other.box.max.x && print.box.max.z > other.box.min.z && print.box.min.z < other.box.max.z,
+    );
+    if (!bench) continue; // a worktop that ends below a splash-back or a shelf: nothing to measure against
+    onBenches++;
+    const over = Math.max(bench.box.min.x - print.box.min.x, print.box.max.x - bench.box.max.x, bench.box.min.z - print.box.min.z, print.box.max.z - bench.box.max.z);
+    if (toMm(over) > 1) fail(`${describe(print)} hangs ${fmt(toMm(over))} mm over the edge of its bench`);
+  }
+
   // Solid things must not occupy the same space. Chairs are skipped (they tuck
   // under worktops); bench-top things are checked against each other only.
   const overlapVolume = (a, b) => {
@@ -331,7 +348,7 @@ async function checkBuiltLab() {
       }
     }
   }
-  console.log(`  ${lab.footprints.length} placed objects, ${lab.items.size} machines, ${doorCount} doors checked`);
+  console.log(`  ${lab.footprints.length} placed objects, ${lab.items.size} machines (${onBenches} measured on their benches), ${doorCount} doors checked`);
 
   // ── 6. Imported machines ─────────────────────────────────────────────────────
   section('Imported machines (hero → lite)');

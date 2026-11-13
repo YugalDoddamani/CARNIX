@@ -34,6 +34,9 @@ export const EQUIPMENT = {
   'upcera-a7-plus': { status: 'built', icon: 'furnace', shortName: 'UPCERA A7+', kind: 'Porcelain furnace' },
   'ivoclar-programat-p300': { status: 'built', icon: 'furnace', shortName: 'Programat P300', kind: 'Ceramic furnace' },
   'uniformation-gk3': { status: 'built', icon: 'printer', shortName: 'GK3', kind: 'Resin 3D printer' },
+  // (these two from their own viewer files too)
+  'imes-icore-350i-pro': { status: 'built', icon: 'mill', shortName: '350i PRO', kind: 'Milling machine' },
+  'dgshape-dwx-52di-plus': { status: 'built', icon: 'mill', shortName: 'DWX-52Di Plus', kind: 'Milling machine' },
 
   // ── Planned · Printing Room ────────────────────────────────────────────────
   'resin-printer': { status: 'planned', icon: 'printer', name: 'Resin 3D printer', kind: '3D printer', mount: 'bench', sizeMm: { w: 400, d: 400, h: 580 } },

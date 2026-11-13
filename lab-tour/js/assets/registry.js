@@ -5,7 +5,7 @@
 // a machine the library does not hold yet). The imported components are also
 // inconsistent with each other (some return `assemblies`, some `subAssemblies`,
 // a viewer's model returns neither; one needs a 0.84 scale to sit right on the
-// bench; one brings a lamp of its own). This file hides all that behind a single
+// bench; three bring a lamp of their own). This file hides all that behind a single
 // contract, so the rest of the tour — and every future asset — only ever deals
 // with this shape:
 //
@@ -103,6 +103,9 @@ export async function createEquipment(id) {
   // other, and three.js then looks up the shader program of every lit material
   // again on every frame (40 look-ups a frame in the scanner's view, none
   // without the lamp); and two more shader programs to build, once.
+  // The two milling machines hold one each as well, a white point light in the
+  // milling chamber. The same goes for those. (Their models set the strength
+  // of that light whenever they are taken apart; a hidden light stays hidden.)
   root.traverse((node) => {
     if (node.isLight) node.visible = false;
   });

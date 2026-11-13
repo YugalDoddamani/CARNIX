@@ -1279,7 +1279,7 @@ async function desktop(browser) {
   // The thermopress is also the first model that keeps parts out of sight
   // while it is closed: the tool that tightens its flask, which appears when
   // the machine is taken apart, and the stay that props its lid open, which
-  // the tour never shows because it never opens the lid.
+  // is seen only when a step of a guide opens the lid (the `howto` walk).
   const meshesOf = (id) =>
     page.evaluate((key) => {
       const holder = window.labTour.stage.scene.getObjectByName(key);

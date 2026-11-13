@@ -13,8 +13,9 @@ T500 lab scanner, the two milling machines, imes-icore CORiTEC 350i PRO and
 DGSHAPE DWX-52Di Plus, and the two injection units of the Acrylic room, Ivoclar
 SR Ivocap and bredent thermopress 400), and 22 placeholders for machines that
 are not modelled yet; on top of that a guided route through the rooms, a page
-that explains each machine, with sourced figures for the eleven real ones, and
-an opening in which the lab comes up part by part.
+that explains each machine, with sourced figures for the eleven real ones,
+step-by-step guides to working one of them (the thermopress 400), and an
+opening in which the lab comes up part by part.
 What comes next, and why it is built in this order, is in
 [`docs/PLAN.md`](docs/PLAN.md).
 
@@ -36,6 +37,13 @@ What comes next, and why it is built in this order, is in
 - **Up to four pills per machine** — what it is, who makes it (About), its key
   figures (Features) and what sets it apart (Capabilities). Figures carry links
   to the maker's documents they were taken from.
+- **Guides to working a machine** — a card "How to use it" on a machine's first
+  pill leads to short guides, retold from the maker's instructions for use:
+  one step at a time on a phone, all the steps as a list beside the lab. At
+  each step the machine turns to the part the step is about, rings mark the
+  keys or screws to use, and the machine is shown as it is at that point of
+  the work: its lid open, the flask not in yet. So far one machine has them,
+  the bredent thermopress 400: three guides, 20 steps.
 
 ## Run it
 
@@ -59,7 +67,7 @@ Useful addresses while working:
 | `?q=low` · `?q=medium` · `?q=high` | forces a quality tier (normally chosen per device) |
 | `?intro=off` | opens without the opening (the lab is simply there) |
 
-## The four files you will edit
+## The five files you will edit
 
 Everything specific to *this* lab is data. The 3D scene and the panels are
 generated from it.
@@ -70,12 +78,14 @@ generated from it.
 | [`js/rooms/catalogue.js`](js/rooms/catalogue.js) | Every machine: built (has a 3D model) or planned (shown as a blue volume) |
 | [`js/rooms/content.js`](js/rooms/content.js) | What stands where in each room: benches, chairs, shelves, machines |
 | [`js/rooms/knowledge.js`](js/rooms/knowledge.js) | Everything the visitor reads: the welcome guide, the tour order, what happens in each room, the makers, and each machine's description, figures and sources |
+| [`js/rooms/how-to.js`](js/rooms/how-to.js) | The guides to working a machine ("How to use it"): their steps, where each step points on the machine's model, and the instructions they were taken from |
 
 After any edit run `npm run check`. It builds the whole lab without a browser
 and reports, in plain words, anything in a wall, in front of a door, overlapping
 its neighbour, hanging off its bench, missing from the catalogue, or over the
 drawing budget — and any machine without a description, figure without a
-source, or icon that does not exist. It ends with the list of things that
+source, or icon that does not exist, and any step of a guide that points at
+something the visitor could not see. It ends with the list of things that
 still need the lab's confirmation.
 
 > ⚠ **Drafts.** The floor-plan dimensions and the 19 generic "planned" machine
@@ -247,6 +257,84 @@ out — the tour is for teaching, and a wrong figure is worse than a missing one
 note. The tour never displays those notes, but the file is as public as the
 page itself, so nothing private belongs in one.
 
+### Write a guide to working a machine
+
+A machine gets its guides ("How to use it") by an entry in `HOW_TO` in
+[`js/rooms/how-to.js`](js/rooms/how-to.js), under the id it has in
+`catalogue.js`. Its panel then shows a card on the first pill that leads to
+them.
+
+```js
+'bredent-thermopress-400': {
+  source: { label: 'bredent’s instructions for use (2025)', url: 'https://…' },    // required; printed under every guide
+  note: 'One sentence about the 3D model that the reader of a guide should know.', // optional; printed after the source
+  places: {                                    // where on the machine a step can point
+    mainSwitch: { part: 'lowerChassisAssembly', at: [4.167, 1.02, -1.42], size: 0.5, from: [68, 14], show: 3 },
+  },
+  guides: [
+    {
+      id: 'run-a-program',                     // its name in the address: #/acrylic/bredent-thermopress-400/how-to/run-a-program
+      title: 'Run a program',
+      steps: [
+        { title: 'Switch on', text: 'Two or three sentences.', at: 'mainSwitch' },
+        { title: 'Put in the cartridge', text: '…', at: 'chambers', open: true, without: ['dentalFlaskAssembly'] },
+      ],
+    },
+  ],
+  confirm: 'A note to ourselves, as in knowledge.js. Never shown to visitors.',
+},
+```
+
+A step needs a `title` and a `text`. The rest says how the machine is shown
+while the step is open:
+
+| In a step | What it does |
+|---|---|
+| `at` | names a place: the machine turns to it, and rings mark it |
+| `open: true` | the lid or cover stands open. Five models have one that the tour can open: the thermopress 400, the SR Ivocap, the two milling machines and the resin printer |
+| `without` | parts of the model, by name, that are not there yet at this point of the work |
+
+A place is written in the terms of the machine's 3D model, with the numbers of
+the model's own file (in `js/assets/viewers/` or `js/assets/legacy/`): x from
+its left to its right as one stands in front of it, y up, z towards the front,
+80 mm to a unit.
+
+| In a place | What it is |
+|---|---|
+| `part` | the name of a group in the model. The marks belong to it. With nothing else given, its middle is marked and the camera frames it whole |
+| `at` | a point `[x, y, z]` on the part's surface, or a list of points: each gets a ring |
+| `size` | the diameter of the rings, in the model's units. A point with a fourth number has a ring of that diameter instead. Left out: the smallest ring, 30 px |
+| `from` | `[turn, tilt]` in degrees, the side the camera looks from. Turn 0 is straight in front, 90 the machine's right-hand end, −90 its left, 180 its back; tilt is the height above the horizon, from 2 to 85 |
+| `show` | what the camera frames: a number (a cube that wide around the marks) or the name of another part (that part, whole) |
+
+The rule for this file is the rule of `knowledge.js` and one more: **a guide
+retells the maker's instructions for use**, in the maker's order and in plain
+words. Nothing is added from experience or from another machine. Where the
+instructions leave something open, the guide leaves it out. A warning that
+belongs to a step is part of that step. Under every guide the panel names the
+instructions and says that a guide does not replace the manual or training.
+
+`npm run check` builds the model and tries every step. The parts must exist; a
+step that says `open` needs a model with a lid; and from the side a step looks
+from, with the lid as the step has it, each mark must be in plain sight: the
+first thing the eye meets there is the part the mark belongs to, and a point
+that was given lies on that part's surface. It warns about a step of more than
+215 letters, which is about what a phone 360 px wide shows without scrolling.
+**It cannot tell whether a ring sits on the right key or screw.** That takes
+eyes, on every step, on a phone and beside the lab:
+
+```bash
+npm run shots -- /tmp/guide --size=390x844 --touch 'step2=#/acrylic/bredent-thermopress-400/how-to/run-a-program/2'
+```
+
+`npm run e2e` then walks through the guides of one machine, the thermopress
+(`--guided=room/machine` names another), and takes what it expects from
+`how-to.js`: so a new step is checked without a line of test being written.
+
+How much room a step leaves around what it frames is `VIEWS.step` in
+`layout.js`; how a guide is laid out is the end of section 6 of `css/tour.css`,
+and of section 9 for a phone.
+
 ### Change the tour order, the room texts or the welcome guide
 
 All in `knowledge.js`: `ROUTE` is one line listing the rooms in tour order (the
@@ -311,6 +399,7 @@ Every machine model, whatever its origin, is used through one shape
 asset.root            THREE.Object3D · origin at bottom-centre · +Z is the operator side
 asset.parts           { name → Object3D } sub-assemblies
 asset.setExplode(f)   0 = assembled … 1 = exploded
+asset.setOpen(f)      0 = closed … 1 = lid or cover open; does nothing for a machine without one
 asset.dispose()
 ```
 
@@ -344,6 +433,22 @@ flying around a room, and both are easy to break:
   direction the visitor arrived from, so a drag turns the machine only. When
   the visitor leaves, the faded lab first swings round to match, then returns
   to full strength.
+
+A step of a guide uses both and adds two things of its own:
+
+- **The camera goes to a part** ([`js/core/places.js`](js/core/places.js)
+  finds it on the model). It frames what the step's place says, from the side
+  the place says, with the margin of `VIEWS.step` around it. One thing
+  overrules that margin: as long as what the step frames still fits, the
+  camera stands no further away than it does on the machine's own page, so
+  that going to a step does not make the machine smaller.
+- **Rings** ([`js/ui/marker.js`](js/ui/marker.js)) are drawn by the page, over
+  the 3D picture, and put in place after every frame: each sits where its
+  point of the model is in that frame, so it stays on its key while the
+  visitor turns the machine. They take no taps. Turned more than 80° away
+  from the side the step looks from, they go, because a ring would then float
+  over the wrong side of the machine; a button in the step ("Show it on the
+  machine again") brings the step's view back.
 
 ## How it stays fast
 
@@ -398,15 +503,17 @@ index.html              page shell + import map
 css/tour.css            all styling (light theme; card on wide screens, sheet on phones)
 js/main.js              the app: where the visitor is (lab / room / machine), links, the route, loading
 js/shell/               layout.js (floor-plan DATA) · build-shell.js (walls, floors from it)
-js/rooms/               catalogue.js, content.js, knowledge.js (DATA) · build-rooms.js (places everything)
+js/rooms/               catalogue.js, content.js, knowledge.js, how-to.js (DATA) · build-rooms.js (places everything)
 js/assets/registry.js   one contract over all machine models
 js/assets/legacy/       GENERATED from the asset library — do not edit
 js/assets/viewers/      GENERATED from single-machine viewer files — do not edit
                         (except _viewer-window.js, which is written by hand)
 js/assets/kit/          furniture: bench, shelves, chair, sofa, monitor, display, desk, plant
 js/core/                units, stage (renderer, lights, spotlight), camera, picking, baking, palette,
-                        motion (the opening; a model fading in when it is ready)
-js/ui/                  panel (rooms, machines, pills) · dock (the bar) · guide · labels · icons
+                        motion (the opening; a model fading in when it is ready),
+                        places (where a step of a guide points on a model)
+js/ui/                  panel (rooms, machines, pills, guides) · dock (the bar) · guide (the welcome
+                        guide) · labels · marker (the rings of a step) · icons
 tools/                  serve.mjs · check.mjs · import-asset-library.mjs · import-viewer.mjs
 tools/browser/          e2e.mjs (the walk-through test) · shots.mjs · film.mjs · lib.mjs
 vendor/three-r160/      three.js 0.160.0, unmodified (see its README for why this version)
@@ -416,29 +523,45 @@ vendor/three-r160/      three.js 0.160.0, unmodified (see its README for why thi
 
 `npm run check` needs nothing and is quick; run it after every edit.
 
-`npm run e2e` walks through the tour the way six visitors would — on a desktop
-with a mouse, on a phone with a finger (390 × 844, then 360 × 640 and 320 ×
-568), on a first visit, with "reduce motion" switched on, one who watches the
-opening, and one with a browser from 2021–22 — with real clicks, taps, drags
-and key presses, and checks what happens (491 checks, 8 to 13 minutes;
-`--only=entrance,older` runs some of them). Among them: a drag turns the
-machine about its own middle and leaves the lab behind it unchanged, pixel for
-pixel; a machine fits the area the panel leaves free, in a wide window, a small
-one and on a phone; leaving a machine clears the spotlight; Back, Forward,
-Escape and shared links work; the opening shows the lab's parts in order, ends
-at once on a tap or a resize, leaves the same picture as opening without it,
-and never costs a visitor the tour: in a browser that cannot supply the
-pictures it is made of, the tour opens without it; the six models that came
-later (the resin printer; the lab scanner, the two milling machines and the two
-injection units from their viewer files) are shown, fill the view and come
-apart like the first seven; the lamps that the scanner, the milling machines
-and the thermopress bring stay off; the parts that the thermopress hides while
-it is closed are not drawn until it is taken apart; no machine in the Printing
-Room or the Acrylic Room is out of reach behind the new ones; and on a phone no
-text is set under 12 px and no running text under 16, nothing is wider than the
-screen, the names on the bar keep clear of each other, the buttons of the first
-sheet and of the welcome guide stay in view on a short screen, and a model
-whose file never arrives leaves a note that fits beside the lab's name.
+`npm run e2e` walks through the tour the way seven visitors would — on a
+desktop with a mouse, on a phone with a finger (390 × 844, then 360 × 640 and
+320 × 568), on a first visit, with "reduce motion" switched on, one who watches
+the opening, one who follows a machine's guides, and one with a browser from
+2021–22 — with real clicks, taps, drags and key presses, and checks what
+happens (708 checks, 13 to 18 minutes; `--only=entrance,older` runs some of
+them). Among them: a drag turns the machine about its own middle and leaves the
+lab behind it unchanged, pixel for pixel; a machine fits the area the panel
+leaves free, in a wide window, a small one and on a phone; leaving a machine
+clears the spotlight; Back, Forward, Escape and shared links work; the opening
+shows the lab's parts in order, ends at once on a tap or a resize, leaves the
+same picture as opening without it, and never costs a visitor the tour: in a
+browser that cannot supply the pictures it is made of, the tour opens without
+it; the six models that came later (the resin printer; the lab scanner, the two
+milling machines and the two injection units from their viewer files) are
+shown, fill the view and come apart like the first seven; the lamps that the
+scanner, the milling machines and the thermopress bring stay off; the parts
+that the thermopress hides while it is closed are not drawn until it is taken
+apart; no machine in the Printing Room or the Acrylic Room is out of reach
+behind the new ones; and on a phone no text is set under 12 px and no running
+text under 16, nothing is wider than the screen, the names on the bar keep
+clear of each other, the buttons of the first sheet and of the welcome guide
+stay in view on a short screen, and a model whose file never arrives leaves a
+note that fits beside the lab's name.
+
+The walk through the guides (`--only=howto`, about 5 minutes) takes every step
+of every guide, beside the lab and on a phone. At each step, what the panel
+says is the text of `how-to.js`; the camera has gone to the part; every ring
+sits on the very point that `how-to.js` names, to a pixel and a half, which the
+test works out from the 3D scene on its own and not with the tour's code; a tap
+on a ring lands on the machine under it; and the machine is shown as the step
+has it, its lid open or shut and the flask in or not yet. Beside that: the
+rings go when their part is turned out of sight, and "Show it on the machine
+again" brings them back; the lid swings and does not jump, except with "reduce
+motion"; Escape and the browser's Back lead from a step to the list, the
+machine and the room; a link to a step is put right once its model has arrived;
+a machine left in the middle of a guide is shut and whole again; and on a phone
+a step starts at its first line and is read without scrolling, with "Back ·
+Next" at the bottom edge of the sheet.
 
 It needs the tour running (`npm run serve`) and a headless Chromium, which is
 not part of the repository. Install it once, anywhere outside the repo:
@@ -541,11 +664,13 @@ Things to know — none of the existing CARNIX files have been changed:
 - The two milling machines do less in the tour than in their own viewers.
   There, a button opens the cover and another lets the machine mill: the
   spindle, the disc and the axes move, and the DGSHAPE's chamber light turns
-  blue. The tour has no such buttons for any machine yet; the models'
-  functions for it are imported and unused, and the light in each milling
-  chamber is off. Both models also show details that were not checked against
-  the makers' documents (type plates, stickers, a drawer); `npm run check`
-  lists them, and `docs/PLAN.md` ("The two milling machines' 3D models").
+  blue. The tour has no such buttons. It opens a machine only at a step of a
+  guide that says so ("How to use it"), and the milling machines have no
+  guides yet: their functions for it are imported and unused, and the light in
+  each milling chamber is off. Both models also show details that were not
+  checked against the makers' documents (type plates, stickers, a drawer);
+  `npm run check` lists them, and `docs/PLAN.md` ("The two milling machines'
+  3D models").
 - There is no milling room in the floor plan. The two milling machines stand
   in the Printing Room, on a table of their own: a choice made here, and one
   entry in `js/rooms/content.js` to change.
@@ -553,12 +678,29 @@ Things to know — none of the existing CARNIX files have been changed:
   There, one button lifts the SR Ivocap's pressure apparatus off the flask, or
   opens the thermopress's lid, and another runs an injection: the needle of
   the SR Ivocap's manometer rises and its piston goes down; the thermopress's
-  lever moves, its heater glows and its piston pushes. The models' functions
-  for it are imported and unused, and the thermopress's two lights are off.
-  The stay that props the thermopress's lid open is never seen, because the
-  tour never opens the lid. Both models show details that were not checked
-  against the makers' documents (a type plate, the display, the capsule's
-  label, the manometer's face); `npm run check` lists them.
+  lever moves, its heater glows and its piston pushes. The tour opens the
+  thermopress's lid, with the stay that props it, at the steps of its guides
+  that have it open, and nowhere else: there is no button for it. It plays no
+  injection and lifts nothing off the SR Ivocap; the models' functions for
+  that are imported and unused, and the thermopress's two lights are off.
+  Both models show details that were not checked against the makers'
+  documents (a type plate, the display, the capsule's label, the manometer's
+  face); `npm run check` lists them.
+- Guides ("How to use it") exist for one machine, the bredent thermopress 400.
+  They retell the part of its operation manual that bredent reprints in its
+  2025 instructions for use, which is for software 2.61 and later. The manual
+  that came with the lab's own unit was not read. Left out: working with both
+  heating chambers at once, the error messages, cleaning. `npm run check`
+  lists what is to be confirmed.
+- The thermopress's 3D model does not draw the keypad as it is: it has the
+  same fourteen keys in the same places, with other signs on some of them. A
+  guide's rings go by a key's place, which was checked against bredent's
+  numbered drawing and a product photo, and every step says so under its text.
+- A step of a guide is read without scrolling where the browser leaves the
+  page 360 × 740 px or more (tried on the emulated phone at 360 × 740,
+  360 × 800, 390 × 844 and 412 × 915). At 360 × 640 the two longest of the 20
+  steps run a line or two past the sheet and scroll under their title; at
+  320 × 568 most steps do. "Back · Next" stay in view on all of them.
 - The SR Ivocap stands on a bench, assembled, as in its viewer. In use it
   stands in a bath of boiling water, and it needs a hydraulic press and a
   vibrator for its capsules: the room has a placeholder for a flask press and

@@ -117,7 +117,8 @@ const VARIO_WHOLE = { part: 'firingPedestal', from: [24, 12], show: 'zubler-vari
 // and y from the middle of the plate's group, which stands at [0, 1.12, 1.72]
 // and is turned by 0.25. The keys' legends lie 0.062 in front of it.
 const onP300 = (x, y, out = 0.064) => [x, 1.12 + y * Math.cos(0.25) + out * Math.sin(0.25), 1.72 - y * Math.sin(0.25) + out * Math.cos(0.25)];
-const P300_KEYPAD = { part: 'controlConsole', size: 0.24, from: [0, 18], show: 'controlConsole' };
+// What is framed is the keypad's membrane, not the housing around it: on a phone the keys are half as large again.
+const P300_KEYPAD = { part: 'controlConsole', size: 0.24, from: [0, 18], show: 'keypadMembranePane' };
 const P = {
   display: [...onP300(-0.2, 0.44, 0.05), 0.5],
   openHead: onP300(0.72, 0.46), // the upper of the two keys right of the display
@@ -448,12 +449,17 @@ export const HOW_TO = {
       curve: { ...P300_KEYPAD, at: P.curve },
       enterValue: { ...P300_KEYPAD, at: [P.numbers, P.plusMinus, P.escape, P.enter] },
       stages: { ...P300_KEYPAD, at: [P.program, P.cursor, P.plusMinus] },
-      keypad: { part: 'controlConsole', from: [0, 18] },
+      // The keypad as a whole, on the furnace as a whole: close up, a ring around all of it would be larger than a ring may be.
+      keypad: { part: 'controlConsole', at: [...onP300(0, 0.02), 1.5], from: [16, 16], show: 'ivoclar-programat-p300' },
       // Under the head: the firing plate in the middle of the base, with the sealing surface around it.
       plate: { part: 'firingPedestal', at: [0, 2.395, 0.18], size: 1.0, from: [18, 30], show: 4.2 },
-      rims: { part: 'firingPedestal', at: [[0, 2.125, 1.68, 0.6], [0, 2.395, 0.18, 1.0]], from: [18, 30], show: 4.2 },
+      // The sealing surface: the dark ring around the firing plate, on which the head comes down (top at 2.125, 0.98 to 1.53 from the middle).
+      rims: { part: 'firingPedestal', at: [[-0.9, 2.125, 1.08], [0.9, 2.125, 1.08]], size: 0.5, from: [18, 30], show: 4.2 },
       tray: { part: 'coolingTray', at: [1.9, 2.045, 0.9], size: 1.1, from: [40, 34], show: 'coolingTray' },
-      head: { part: 'clamshellHead', from: [30, 16], show: 'clamshellHead' },
+      head: { part: 'clamshellHead', size: 1.2, from: [30, 16], show: 'clamshellHead' },
+      // Under the head, seen once it has tipped open: the heating muffle in the middle (its face at 2.05), the white
+      // insulation around it. Looked at from low in front: the underside then faces the eye.
+      insulation: { part: 'clamshellHead', at: [0, 2.05, 0.18], size: 1.0, from: [0, 6], show: 'clamshellHead' },
     },
     guides: [
       {
@@ -564,7 +570,7 @@ export const HOW_TO = {
           {
             title: 'Every month, every year',
             text: 'Each month, check that the head opens smoothly and quietly, and look at the insulation: hairline cracks do no harm, worn insulation is for Ivoclar’s service. At least once a year, test the temperature.',
-            at: 'head',
+            at: 'insulation',
             open: true,
           },
         ],

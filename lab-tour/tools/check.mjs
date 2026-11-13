@@ -482,8 +482,8 @@ async function checkBuiltLab() {
   for (const id of guidedTypes) {
     const entry = HOW_TO[id];
     const asset = await createEquipment(id);
-    // As the tour does it: the places are found while the model stands shut and whole.
-    const { places, problems } = findPlaces(asset.root, entry.places);
+    // As the tour does it: the places are found while the model stands as it is built, and whole.
+    const { places, problems } = findPlaces(asset.root, entry.places, asset);
     for (const problem of problems) fail(`how-to.js "${id}": ${problem}`);
     for (const guide of entry.guides) {
       console.log(`  ${EQUIPMENT[id].shortName ?? id} › ${guide.title}`);

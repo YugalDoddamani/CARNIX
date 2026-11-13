@@ -2,7 +2,8 @@
 // real (headless) browser. Four visitors, and the way the lab arrives:
 //
 //   desktop   a wide window and a mouse
-//   phone     a 390 × 844 phone and a finger
+//   phone     a 390 × 844 phone and a finger; then 360 × 640 and 320 × 568,
+//             and a phone on which one model's file never arrives
 //   first     somebody who has never been here (the welcome guide)
 //   reduced   somebody who has asked their device for less motion
 //   entrance  the opening: the lab coming up part by part, a model fading in
@@ -17,7 +18,7 @@
 //
 // What this cannot tell: how fast the tour runs on a real phone, and how it
 // looks. For looks there are shots.mjs and film.mjs.
-import { SPOTLIGHT, VIEWS } from '../../js/shell/layout.js';
+import { ROOMS, SPOTLIGHT, VIEWS } from '../../js/shell/layout.js';
 import { frames, go, holdClock, launchBrowser, openTour, parseArgs, pass, sleep, waitReady } from './lib.mjs';
 
 const { flags } = parseArgs(process.argv.slice(2));
@@ -45,6 +46,8 @@ const INJECTORS = [
   { id: flags.thermopress || 'acrylic/bredent-thermopress-400', lamps: 2, hides: 4, shows: 3, apart: 'its housing, lid, heating cylinder, flask and clamping tool move away from each other' },
 ];
 const roomOf = (id) => id.split('/')[0];
+// The file one walk goes without, to see what the tour says when a model fails to arrive: the scanner's.
+const LOST_MODEL = new RegExp(`/viewers/${SCANNER.split('/')[1]}\\.js`);
 
 // What layout.js asks for, in the terms the checks measure.
 const FADED = 1 - SPOTLIGHT.rest; // how far the lab is faded around a spotlit machine
@@ -177,6 +180,57 @@ function install() {
         dockRect: rect(document.getElementById('dock')),
         window: { width: innerWidth, height: innerHeight },
       };
+    },
+
+    /**
+     * The text a visitor can read right now, piece by piece, with the size it
+     * is set in. Counted: everything that is drawn (not switched off, clipped
+     * away or faded out); in the panel and the welcome guide also what is
+     * scrolled out of sight. Where the stylesheet swaps a name for a shorter
+     * one, `::after` draws the shorter one, so that is what is reported.
+     * `read` marks running text: descriptions, points, the names in a list.
+     */
+    type() {
+      const pieces = [];
+      const drawn = (element) => {
+        for (let node = element; node && node !== document.documentElement; node = node.parentElement) {
+          const style = getComputedStyle(node);
+          if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) < 0.05 || /inset\(50%\)/.test(style.clipPath)) return false;
+        }
+        return true;
+      };
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        const text = node.textContent.replace(/\s+/g, ' ').trim();
+        const element = node.parentElement;
+        if (!text || !element || element.closest('script, style') || !drawn(element)) continue;
+        const style = getComputedStyle(element);
+        if (parseFloat(style.fontSize) === 0) {
+          const after = getComputedStyle(element, '::after');
+          const shown = after.content.replace(/^"|"$/g, '');
+          if (after.content !== 'none' && shown) pieces.push({ what: `${describe(element)}::after`, px: parseFloat(after.fontSize), text: shown, read: false });
+          continue;
+        }
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const boxes = [...range.getClientRects()].filter((r) => r.width > 0.5 && r.height > 0.5);
+        if (!boxes.length) continue;
+        const scrolls = Boolean(element.closest('#panel, dialog.guide'));
+        if (!scrolls && !boxes.some((r) => r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth)) continue;
+        const read = Boolean(element.closest('.lead, .body, .points li, .row__text strong, .guide__steps strong'));
+        pieces.push({ what: describe(element), px: parseFloat(style.fontSize), text: text.slice(0, 40), read });
+      }
+      return pieces;
+    },
+
+    /** The stops of the navigation bar: the name each one shows, and where that name and the stop are. */
+    bar() {
+      return [...document.querySelectorAll('.dock__item')].map((button) => {
+        const label = button.querySelector('.dock__label');
+        const swapped = parseFloat(getComputedStyle(label).fontSize) === 0;
+        return { id: button.dataset.id, text: swapped ? getComputedStyle(label, '::after').content.replace(/^"|"$/g, '') : label.textContent, label: rect(label), stop: rect(button) };
+      });
     },
 
     /** Where to click a control, and what (if anything) is in the way. */
@@ -416,6 +470,79 @@ function checkCatchUp(seen, label) {
   check(`${label}: the lab stays fully faded until it matches the machine again`, shown.length === 0, shown.map((moment) => `t=${moment.t}s ${round(moment.lag, 1)}° at ${round(moment.veil)}`).join(', '));
   const matchedAt = seen.find((moment) => moment.lag <= 1);
   check(`${label}: it matches again within the first third of the journey`, Boolean(matchedAt) && matchedAt.t <= seen[seen.length - 1].t * 0.4, matchedAt ? `at ${matchedAt.t} s of ${seen[seen.length - 1].t} s` : 'never');
+}
+
+/**
+ * What a phone has to get right wherever the visitor is. Nothing is wider than
+ * the screen, and what scrolls up and down does not scroll sideways as well.
+ * No text is set under 12 px, and running text not under 16 (tour.css,
+ * section 9: the phone's scale); `reads: false` for a place that holds figures
+ * and labels only.
+ */
+async function checkOnPhone(page, where, { reads = true } = {}) {
+  await atRest(page); // what is still fading in does not count as on show
+  const wide = await page.evaluate(() => {
+    const sideways = (element) => (element ? element.scrollWidth - element.clientWidth : 0);
+    return { page: document.documentElement.scrollWidth, screen: document.documentElement.clientWidth, sheet: sideways(document.getElementById('panel')), guide: sideways(document.querySelector('dialog.guide[open]')) };
+  });
+  check(`${where}: nothing is wider than the screen, and neither the sheet nor the guide scrolls sideways`, wide.page <= wide.screen && wide.sheet <= 1 && wide.guide <= 1, `page ${wide.page} px on a screen of ${wide.screen}; sideways: sheet ${wide.sheet} px, guide ${wide.guide} px`);
+  const pieces = await page.evaluate(() => window.__t.type());
+  const small = pieces.filter((piece) => piece.px < 12);
+  check(`${where}: no text is set smaller than 12 px`, pieces.length > 0 && small.length === 0, pieces.length ? small.slice(0, 4).map((piece) => `${piece.px} px ${piece.what} "${piece.text}"`).join(', ') : 'found no text at all');
+  if (!reads) return;
+  const read = pieces.filter((piece) => piece.read);
+  const off = read.filter((piece) => piece.px < 16);
+  check(`${where}: what is read is set in 16 px or larger`, read.length > 0 && off.length === 0, read.length ? off.slice(0, 4).map((piece) => `${piece.px} px ${piece.what} "${piece.text}"`).join(', ') : 'found no running text');
+}
+
+/**
+ * Wait until the interface has come to rest: the sheet and its strip of pills
+ * have stopped scrolling, and whatever was sliding or fading in has arrived.
+ * All of that runs on the browser's clock, which `pass` does not move.
+ */
+async function atRest(page) {
+  let last = '';
+  for (let still = 0, tries = 0; still < 3 && tries < 80; tries++) {
+    await sleep(50);
+    const now = await page.evaluate(() => {
+      const panel = document.getElementById('panel');
+      const arriving = document.getAnimations().filter((animation) => animation.playState === 'running' && Number.isFinite(animation.effect?.getComputedTiming().endTime)).length;
+      return arriving ? `arriving ${performance.now()}` : `${panel.scrollTop} ${panel.querySelector('.tabs')?.scrollLeft ?? 0} ${document.querySelector('dialog.guide')?.scrollTop ?? 0}`;
+    });
+    still = now === last ? still + 1 : 0;
+    last = now;
+  }
+}
+
+/** The names on the navigation bar: none runs out of its stop, and neighbours stay a space apart. Returns the stops. */
+async function checkBar(page, where) {
+  const stops = await page.evaluate(() => window.__t.bar());
+  const gaps = stops.slice(1).map((stop, index) => stop.label.left - stops[index].label.right);
+  const names = stops.map((stop, index) => `${stop.text}${index < gaps.length ? ` (${round(gaps[index], 1)})` : ''}`).join(' ');
+  check(`${where}: the names on the bar stay clear of each other`, stops.length > 1 && Math.min(...gaps) >= 3, `the gaps in px: ${names}`);
+  check(`${where}: and each fits its stop`, stops.every((stop) => stop.label.left >= stop.stop.left - 0.5 && stop.label.right <= stop.stop.right + 0.5), stops.map((stop) => `${stop.text} ${round(stop.label.width, 1)} in ${round(stop.stop.width, 1)}`).join(', '));
+  return stops;
+}
+
+/**
+ * Runs in the page before the tour does: keeps what the note beside the name
+ * ("Loading 3D models 3/14") said while it was on show, and how wide the page
+ * was at that moment. `innerText` is the text as drawn, without what the
+ * stylesheet leaves out. The screen's width is `clientWidth` here and wherever
+ * a page is held against it: on a phone `innerWidth` grows along with whatever
+ * is too wide (the browser makes room to zoom out), and would never tell.
+ */
+function watchLoadingNote() {
+  window.__loadingNotes = [];
+  new MutationObserver((_, finder) => {
+    const note = document.getElementById('loading');
+    if (!note) return;
+    finder.disconnect();
+    const keep = () => {
+      if (!note.hidden && note.textContent) window.__loadingNotes.push({ text: note.innerText.replace(/\s+/g, ' ').trim(), px: parseFloat(getComputedStyle(note).fontSize), page: document.documentElement.scrollWidth, screen: document.documentElement.clientWidth });
+    };
+    new MutationObserver(keep).observe(note, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+  }).observe(document, { childList: true, subtree: true });
 }
 
 // ── Desktop ──────────────────────────────────────────────────────────────────
@@ -1101,7 +1228,7 @@ async function desktop(browser) {
 async function phone(browser) {
   current = 'phone';
   console.log('\nPhone — 390 × 844, touch');
-  const { page, problems, state } = await open(browser, { width: 390, height: 844, dpr: 2, touch: true, storage: WELCOMED });
+  const { page, problems, state } = await open(browser, { width: 390, height: 844, dpr: 2, touch: true, storage: WELCOMED, init: watchLoadingNote });
   const v = visitor(page, { touch: true });
   const facts = await page.evaluate(() => ({ route: window.labTour.route, items: window.labTour.items() }));
   const { route } = facts;
@@ -1112,13 +1239,23 @@ async function phone(browser) {
     check('every model loaded', state === 'ready', state);
     check('the navigation bar is a tab bar across the bottom edge', near(s.dockRect.bottom, s.window.height, 1) && near(s.dockRect.left, 0, 1) && near(s.dockRect.width, s.window.width, 1), `bar ${box(s.dockRect)} in ${s.window.width} × ${s.window.height}`);
     check('the panel is a sheet between the lab and the bar', s.panelRect.top > s.stage.top + s.stage.height * 0.3 && s.panelRect.bottom <= s.dockRect.top + 1 && near(s.panelRect.width, s.window.width, 20), `sheet ${box(s.panelRect)}`);
-    check('nothing is wider than the screen', (await page.evaluate(() => document.documentElement.scrollWidth)) <= s.window.width, `${await page.evaluate(() => document.documentElement.scrollWidth)} px`);
+    const wide = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, screen: document.documentElement.clientWidth }));
+    check('nothing is wider than the screen', wide.screen === 390 && wide.page <= wide.screen, `${wide.page} px on a screen of ${wide.screen}`);
     const stops = await page.$$eval('.dock__item', (buttons) => buttons.map((button) => ({ id: button.dataset.id, ...button.getBoundingClientRect().toJSON() })));
     check('all seven stops are on screen and big enough for a finger', stops.length === route.length + 1 && stops.every((stop) => stop.left >= -0.5 && stop.right <= s.window.width + 0.5 && stop.height >= 44 && stop.width >= 44), stops.map((stop) => `${stop.id} ${Math.round(stop.width)}×${Math.round(stop.height)}`).join(', '));
     for (const id of route) {
       const where = await v.whereIs(id);
       check(`room "${id}" is in view above the sheet`, inside(where, s.free, 2), `room ${box(where)}, free ${box(s.free)}`);
     }
+    // The area above the sheet is about as high as it is wide here. The upright
+    // view draws the rooms a third larger in it than the view across would.
+    check('the lab is shown upright, the view that draws it larger on a screen this shape', near(s.azimuth, VIEWS.overviewPortrait.azimuth, 0.5), `seen from ${round(s.azimuth, 1)}° (upright ${VIEWS.overviewPortrait.azimuth}°, across ${VIEWS.overview.azimuth}°), free area ${Math.round(s.free.right - s.free.left)} × ${Math.round(s.free.bottom - s.free.top)}`);
+    const notes = await page.evaluate(() => window.__loadingNotes);
+    check(
+      'while the models loaded, the note beside the name was short ("Loading 3/14"), large enough, and never pushed the page wider than the screen',
+      notes.length > 1 && notes.every((note) => /^Loading \d+\/\d+$/.test(note.text) && note.px >= 12 && note.page <= note.screen),
+      notes.length ? `${notes.length} notes; ${[...new Set(notes.filter((note) => !/^Loading \d+\/\d+$/.test(note.text) || note.px < 12 || note.page > note.screen).map((note) => `"${note.text}" at ${note.px} px, page ${note.page} of ${note.screen}`))].slice(0, 3).join(' | ')}` : 'the note was never seen',
+    );
   });
 
   await step('Tap a room, then a machine', async () => {
@@ -1186,6 +1323,10 @@ async function phone(browser) {
     await v.rest();
     const scrolled = await v.see();
     check('scrolling the sheet with a finger does not turn the machine', near(scrolled.azimuth, pose.azimuth, 1e-6) && near(scrolled.elevation, pose.elevation, 1e-6));
+    // The finger left the sheet moving, and it runs on for a moment by the
+    // browser's clock, not the tour's. A tap that lands meanwhile stops the
+    // sheet instead of pressing what is under it, as on any page.
+    await atRest(page);
   });
 
   await step('Take it apart', async () => {
@@ -1237,8 +1378,136 @@ async function phone(browser) {
     check('the sheet says so', /not modelled yet/i.test(await page.$eval('#panel .note', (note) => note.textContent)));
   });
 
+  await step('Text large enough to read, and nothing wider than the screen', async () => {
+    await checkOnPhone(page, 'a machine that is not modelled yet', { reads: false }); // its sheet holds a note and figures
+    await v.go('#/');
+    await v.rest();
+    await checkOnPhone(page, 'the whole lab');
+    await checkBar(page, 'at 390 px');
+    await v.go(`#/${room}`);
+    await v.rest();
+    await checkOnPhone(page, 'a room');
+    await v.go(`#/${MACHINE}`);
+    await v.rest();
+    await checkOnPhone(page, 'a machine');
+    for (const tab of ['about', 'features', 'capabilities']) {
+      await atRest(page); // the strip of pills is still sliding to the last one pressed
+      await v.press(`#panel [data-tab="${tab}"]`);
+      await atRest(page);
+      const now = (await v.see()).tab;
+      if (now !== tab) throw new Error(`the tap on "${tab}" opened "${now}"`);
+      await checkOnPhone(page, `a machine's "${tab}"`, { reads: tab !== 'features' }); // "Features" holds figures
+    }
+    await v.go('#/');
+    await v.rest();
+    await v.press('#open-guide');
+    await atRest(page);
+    await checkOnPhone(page, 'the welcome guide');
+    await v.press('dialog.guide .guide__close');
+    await atRest(page);
+  });
+
+  // A phone 360 px wide whose browser has taken its share of the height, then
+  // the narrowest phone there is. The size changes; the touch screen stays.
+  const resize = async (width, height) => {
+    await page.setViewport({ width, height, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    await frames(page, 3);
+    await v.rest();
+  };
+  const guideButtons = async () => {
+    await v.press('#open-guide');
+    await atRest(page);
+    const seen = await page.evaluate(() => {
+      const dialog = document.querySelector('dialog.guide');
+      const d = dialog.getBoundingClientRect();
+      const buttons = [...dialog.querySelectorAll('.guide__actions .button')].map((button) => button.getBoundingClientRect());
+      return { scrolls: dialog.scrollHeight > dialog.clientHeight + 1, card: Math.round(dialog.scrollHeight), window: Math.round(d.height), inView: buttons.length === 2 && buttons.every((b) => b.top >= d.top && b.bottom <= d.bottom + 0.5 && b.bottom <= innerHeight) };
+    });
+    await v.press('dialog.guide [data-start]');
+    await atRest(page);
+    await v.rest();
+    return { ...seen, started: (await v.see()).place === route[0] };
+  };
+
+  await step('A smaller phone, 360 × 640', async () => {
+    await v.go('#/');
+    await resize(360, 640);
+    const stops = await checkBar(page, 'at 360 px');
+    const short = ROOMS.filter((entry) => entry.tabShort);
+    check(`where the full name would touch its neighbour the bar shows the short one (${short.map((entry) => `"${entry.tabShort}" for "${entry.tab}"`).join(', ')})`, short.length > 0 && short.every((entry) => stops.find((stop) => stop.id === entry.id)?.text === entry.tabShort), stops.map((stop) => stop.text).join(' '));
+    await checkOnPhone(page, 'at 360 px, the whole lab');
+    const guide = await guideButtons();
+    check('the welcome guide is taller than this screen and scrolls, with both its buttons in view all the same', guide.scrolls && guide.inView, `card ${guide.card} px in ${guide.window} px, buttons in view: ${guide.inView}`);
+    check('"Start the tour" in it goes to the first stop', guide.started);
+  });
+
+  await step('The narrowest phone, 320 × 568', async () => {
+    await v.go('#/');
+    await resize(320, 568);
+    // The first sheet says more than fits here. What has to stay in view is its two buttons.
+    const first = await page.evaluate(() => {
+      const panel = document.getElementById('panel');
+      const sheet = panel.getBoundingClientRect();
+      const buttons = [...panel.querySelectorAll('.actions .button')].map((button) => button.getBoundingClientRect());
+      return {
+        buttons: buttons.length,
+        inView: buttons.every((b) => b.top >= sheet.top && b.bottom <= sheet.bottom + 0.5),
+        oneRow: buttons.length === 2 && Math.abs(buttons[0].top - buttons[1].top) < 1,
+        words: panel.scrollHeight,
+        sheet: Math.round(sheet.height),
+        scrolled: panel.scrollTop,
+      };
+    });
+    check(
+      'the first sheet is too short for its words, which scroll; "Start the tour" and "How it works" are in view without scrolling, side by side',
+      first.buttons === 2 && first.words > first.sheet && first.scrolled === 0 && first.inView && first.oneRow,
+      `${first.words} px of words in a sheet of ${first.sheet} px, buttons in view: ${first.inView}, in one row: ${first.oneRow}`,
+    );
+    for (const id of route) {
+      await v.go(`#/${id}`);
+      await v.rest();
+      const list = await page.evaluate(() => {
+        const panel = document.getElementById('panel');
+        const edge = panel.getBoundingClientRect().right;
+        const rows = [...panel.querySelectorAll('.row')].map((row) => row.getBoundingClientRect().right);
+        return { rows: rows.length, past: rows.length ? Math.max(...rows) - edge : 0, sideways: panel.scrollWidth - panel.clientWidth, page: document.documentElement.scrollWidth };
+      });
+      check(`room "${id}": the list of machines stays inside the sheet, however long a name`, list.past <= 0.5 && list.sideways <= 1 && list.page <= 320, `${list.rows} rows, ${round(list.past, 1)} px past the edge, sheet scrolls ${list.sideways} px sideways, page ${list.page} px`);
+    }
+    await v.go('#/');
+    await v.rest();
+    const guide = await guideButtons();
+    check('the welcome guide keeps both its buttons in view here too', guide.inView && guide.started, `card ${guide.card} px in ${guide.window} px, buttons in view: ${guide.inView}, started: ${guide.started}`);
+  });
+
   noProblems(problems);
   await page.close();
+
+  // One model's file is kept from arriving. The tour says so beside its name,
+  // in a sentence, and on a phone there is little room for a sentence there.
+  await step('A model that does not arrive', async () => {
+    const lost = await open(browser, { width: 360, height: 640, dpr: 2, touch: true, storage: WELCOMED, block: LOST_MODEL });
+    const seen = await lost.page.evaluate(() => {
+      const note = document.getElementById('loading');
+      const n = note.getBoundingClientRect();
+      return {
+        text: note.hidden ? '' : note.innerText.replace(/\s+/g, ' ').trim(),
+        px: parseFloat(getComputedStyle(note).fontSize),
+        left: n.left,
+        right: n.right,
+        name: document.querySelector('.brand').getBoundingClientRect().right,
+        guide: document.getElementById('open-guide').getBoundingClientRect().left,
+        page: document.documentElement.scrollWidth,
+        screen: document.documentElement.clientWidth,
+        plain: window.labTour.items().filter((item) => item.modelState === 'failed').map((item) => item.id),
+      };
+    });
+    check('the tour starts all the same; the machine without its model stays a plain volume', lost.state === 'ready-with-errors' && seen.plain.length > 0, `${lost.state}, without a model: ${seen.plain.join(', ') || 'none'}`);
+    check('the note beside the name says how many models are missing, in text large enough to read', /^\d+ of \d+ models could not be loaded$/.test(seen.text) && seen.px >= 12, `"${seen.text}" at ${seen.px} px`);
+    check('it keeps between the name and the Guide button, and the page is no wider than the screen', seen.left >= seen.name - 0.5 && seen.right <= seen.guide + 0.5 && seen.page <= seen.screen, `name ends at ${round(seen.name, 1)}, note ${round(seen.left, 1)} → ${round(seen.right, 1)}, Guide from ${round(seen.guide, 1)}, page ${seen.page} of ${seen.screen}`);
+    check('the browser console names the model', lost.problems.some((problem) => /Could not build/.test(problem)), lost.problems.slice(0, 3).join(' | '));
+    await lost.page.close();
+  });
 }
 
 // ── A first visit ────────────────────────────────────────────────────────────

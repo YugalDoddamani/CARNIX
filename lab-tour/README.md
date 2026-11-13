@@ -253,7 +253,46 @@ All in `knowledge.js`: `ROUTE` is one line listing the rooms in tour order (the
 bar, "Stop n of 6" and the Next buttons follow it), `ROOM_INFO` has one
 paragraph per room, `GUIDE` the welcome text. A room's one-word name on the bar
 is its `tab` in `layout.js`; icons are picked by name from
-[`js/ui/icons.js`](js/ui/icons.js).
+[`js/ui/icons.js`](js/ui/icons.js). On a phone the seven names share the width
+of the screen. A name too long for its share gets a `tabShort` as well ("Print"
+for "Printing"), which phones narrower than 380 px show instead; `npm run e2e`
+fails if two names on the bar come closer than 3 px.
+
+### Change the size of the text on a phone
+
+A phone has a scale of its own: five sizes and one for the bar, at the top of
+section 9 of [`css/tour.css`](css/tour.css) ("Phones and narrow windows"). They
+apply below 900 px of width; a desktop keeps the sizes of sections 2 to 8.
+
+| Value | Size | Set in it |
+|---|---|---|
+| `--type-read` | 16 px | what is read: descriptions, capability points, the names in a list |
+| `--type-control` | 15 px | buttons, the four pills, the facts under a machine |
+| `--type-aside` | 14 px | the kind under a name, notes, the maker's details, hints |
+| `--type-label` | 13 px | section titles, sources, the legend, the number in a marker |
+| `--type-small` | 12.5 px | capitals and counts ("STOP 5 OF 6", "Planned") |
+| `--type-bar` | 12 px | the names on the bar; less on a phone narrower than 360 px |
+
+Headings and the large figures are not on the scale; they keep their sizes.
+To set everything larger or smaller, change these numbers and nothing else.
+Larger text takes room from three things, so look at them afterwards:
+
+- **The row of pills.** At 15 px the row fits a phone 360 px wide for eight
+  machines of thirteen; for the other five it scrolls sideways to reach
+  "Capabilities". On a phone 390 px wide it does for one.
+- **The bar.** At 12 px the two names closest to each other are 5 px apart on
+  a phone 360 px wide.
+- **The lab.** Text makes the sheet under the lab taller, and the lab is drawn
+  in what is left. A room's sheet stops at 46 % of the height and a machine's
+  is always 48 % of it: larger text there leaves more to scroll and costs the
+  lab nothing. The first sheet is as tall as its words, up to the same 46 %:
+  larger text there draws the lab smaller.
+
+The pills were measured in Roboto, the font of most Android phones; the bar in
+the test browser's own font, which is wider (see "Testing").
+
+`npm run e2e` holds a phone to two floors, whatever the scale says: no text
+under 12 px, and no running text under 16.
 
 ### Update an existing model
 
@@ -378,24 +417,28 @@ vendor/three-r160/      three.js 0.160.0, unmodified (see its README for why thi
 `npm run check` needs nothing and is quick; run it after every edit.
 
 `npm run e2e` walks through the tour the way six visitors would — on a desktop
-with a mouse, on a 390 × 844 phone with a finger, on a first visit, with
-"reduce motion" switched on, one who watches the opening, and one with a
-browser from 2021–22 — with real clicks, taps, drags and key presses, and
-checks what happens (445 checks, 8 to 13 minutes; `--only=entrance,older` runs
-some of them). Among them: a drag turns the machine about its own middle and
-leaves the lab behind it unchanged, pixel for pixel; a machine fits the area
-the panel leaves free, in a wide window, a small one and on a phone; leaving a
-machine clears the spotlight; Back, Forward, Escape and shared links work; the
-opening shows the lab's parts in order, ends at once on a tap or a resize,
-leaves the same picture as opening without it, and never costs a visitor the
-tour: in a browser that cannot supply the pictures it is made of, the tour
-opens without it; the six models that came later (the resin printer; the lab
-scanner, the two milling machines and the two injection units from their
-viewer files) are shown, fill the view and come apart like the first seven;
-the lamps that the scanner, the milling machines and the thermopress bring
-stay off; the parts that the thermopress hides while it is closed are not
-drawn until it is taken apart; and no machine in the Printing Room or the
-Acrylic Room is out of reach behind the new ones.
+with a mouse, on a phone with a finger (390 × 844, then 360 × 640 and 320 ×
+568), on a first visit, with "reduce motion" switched on, one who watches the
+opening, and one with a browser from 2021–22 — with real clicks, taps, drags
+and key presses, and checks what happens (491 checks, 8 to 13 minutes;
+`--only=entrance,older` runs some of them). Among them: a drag turns the
+machine about its own middle and leaves the lab behind it unchanged, pixel for
+pixel; a machine fits the area the panel leaves free, in a wide window, a small
+one and on a phone; leaving a machine clears the spotlight; Back, Forward,
+Escape and shared links work; the opening shows the lab's parts in order, ends
+at once on a tap or a resize, leaves the same picture as opening without it,
+and never costs a visitor the tour: in a browser that cannot supply the
+pictures it is made of, the tour opens without it; the six models that came
+later (the resin printer; the lab scanner, the two milling machines and the two
+injection units from their viewer files) are shown, fill the view and come
+apart like the first seven; the lamps that the scanner, the milling machines
+and the thermopress bring stay off; the parts that the thermopress hides while
+it is closed are not drawn until it is taken apart; no machine in the Printing
+Room or the Acrylic Room is out of reach behind the new ones; and on a phone no
+text is set under 12 px and no running text under 16, nothing is wider than the
+screen, the names on the bar keep clear of each other, the buttons of the first
+sheet and of the welcome guide stay in view on a short screen, and a model
+whose file never arrives leaves a note that fits beside the lab's name.
 
 It needs the tour running (`npm run serve`) and a headless Chromium, which is
 not part of the repository. Install it once, anywhere outside the repo:
@@ -420,7 +463,10 @@ and move it by hand (`labTour.stage.clock`). The opening runs on the browser's
 own clock instead, so for the tests it is held with `?intro=hold` and moved
 with `labTour.motion.seek(ms)` and `labTour.motion.release()`. The tests prove
 behaviour; they say nothing about speed, or about how smooth the opening is,
-on a real device.
+on a real device. Nor does the headless browser have a phone's fonts. Its own
+face is wider than Roboto, the font of most Android phones, so a paragraph may
+take a line less on such a phone, and a row that scrolls in the tests may fit.
+An iPhone's font has not been tried.
 
 ## Deploying with CARNIX
 
@@ -467,6 +513,17 @@ Things to know — none of the existing CARNIX files have been changed:
 - It has been tested in an automated desktop browser and an emulated phone, with
   software rendering. It has not been run on real phones yet, so real-device
   speed and feel are unmeasured.
+- The phone's text sizes were chosen on that emulated phone, for screens 360
+  to 430 px wide. On a screen 320 px wide two things give way: the names on
+  the bar are set in 10.7 px, the only text under 12, and the longest room
+  name on a machine's back button ("Acrylic & Prostho") is cut short.
+- In a room, on a phone whose browser leaves the page about 670 px of height
+  (one of 390 × 844 or 360 × 800 with the browser's own bars showing), the
+  sheet has room for the room's paragraph and the buttons to the next stop.
+  The list of machines starts below them and is reached by scrolling the
+  sheet; the numbered markers in the lab above lead to the same machines. A
+  taller sheet would show the top of the list and draw the room smaller, with
+  its markers closer together.
 - The welcome guide is remembered per device (in the browser's storage); a
   visitor in a private window sees it every time.
 - A machine that is not modelled yet shows a description of its kind only: no

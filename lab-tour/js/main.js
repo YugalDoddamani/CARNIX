@@ -172,7 +172,7 @@ function start() {
 
   // ── Navigation bar, guide, panel ───────────────────────────────────────────
   const dock = createDock(dockElement, {
-    items: [{ id: 'lab', label: 'Lab', title: 'The whole lab', icon: 'lab' }, ...route.map((room) => ({ id: room.id, label: room.tab ?? room.name, title: room.name, icon: room.icon }))],
+    items: [{ id: 'lab', label: 'Lab', title: 'The whole lab', icon: 'lab' }, ...route.map((room) => ({ id: room.id, label: room.tab ?? room.name, shortLabel: room.tabShort, title: room.name, icon: room.icon }))],
     onSelect: (id) => navigate(id === 'lab' ? {} : { roomId: id }),
   });
 
@@ -328,7 +328,15 @@ function start() {
       return rig.frame(boundsOf(item), itemView(item), { duration, limits: LIMITS.item, room: 'stay' });
     }
     if (state.mode === 'room') return rig.frame(roomOf(state.roomId).focusBox, VIEWS.room, { duration, limits: LIMITS.room });
-    const view = freeArea.height > freeArea.width * 1.05 ? VIEWS.overviewPortrait : VIEWS.overview;
+    // The whole lab has two views (layout.js): across, and upright for a free
+    // area that is not much wider than it is high. On a phone the sheet under
+    // the lab takes much of the height, more so since its text was set larger,
+    // and a phone 360 × 800 would fall back to the view across, which draws
+    // each room a third smaller there. Measured, the upright view shows the
+    // rooms larger from an area 0.83 times as high as wide; the phone layout
+    // therefore switches at 0.9. The wide layout keeps its 1.05.
+    const upright = freeArea.height > freeArea.width * (WIDE_LAYOUT.matches ? 1.05 : 0.9);
+    const view = upright ? VIEWS.overviewPortrait : VIEWS.overview;
     return rig.frame(shell.frameBox, view, { duration, limits: LIMITS.overview });
   }
 
@@ -582,8 +590,17 @@ function start() {
     const report = () => {
       loadingElement.hidden = done >= total && !failed;
       loadingElement.classList.toggle('is-error', failed > 0 && done >= total);
-      loadingElement.textContent =
-        done < total ? `Loading 3D models ${done}/${total}` : `${failed} of ${total} 3D models could not be loaded`;
+      // The middle of the note is left out where the bar is short of room: on a
+      // phone it reads "Loading 3/14" (tour.css hides .topbar__status-detail there).
+      const detail = document.createElement('span');
+      detail.className = 'topbar__status-detail';
+      if (done < total) {
+        detail.textContent = '3D models ';
+        loadingElement.replaceChildren('Loading ', detail, `${done}/${total}`);
+      } else {
+        detail.textContent = '3D ';
+        loadingElement.replaceChildren(`${failed} of ${total} `, detail, 'models could not be loaded');
+      }
     };
     // A model is built first and put in place afterwards (see motion.change:
     // not always at once). Either can go wrong.

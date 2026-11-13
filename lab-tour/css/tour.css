@@ -1633,6 +1633,80 @@ dl {
    the bottom edge. */
 
 @media (max-width: 899.98px) {
+  /* Type. The 12 to 14 px that read well on a desk proved too small on a phone,
+     so the many sizes of sections 2 to 8 give way to one scale of five here.
+     To set everything on a phone larger or smaller, change these numbers.
+     Headings and figures keep their size: they were large enough.
+     (npm run e2e holds the tour to two floors: on a phone no text is under
+     12 px, and what is read is not under 16.) */
+  :root {
+    --type-read: 16px; /* what is read: descriptions, points, the names in a list */
+    --type-control: 15px; /* what is tapped or looked up: buttons, pills, facts */
+    --type-aside: 14px; /* what goes with something larger: kinds, notes, hints */
+    --type-label: 13px; /* labels, sources, the number in a marker */
+    --type-small: 12.5px; /* capitals and counts: the smallest text in the panel */
+    /* The seven stops of the bar share the width of the screen. 12 px is all
+       that fits on a phone 360 px wide; a narrower phone gets what fits. */
+    --type-bar: clamp(10.5px, 3.34vw, 12px);
+  }
+
+  .lead,
+  .body,
+  .points li,
+  .row__text strong,
+  .guide__steps strong {
+    font-size: var(--type-read);
+  }
+
+  .button,
+  .back,
+  .tabs [role='tab'],
+  .facts dt,
+  .facts dd,
+  .slider__label {
+    font-size: var(--type-control);
+  }
+
+  .row__text small,
+  .stepper,
+  .note,
+  .brand-card__facts,
+  .spec dt,
+  .footnote,
+  .hint,
+  .topbar__guide,
+  .guide__steps small {
+    font-size: var(--type-aside);
+  }
+
+  .section-title,
+  .row__number,
+  .hotspot__dot,
+  .hotspot__name,
+  .legend,
+  .slider__ends,
+  .brand-card__label,
+  .sources,
+  .guide__hint {
+    font-size: var(--type-label);
+  }
+
+  .eyebrow,
+  .count,
+  .chip,
+  .topbar__status {
+    font-size: var(--type-small);
+  }
+
+  /* The faintest grey is 3 : 1 against the white of the panel, too little for
+     text this small. The next grey is 5.8 : 1. */
+  .slider__ends,
+  .spec dt small,
+  .sources,
+  .guide__hint {
+    color: var(--ink-soft);
+  }
+
   .topbar {
     padding: 8px 12px;
     padding-left: max(12px, env(safe-area-inset-left));
@@ -1643,9 +1717,25 @@ dl {
     display: none;
   }
 
+  /* The note beside the name has little room on a phone. While the models
+     load it is short here ("Loading 3/14", see below) and keeps to its line;
+     the name gives way if it must, as it always has. If models failed, the
+     note is a sentence. It takes the room the name leaves and breaks into
+     lines there; only when that room is narrower than about three lines'
+     worth does the name give way as well. Either way the page never gets
+     wider than the screen. */
   .topbar__status {
     padding: 5px 10px;
-    font-size: 11.5px;
+    border-radius: 14px;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .topbar__status.is-error {
+    flex: 1 1 0%; /* the room that is left, whatever the sentence would like */
+    min-width: 9em; /* narrower than this, the name wraps instead */
+    max-width: max-content; /* and no wider than the sentence on one line */
+    white-space: normal;
   }
 
   .panel {
@@ -1678,13 +1768,53 @@ dl {
     margin-top: 0;
   }
 
+  /* Less of a margin beside each pill's name. At this size and with the
+     margins of a desktop, the four of them fit a phone 360 px wide for three
+     machines in thirteen; the rest had to be scrolled sideways to reach
+     "Capabilities". This way it is five that scroll (README, "Change the size
+     of the text on a phone"). Where there is room the pills share it out and
+     look as they did; only a row with a long name is set this tight. */
+  .tabs [role='tab'] {
+    padding: 0 6px;
+  }
+
   .panel__top {
     margin: -4px 0 8px;
+  }
+
+  /* "1 / 10" at this size is as wide as the room it was given, and touched
+     the arrows on either side. */
+  .stepper span {
+    padding: 0 5px;
   }
 
   /* The rooms are one tap away on the bar below; keep the lab in view. */
   .panel[data-mode='overview'] .route-list {
     display: none;
+  }
+
+  /* "Start the tour" stays in reach at the bottom of the sheet, like
+     "Back · Next" in a room. On a short phone the words above it are taller
+     than the sheet (an iPhone SE in Safari leaves the sheet 200 px), and the
+     buttons would be cut off at its edge or pushed out of sight; this way
+     the words scroll and the buttons stay. Where everything fits, nothing
+     moves: the spacing adds up to what it was. */
+  .panel[data-mode='overview'] {
+    padding-bottom: 0;
+  }
+
+  .panel[data-mode='overview'] .actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 0 -14px;
+    padding: 12px 14px;
+    background: linear-gradient(to top, #fff 72%, rgba(255, 255, 255, 0));
+  }
+
+  /* Like the bar in a room, they do not ride up with the rest of the sheet. */
+  .panel.is-entering > .actions {
+    animation-name: fade-in;
   }
 
   .panel__header h1 {
@@ -1699,7 +1829,6 @@ dl {
 
   .lead {
     margin-top: 8px;
-    font-size: 14px;
     line-height: 1.45;
   }
 
@@ -1709,6 +1838,17 @@ dl {
 
   .section-title {
     margin-top: 14px;
+  }
+
+  /* A row never asks for more width than the sheet has: at this size the
+     longest names would otherwise push the list past its edge on the narrowest
+     phones. A name wraps, and a word longer than its line may break. */
+  .list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .row__text {
+    overflow-wrap: anywhere;
   }
 
   .route-nav {
@@ -1762,8 +1902,7 @@ dl {
     min-height: 50px;
     padding: 5px 0 4px;
     border-radius: 12px;
-    font-size: 10.5px;
-    letter-spacing: 0.01em;
+    font-size: var(--type-bar);
   }
 
   .dock__item[aria-current] {
@@ -1793,6 +1932,59 @@ dl {
 
   .guide h2 {
     font-size: 21px;
+  }
+
+  /* Set this large, the card is taller than a short screen (about 740 px on a
+     phone 360 px wide) and scrolls. Its two buttons stay in view all the same:
+     nobody should have to scroll to find "Start the tour". */
+  .guide__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 6px -18px 0;
+    padding: 12px 18px;
+    background: linear-gradient(to top, #fff 80%, rgba(255, 255, 255, 0));
+  }
+
+  .guide__hint {
+    margin-top: 0;
+  }
+}
+
+/* Narrower than 380 px, "Printing" at this size would touch "Ceramic" beside
+   it: the bar says "Print" (layout.js: `tabShort`). The stop keeps its full
+   name for screen readers. */
+@media (max-width: 379.98px) {
+  .dock__label[data-short] {
+    font-size: 0;
+  }
+
+  .dock__label[data-short]::after {
+    content: attr(data-short);
+    font-size: var(--type-bar);
+  }
+}
+
+/* Narrower than 360 px (in practice 320: a small phone, or a larger one set
+   to show everything bigger). The two buttons of the first sheet would no
+   longer fit one row at this size, and two rows would leave the words above
+   them a line and a half. They give up some margin, and "Start the tour" its
+   arrow. */
+@media (max-width: 359.98px) {
+  .panel[data-mode='overview'] .actions .button {
+    padding: 0 10px;
+  }
+
+  .panel[data-mode='overview'] .actions .button svg {
+    display: none;
+  }
+}
+
+/* Too narrow for the name, the whole note and the Guide button side by side:
+   the note says "Loading 3/14" (main.js marks the words that can go). */
+@media (max-width: 459.98px) {
+  .topbar__status-detail {
+    display: none;
   }
 }
 
@@ -1845,6 +2037,15 @@ dl {
 
 .is-compact .room-pill__text small {
   display: none;
+}
+
+/* In the phone layout (a tablet held upright, a phone on its side) the short
+   names are set on the phone's scale, like everything else there. */
+@media (max-width: 899.98px) {
+  .is-compact .room-pill__text strong,
+  .is-compact .room-pill__text strong[data-short]::after {
+    font-size: var(--type-small);
+  }
 }
 
 /* Phone width: the icon alone. The name stays available to screen readers. */

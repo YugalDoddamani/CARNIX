@@ -7,7 +7,7 @@ import { ICONS } from './icons.js';
 /**
  * @param {HTMLElement} element  the <nav>
  * @param {object} options
- * @param {{ id, label, title, icon }[]} options.items
+ * @param {{ id, label, shortLabel?, title, icon }[]} options.items  `shortLabel`: what the narrowest phones show instead of `label`
  * @param {(id: string) => void} options.onSelect
  */
 export function createDock(element, { items, onSelect }) {
@@ -30,6 +30,7 @@ export function createDock(element, { items, onSelect }) {
     const label = document.createElement('span');
     label.className = 'dock__label';
     label.textContent = item.label;
+    if (item.shortLabel) label.dataset.short = item.shortLabel; // the stylesheet decides when
     button.append(icon, label);
     button.addEventListener('click', () => onSelect(item.id));
     element.append(button);

@@ -38,10 +38,11 @@ export const WALL_STYLES = {
 export const CORRIDOR = { x: 0, z: ROW, w: BUILDING.w, d: CORRIDOR_D };
 
 // `tab`:        the room's one-word name on the navigation bar.
+// `tabShort`:   a shorter one for the narrowest phones, where seven names share 360 px (tour.css, section 9).
 // `lightStrip`: which wall of the room carries a light strip ('north', 'west' or none).
 export const ROOMS = [
   { id: 'design', name: 'Design Room', tab: 'Design', subtitle: 'CAD Design & Planning', icon: 'design', x: 0, z: 0, w: 5.2, d: ROW, lightStrip: 'north' },
-  { id: 'printing', name: 'Printing Room', tab: 'Printing', subtitle: '3D Printing', icon: 'printing', x: 5.2, z: 0, w: 4, d: ROW, lightStrip: 'north' },
+  { id: 'printing', name: 'Printing Room', tab: 'Printing', tabShort: 'Print', subtitle: '3D Printing', icon: 'printing', x: 5.2, z: 0, w: 4, d: ROW, lightStrip: 'north' },
   { id: 'clinic', name: 'Clinic Reception', tab: 'Clinic', subtitle: 'Patient Care', icon: 'clinic', x: 9.2, z: 0, w: 4.6, d: ROW },
   { id: 'plaster', name: 'Plaster Room', tab: 'Plaster', subtitle: 'Model Preparation', icon: 'plaster', x: 0, z: SOUTH_Z, w: 5.2, d: ROW, lightStrip: 'west' },
   { id: 'ceramic', name: 'Ceramic Room', tab: 'Ceramic', subtitle: 'Ceramic Work', icon: 'ceramic', x: 5.2, z: SOUTH_Z, w: 3.6, d: ROW },

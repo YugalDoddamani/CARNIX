@@ -30,9 +30,10 @@ then filled in by editing a list.
 | 0 | Foundations: one unit system, importers for the asset library and for single-machine viewer files, furniture kit, floor plan as data, automatic checks | ✅ done |
 | 1 | The whole floor, walkable: building, six furnished rooms, overview → room → machine, shareable links, phone layout | ✅ done |
 | 1b | A tour that teaches: navigation bar, guided route, welcome guide, machines that come forward and turn on their own, a page of facts per machine | ✅ done |
+| 1c | Text on a phone: one scale of sizes for the phone layout, nothing under 12 px | ✅ done |
 | 2 | Make it true: real floor plan, real equipment list, real name, the lab's own words | ⏳ needs your input |
 | 3 | Room by room: replace placeholders with models, and write each machine's page | next |
-| 4 | The rest of the concept's interface | later |
+| 4 | The rest of the concept's interface | "How to use it" is approved and next; the rest later |
 | 5 | Atmosphere | later |
 | 6 | Launch | later |
 
@@ -56,6 +57,82 @@ The tour is meant for education and awareness, so it now explains itself:
 How it is checked: `npm run e2e` walks through all of this in a headless
 browser as a desktop visitor, a phone visitor, a first-time visitor and one who
 asked for reduced motion (README, "Testing").
+
+### Phase 1c — text on a phone (done)
+
+Asked for after the tour was tried on a phone: the text was too small there.
+It had mostly the desktop's sizes, 11.5 to 14.5 px, and 10.5 px on the bar.
+
+What was done: the phone layout (below 900 px) has a scale of its own, five
+sizes and one for the bar (README, "Change the size of the text on a phone").
+
+| | Before | Now |
+|---|---|---|
+| Descriptions, capability points | 14 | 16 |
+| Machine names in lists | 14.5 | 16 |
+| Buttons | 14 | 15 |
+| The four pills | 13 | 15 |
+| Facts, notes, the maker's details | 12.5 – 13.5 | 14 – 15 |
+| Small labels, sources, badges | 11.5 – 12 | 12.5 – 14 |
+| The bar | 10.5 | 12 |
+| Headings, large figures | 18 – 27 | unchanged |
+
+The faintest grey, used for four kinds of small text, gave way to the darker
+one. "Printing" reads "Print" on the bar of a phone narrower than 380 px,
+where the full name would touch "Ceramic". A desktop is unchanged, element for
+element (compared at four window sizes).
+
+Where it departs from what was proposed: **a room's sheet did not get
+taller.** The proposal was 40 px more, to keep the first machine of the list
+in view under the longer paragraph. On the screen it was tried on, 360 × 800,
+that cost four rooms nothing and the other two 4 and 8 % of their size. But a
+browser's own bars leave a common phone about 670 px of height, not 800, and
+there every room above the sheet is as large as the height allows. Measured at
+390 × 664 and 360 × 672: 40 px more sheet draws the room a sixth smaller
+(232 px high becomes 195) and brings its markers closer together. Of the three
+rooms measured, the first machine of the list comes into view in one, a third
+of it in another, and none of it in the last. The list is one scroll away as
+it is, and the markers lead to the same machines.
+
+What larger text cost:
+
+- On phones that leave the page about 670 px of height, the whole lab is drawn
+  5 to 7 % smaller, because the paragraph on the first sheet is taller. Rooms
+  and machines are drawn as large as before.
+- The row of pills scrolls sideways more often: on a phone 360 px wide for
+  five of the thirteen modelled machines, where it was two. The margins beside
+  each pill's name were narrowed for it; with the old ones it would be ten.
+  (Measured in Roboto, the font of most Android phones.)
+
+What was found and fixed on the way, all on phones. The first was there
+before this work; the others came with the larger text:
+
+- The note beside the lab's name pushed the page wider than the screen. The
+  sentence shown when a model fails ("3 of 14 3D models could not be loaded")
+  did so on every phone it was measured on, 320 to 430 px wide: on a screen of
+  390 px the page was 399 px wide. The note shown while the models load did
+  on a phone 320 px wide. The first now breaks into lines; the second reads
+  "Loading 3/14" on a phone.
+- The welcome guide is taller than a short screen. It scrolls, and its two
+  buttons stay in view.
+- On a short phone (an iPhone SE in Safari leaves 375 × 553) the first sheet
+  is shorter than its words, and "Start the tour" was pushed partly out of
+  sight. On a phone 320 px wide it had been cut off before. The words scroll
+  now, and the two buttons stay in view.
+- On tall phones the taller first sheet tipped the lab from its upright view
+  into the view across, which draws the rooms a third smaller there. The
+  phone layout now chooses between the two by its own measure.
+- The longest names in a room's list pushed the list past the sheet's edge on
+  a phone 320 px wide. They wrap now.
+
+How it is checked: the phone visitor of `npm run e2e` went from 66 checks to
+112. It reads every piece of text in each kind of view at 390 × 844, goes on
+at 360 × 640 and 320 × 568, and lets one model fail to arrive. Each fix above
+has a check that was seen to fail with the fix taken out.
+
+Not checked: a real phone. The sizes are set in px and are the same in any
+font. How many lines a paragraph takes and whether a row fits are not, and the
+test browser has none of a phone's fonts.
 
 ### Phase 2 — make it true
 
@@ -142,10 +219,32 @@ In the concept image and not built yet:
 - **Equipment list** — every machine in one searchable list (the data exists).
 - **Workflow on the floor** — the path of a case through the rooms, drawn as a
   line on the floor plan. The order exists (`ROUTE`); the drawing does not.
-- **"See how it works"** — steps tied to the parts of a machine as it comes
-  apart. Needs a short script per machine.
+- **"How to use it"** — approved, and next. See below.
 - Compass, "About" the lab, and the left-hand navigation of the concept (the
   bar at the bottom does that job now).
+
+#### "How to use it" (approved, not built)
+
+The concept's "See how it works": steps tied to the parts of a machine. As
+sketched and approved:
+
+- **The way in** is a card on the machine's page: "How to use it", with the
+  number of guides.
+- **The guides** of that machine, each with its number of steps. The sketch
+  used the thermopress 400: "Run a program", "Set a program", "Eject a
+  cartridge by hand".
+- **One step at a time** on a phone: a title, two or three sentences, Back and
+  Next, and a row of dashes showing how far along. The model turns to the part
+  the step is about and marks it. On a desktop all the steps are a list, with
+  the current one open.
+- **Every step comes from the maker's instructions for use**, named and linked
+  under the guide, with a sentence saying that the guide does not replace the
+  manual that came with the unit, or training on it. The rule of
+  `knowledge.js` holds here too: nothing without a source.
+
+What exists for it: each model already names its sub-assemblies (`parts` in
+`js/assets/registry.js`), which is what a step can point at. What does not: the
+guides themselves, one short script per machine, and the marker on the model.
 
 ### Phase 5 — atmosphere
 
@@ -730,8 +829,12 @@ own: see "The Medit T500's 3D model", "The two milling machines' 3D models" and
 3. **DS-EX Pro:** re-proportion the model to its datasheet, or leave it. And
    which version is it (see the table under phase 2)?
 4. **How much phones matter.** The tour works on a phone and adapts its layout,
-   but on a narrow screen the overview is small. If most visitors arrive on
-   phones, that view deserves a design of its own.
+   and its text there is now set larger (phase 1c). Two things remain small on
+   a narrow screen: the overview, which larger text made 5 to 7 % smaller
+   still, and the room above a room's sheet, which is why the list of machines
+   starts below the fold. If most visitors arrive on phones, those two views
+   deserve a design of their own: a sheet that can be pulled up and pushed
+   down, for one.
 5. **The order of the tour.** Reception → plaster → design → printing →
    ceramic → acrylic is a guess at how a case travels. One line to change.
 6. **Who the reader is.** The texts are written for somebody with no dental

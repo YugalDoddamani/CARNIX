@@ -44,7 +44,7 @@ export async function launchBrowser() {
 
 /**
  * Open the tour and wait until it has finished loading.
- * options: { width, height, dpr, touch, reducedMotion, query, hash, storage, forget, until }
+ * options: { width, height, dpr, touch, reducedMotion, query, hash, storage, forget, until, init, block }
  *   storage   localStorage entries to set before the page starts, e.g.
  *             { 'lab-tour:welcomed': '1' } for a returning visitor
  *   forget    true for a first-time visitor: whatever earlier pages of this
@@ -54,11 +54,14 @@ export async function launchBrowser() {
  *             'started': the tour's script has run; the lab may still be coming
  *             up. With `query: 'intro=hold'` the opening stands still at its
  *             first moment until `labTour.motion.release()`.
+ *   init      a function to run in the page before any of its own scripts
+ *   block     a pattern: files whose address matches never arrive, to see what
+ *             the tour does without them (they are then among the `problems`)
  * Returns { page, problems, state, loadMs } — `problems` collects console
  * errors and warnings, page errors and failed requests as they happen.
  */
 export async function openTour(browser, baseUrl, options = {}) {
-  const { width = 1280, height = 800, dpr = 1, touch = false, reducedMotion = false, query = '', hash = '', storage = null, forget = false, until = 'ready', init = null } = options;
+  const { width = 1280, height = 800, dpr = 1, touch = false, reducedMotion = false, query = '', hash = '', storage = null, forget = false, until = 'ready', init = null, block = null } = options;
   const page = await browser.newPage();
   await page.setViewport({ width, height, deviceScaleFactor: dpr, isMobile: touch, hasTouch: touch });
   if (reducedMotion) await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
@@ -69,6 +72,10 @@ export async function openTour(browser, baseUrl, options = {}) {
   }
   // `init` runs in the page before any of its own scripts (to take a browser feature away, for example).
   if (init) await page.evaluateOnNewDocument(init);
+  if (block) {
+    await page.setRequestInterception(true);
+    page.on('request', (request) => (block.test(request.url()) ? request.abort() : request.continue()));
+  }
   const problems = [];
   page.on('console', (message) => {
     // console.warn() is 'warn' to newer versions of Puppeteer and 'warning' to older ones.

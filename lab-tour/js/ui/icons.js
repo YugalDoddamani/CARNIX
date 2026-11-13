@@ -61,4 +61,7 @@ export const UI = {
   book: svg('<path d="M12 6.5 C10 5 7 4.6 4 5.2 V18.2 C7 17.6 10 18 12 19.5 C14 18 17 17.6 20 18.2 V5.2 C17 4.6 14 5 12 6.5 Z"/><path d="M12 6.5 V19.5"/>'),
   pin: svg('<path d="M12 21 C12 21 5.5 15 5.5 10 A6.5 6.5 0 0 1 18.5 10 C18.5 15 12 21 12 21 Z"/><circle cx="12" cy="10" r="2.3"/>', 16),
   external: svg('<path d="M14 5 H19 V10 M19 5 L11 13 M17 14 V18 A1 1 0 0 1 16 19 H6 A1 1 0 0 1 5 18 V8 A1 1 0 0 1 6 7 H10"/>', 14),
+  // "How to use it": the way in, and "show it on the machine again"
+  play: svg('<path d="M9.5 7.2 L17 12 L9.5 16.8 Z"/>', 18),
+  aim: svg('<circle cx="12" cy="12" r="6"/><path d="M12 2.8 V6 M12 18 V21.2 M2.8 12 H6 M18 12 H21.2 M12 12 V12.1"/>', 18),
 };

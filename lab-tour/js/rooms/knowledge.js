@@ -78,6 +78,17 @@ export const BRANDS = {
       '3Shape develops 3D scanners and design software for dentistry: the TRIOS intraoral scanners used in clinics, lab scanners such as the E4, and the Dental System software in which restorations are designed.',
     sources: [{ label: 'CB Insights, 3Shape company profile', url: 'https://www.cbinsights.com/company/3shape' }],
   },
+  medit: {
+    name: 'Medit',
+    place: 'Seoul, South Korea',
+    since: 2000,
+    about:
+      'Medit has worked on 3D scanning since it was founded in 2000, for industry and for dentistry. Its lab scanners, such as this one, stand in dental laboratories; its intraoral scanners are used by dentists in the clinic, and its Medit Link software connects the two.',
+    sources: [
+      { label: 'Medit, press release with company profile (2024)', url: 'https://www.prnewswire.com/news-releases/medit-appoints-han-ryu-as-ceo-focusing-on-customer-centric-innovation-302193152.html' },
+      { label: 'Medit, T-Series brochure, "About Medit" (via CAD/CAM Lösungen)', url: 'https://cadcam-loesungen.at/website2019/wp-content/uploads/2019/06/medit-t-series-eng-1904.pdf' },
+    ],
+  },
   zubler: {
     name: 'Zubler',
     place: 'Ulm, Germany',
@@ -189,6 +200,36 @@ export const MACHINE_INFO = {
       'Used to design crowns, bridges, implant restorations and splints on screen.',
       'Sends the finished design on as a file, to be printed or milled.',
     ],
+  },
+  'medit-t500': {
+    brand: 'medit',
+    summary: 'A desktop 3D scanner for dental labs. It measures a plaster model, single dies or an impression with blue light, and takes about twelve seconds for a full arch.',
+    how: 'The model sits on a round plate at the end of an arm, in a bay that is open to the front and to one side. From under the roof a projector casts patterns of blue light onto it, and two cameras record how the patterns fall on the surface. The arm tilts and the plate turns, so that the cameras get to see every side.',
+    features: [
+      { label: 'Cameras', value: '2 × 2 MP' },
+      { label: 'Accuracy', value: '7 µm', note: 'ISO 12836' },
+      { label: 'Full arch scanned in', value: '12 s' },
+      { label: 'Eight dies scanned in', value: '19 s' },
+      { label: 'Light', value: 'Blue LED' },
+      { label: 'Largest object', value: '90 × 72 × 60 mm', note: 'scanning volume' },
+      { label: 'Size', value: '290 × 290 × 340 mm', note: 'width × depth × height' },
+      { label: 'Weight', value: '12 kg' },
+    ],
+    capabilities: [
+      'Flexible multi-die: a full arch or a part of one is scanned together with its single dies, in fewer steps. The plate holds up to 16 dies at once.',
+      'With its 3-axis arm it scans an impression directly, both sides in one step, so that no plaster model has to be poured first.',
+      'Touch to start: once the case is loaded, a touch on the scanner starts the scan. No reaching for the keyboard or mouse.',
+      'Comes with a colour texture module, so that a scan can keep the colours of a surface as well as its shape.',
+      'Comes with an articulator module, for scanning the two jaw models as they are mounted together.',
+      'An open system: it reads and writes STL files, the format that design programs share.',
+    ],
+    sources: [
+      { label: 'Medit, T-Series brochure, 2019 (via CAD/CAM Lösungen)', url: 'https://cadcam-loesungen.at/website2019/wp-content/uploads/2019/06/medit-t-series-eng-1904.pdf' },
+      { label: 'Medit, T-Series brochure, 2018 (via Pearson Dental)', url: 'https://www.pearsondental.com/flyers/MEDIT_T-SERIES_ENG_180608.pdf' },
+      { label: 'Medit Identica T500, dealer page (Norton Dental)', url: 'https://www.nortondental.net/medit-identica-t500' },
+    ],
+    confirm:
+      "(1) Medit's brochures call this scanner 'Medit T500'; dealers, and the badge on the 3D model, say 'Identica T500'. The tour uses the model's name, 'Medit Identica T500'. (2) Which accessories does the lab have? The 2019 brochure lists the flexible multi-die, colour texture and articulator modules as included and the 3-axis arm for impressions as optional; dealers' pages describe the arm as part of the T500. Without the arm the T500 does not scan impressions the way its page here says. (3) The brochure only lists the colour texture and articulator modules; what they are for is described here from how such modules are generally used. (4) The back of the 3D model shows a rocker switch, a 24 V socket and a nameplate with a serial number. These were not checked against a Medit document.",
   },
 
   // ── Ceramic Room ───────────────────────────────────────────────────────────

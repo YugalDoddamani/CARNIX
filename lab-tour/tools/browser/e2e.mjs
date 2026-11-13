@@ -31,6 +31,7 @@ const MACHINE = flags.machine || 'ceramic/zubler-vario-200'; // modelled, has al
 const NEIGHBOUR = flags.neighbour || 'ceramic/upcera-a7-plus'; // the next machine in the same room
 const PLANNED = flags.planned || 'plaster/model-trimmer'; // not modelled yet
 const PRINTER = flags.printer || 'printing/uniformation-gk3'; // modelled; the last machine to come out of the asset library
+const SCANNER = flags.scanner || 'design/medit-t500'; // modelled; came out of a single-machine viewer file, not out of the library
 const roomOf = (id) => id.split('/')[0];
 
 // What layout.js asks for, in the terms the checks measure.
@@ -817,42 +818,81 @@ async function desktop(browser) {
     });
   }
 
+  // A machine whose model was imported after the rest must behave like every
+  // other modelled machine: listed without a "Planned" beside it, a panel with
+  // its maker and figures, a slider that takes it apart, and all of it in view.
+  const likeTheOthers = async (id, apartMeans) => {
+    await v.go(`#/${roomOf(id)}`);
+    const chip = await page.$eval(`#panel [data-go-item="${id}"]`, (element) => element.querySelector('.chip')?.textContent.trim() ?? '');
+    check('the room list has it as a machine, with no "Planned" or "Model coming" beside it', chip === '', `"${chip}"`);
+    await v.press(`#panel [data-go-item="${id}"]`);
+    await v.rest();
+    await checkMachineInView(v, id);
+    const panel = await page.evaluate(() => ({
+      note: document.querySelector('#panel .note')?.textContent ?? '',
+      sizeLabel: [...document.querySelectorAll('#panel .facts dt')].map((term) => term.textContent.trim()),
+      tabs: [...document.querySelectorAll('#panel [role="tab"]')].map((tab) => tab.dataset.tab),
+    }));
+    check('the panel does not say that its model is missing', !/3D model is not in the tour yet|not modelled yet/i.test(panel.note), panel.note.slice(0, 60));
+    check('it gives the size of the model, and its maker and figures', panel.sizeLabel.includes('Size of the model') && panel.tabs.includes('about') && panel.tabs.includes('features'), `${panel.sizeLabel.join(', ')}; ${panel.tabs.join(' ')}`);
+
+    const before = await v.see();
+    const closed = await v.whereIs(id);
+    const slider = '#panel [data-explode]';
+    check('it has a "Take it apart" slider at 0', (await page.$eval(slider, (input) => input.value).catch(() => null)) === '0');
+    await page.focus(slider);
+    await page.keyboard.press('End');
+    await v.rest();
+    const apart = await v.see();
+    const open = await v.whereIs(id);
+    const entry = await v.item(id);
+    check(`taken apart, ${apartMeans}: it needs more room`, entry.apart === 1 && apart.distance > before.distance * 1.05, `apart ${entry.apart}, camera ${round(before.distance)} → ${round(apart.distance)}`);
+    check('and all of it is still in view', inside(open, apart.free, 2), `parts ${box(open)}, free ${box(apart.free)}; closed ${box(closed)}`);
+    await page.keyboard.press('Home');
+    await v.rest();
+  };
+  const leave = async (id) => {
+    await page.keyboard.press('Escape');
+    await v.rest();
+    const left = await v.see();
+    check('leaving it clears the spotlight', left.place === roomOf(id) && left.lit === null && left.veil === 0);
+  };
+
   // The resin printer stood in the Printing Room as a plain volume until its
-  // model was imported. It must now behave like every other modelled machine.
+  // model was imported.
   if (facts.items.some((entry) => entry.id === PRINTER && entry.status === 'built')) {
     await step('The resin printer, a model like the other machines', async () => {
-      await v.go(`#/${roomOf(PRINTER)}`);
-      const chip = await page.$eval(`#panel [data-go-item="${PRINTER}"]`, (element) => element.querySelector('.chip')?.textContent.trim() ?? '');
-      check('the room list has it as a machine, with no "Planned" or "Model coming" beside it', chip === '', `"${chip}"`);
-      await v.press(`#panel [data-go-item="${PRINTER}"]`);
-      await v.rest();
-      await checkMachineInView(v, PRINTER);
-      const panel = await page.evaluate(() => ({
-        note: document.querySelector('#panel .note')?.textContent ?? '',
-        sizeLabel: [...document.querySelectorAll('#panel .facts dt')].map((term) => term.textContent.trim()),
-        tabs: [...document.querySelectorAll('#panel [role="tab"]')].map((tab) => tab.dataset.tab),
-      }));
-      check('the panel no longer says that its model is missing', !/3D model is not in the tour yet|not modelled yet/i.test(panel.note), panel.note.slice(0, 60));
-      check('it gives the size of the model, and still its maker and figures', panel.sizeLabel.includes('Size of the model') && panel.tabs.includes('about') && panel.tabs.includes('features'), `${panel.sizeLabel.join(', ')}; ${panel.tabs.join(' ')}`);
+      await likeTheOthers(PRINTER, 'its hood swings open and its parts come out');
+      await leave(PRINTER);
+    });
+  }
 
-      const before = await v.see();
-      const closed = await v.whereIs(PRINTER);
-      const slider = '#panel [data-explode]';
-      check('it has a "Take it apart" slider at 0', (await page.$eval(slider, (input) => input.value).catch(() => null)) === '0');
-      await page.focus(slider);
-      await page.keyboard.press('End');
-      await v.rest();
-      const apart = await v.see();
-      const open = await v.whereIs(PRINTER);
-      const entry = await v.item(PRINTER);
-      check('taken apart, its hood swings open and its parts come out: it needs more room', entry.apart === 1 && apart.distance > before.distance * 1.05, `apart ${entry.apart}, camera ${round(before.distance)} → ${round(apart.distance)}`);
-      check('and all of it is still in view', inside(open, apart.free, 2), `parts ${box(open)}, free ${box(apart.free)}; closed ${box(closed)}`);
-      await page.keyboard.press('Home');
-      await v.rest();
-      await page.keyboard.press('Escape');
-      await v.rest();
-      const left = await v.see();
-      check('leaving it clears the spotlight', left.place === roomOf(PRINTER) && left.lit === null && left.veil === 0);
+  // The Medit scanner is not in the asset library: its model was imported from
+  // the viewer file of that one machine (tools/import-viewer.mjs). That model
+  // holds a lamp of its own, which the tour switches off (assets/registry.js
+  // says why).
+  if (facts.items.some((entry) => entry.id === SCANNER && entry.status === 'built')) {
+    await step('The lab scanner from a viewer file, a model like the other machines', async () => {
+      // Lamps in the picture: all of them, and those that are switched on.
+      const lamps = () =>
+        page.evaluate(() => {
+          let all = 0;
+          let on = 0;
+          window.labTour.stage.scene.traverse((node) => {
+            if (!node.isLight) return;
+            all++;
+            let shown = true;
+            for (let at = node; at; at = at.parent) shown = shown && at.visible;
+            if (shown) on++;
+          });
+          return { all, on };
+        });
+      await v.go(`#/${roomOf(SCANNER)}`);
+      const inRoomView = await lamps();
+      await likeTheOthers(SCANNER, 'its roof, walls, arm and plate move away from each other');
+      const opened = await lamps();
+      check('the model brings a lamp of its own, and the tour keeps it switched off: the lab is lit as before', opened.all === inRoomView.all + 1 && opened.on === inRoomView.on, `in the room ${inRoomView.on} of ${inRoomView.all} lamps on; with the scanner open ${opened.on} of ${opened.all}`);
+      await leave(SCANNER);
     });
   }
 

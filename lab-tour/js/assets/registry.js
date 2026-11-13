@@ -1,9 +1,13 @@
 // One uniform way to get any machine, whatever its origin.
 //
-// The imported library components are inconsistent with each other (some return
-// `assemblies`, some `subAssemblies`; one needs a 0.84 scale to sit right on the
-// bench). This file hides that behind a single contract, so the rest of the tour
-// — and every future asset — only ever deals with this shape:
+// Machines come from two places: the asset library (./legacy/, many machines in
+// one file) and single-machine viewer files (./viewers/, one machine each, for
+// a machine the library does not hold yet). The imported components are also
+// inconsistent with each other (some return `assemblies`, some `subAssemblies`,
+// a viewer's model returns neither; one needs a 0.84 scale to sit right on the
+// bench; one brings a lamp of its own). This file hides all that behind a single
+// contract, so the rest of the tour — and every future asset — only ever deals
+// with this shape:
 //
 //   const asset = await createEquipment('3shape-e4');
 //   asset.root            THREE.Object3D, origin bottom-centre, +Z = operator side
@@ -12,10 +16,11 @@
 //   asset.dispose()
 //
 // Fixes and overrides for imported assets belong HERE, never in the generated
-// modules under ./legacy/ (those are overwritten by the importer).
+// modules under ./legacy/ and ./viewers/ (those are overwritten by the importers).
 import * as THREE from 'three';
 import { UNIT_MM } from '../core/units.js';
 import { LEGACY_ASSETS, LEGACY_WORKBENCH } from './legacy/manifest.js';
+import { VIEWER_ASSETS } from './viewers/manifest.js';
 
 // The GK3's touch-screen picture is drawn with ctx.roundRect(). The tour runs
 // from Chrome 89 and Firefox 108 on, but roundRect() only came with Chrome 99
@@ -36,12 +41,21 @@ if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D
   };
 }
 
-const legacyById = new Map(LEGACY_ASSETS.map((entry) => [entry.id, entry]));
-const moduleUrl = (relative) => new URL(relative, new URL('./legacy/', import.meta.url)).href;
+/** Every imported machine by id, with the folder its module lives in. A library machine wins over a viewer of the same id (`npm run check` reports such a pair). */
+const importedById = new Map([
+  ...VIEWER_ASSETS.map((entry) => [entry.id, { ...entry, folder: './viewers/' }]),
+  ...LEGACY_ASSETS.map((entry) => [entry.id, { ...entry, folder: './legacy/' }]),
+]);
+const moduleUrl = (relative, folder = './legacy/') => new URL(relative, new URL(folder, import.meta.url)).href;
 
-/** Static facts about a library machine, available before its code is loaded. */
+/** Ids of all imported machines, and where each came from: 'library' or 'viewer'. */
+export function listEquipment() {
+  return [...importedById.values()].map((entry) => ({ id: entry.id, origin: entry.folder === './viewers/' ? 'viewer' : 'library' }));
+}
+
+/** Static facts about an imported machine, available before its code is loaded. */
 export function describeEquipment(id) {
-  const entry = legacyById.get(id);
+  const entry = importedById.get(id);
   if (!entry) return null;
   const scale = entry.meta.benchScale ?? 1;
   const box = new THREE.Box3(
@@ -69,19 +83,33 @@ export function describeEquipment(id) {
   };
 }
 
-/** Build a library machine. Loads its module on first use. */
+/** A model that returns no map of its sub-assemblies: they are the named groups directly under its root. */
+const namedGroups = (root) => Object.fromEntries(root.children.filter((child) => child.isGroup && child.name).map((child) => [child.name, child]));
+
+/** Build an imported machine. Loads its module on first use. */
 export async function createEquipment(id) {
-  const entry = legacyById.get(id);
+  const entry = importedById.get(id);
   if (!entry) throw new Error(`Unknown equipment "${id}"`);
-  const mod = await import(moduleUrl(entry.module));
+  const mod = await import(moduleUrl(entry.module, entry.folder));
   const instance = mod.assets[id].createAsset();
   const root = instance.productRoot;
   root.name = id;
   root.scale.setScalar(entry.meta.benchScale ?? 1);
+  // A machine does not bring its own lamps into the lab: the tour lights
+  // everything itself. The Medit T500 holds one, a blue point light in its scan
+  // bay. What it would add is a faint blue cast on the bay's inner walls. What
+  // it would cost was measured: a machine on show is drawn in a pass of its
+  // own (core/stage.js), so the lamp would be there in one pass and not in the
+  // other, and three.js then looks up the shader program of every lit material
+  // again on every frame (40 look-ups a frame in the scanner's view, none
+  // without the lamp); and two more shader programs to build, once.
+  root.traverse((node) => {
+    if (node.isLight) node.visible = false;
+  });
   return {
     id,
     root,
-    parts: instance.assemblies ?? instance.subAssemblies ?? {},
+    parts: instance.assemblies ?? instance.subAssemblies ?? namedGroups(root),
     setExplode: (factor) => instance.setExplodeFactor?.(factor),
     dispose: () => instance.dispose?.(),
   };

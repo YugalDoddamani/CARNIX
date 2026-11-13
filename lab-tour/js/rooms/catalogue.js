@@ -1,7 +1,8 @@
 // THE EQUIPMENT CATALOGUE — every machine the tour knows about.
 //
-//   status 'built'    the model exists in the asset library; its name and size
-//                     come from the library manifest, nothing to maintain here.
+//   status 'built'    the model has been imported (from the asset library, or
+//                     from a single-machine viewer file); its name and size come
+//                     from the import's manifest, nothing to maintain here.
 //   status 'planned'  not modelled yet. It appears in the lab as a blue
 //                     placeholder volume so the room can be laid out, and in the
 //                     equipment list so the backlog is visible.
@@ -25,6 +26,8 @@ export const EQUIPMENT = {
   // ── Built (imported from the asset library) ────────────────────────────────
   'dsex-pro': { status: 'built', icon: 'scanner', shortName: 'DS-EX Pro', kind: 'Lab scanner' },
   '3shape-e4': { status: 'built', icon: 'scanner', shortName: '3Shape E4', kind: 'Lab scanner' },
+  // (this one from its own viewer file: the library does not hold it yet)
+  'medit-t500': { status: 'built', icon: 'scanner', shortName: 'Identica T500', kind: 'Lab scanner' },
   'pc-dsex': { status: 'built', icon: 'computer', shortName: 'Scan PC', kind: 'Scan workstation' },
   'pc-3shape': { status: 'built', icon: 'computer', shortName: '3Shape CAD PC', kind: 'CAD workstation' },
   'zubler-vario-200': { status: 'built', icon: 'furnace', shortName: 'Vario 200', kind: 'Ceramic furnace' },

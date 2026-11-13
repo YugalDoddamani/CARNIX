@@ -6,6 +6,7 @@
   "scripts": {
     "serve": "node tools/serve.mjs",
     "import-assets": "node tools/import-asset-library.mjs",
+    "import-viewer": "node tools/import-viewer.mjs",
     "check": "node tools/check.mjs",
     "e2e": "node tools/browser/e2e.mjs",
     "shots": "node tools/browser/shots.mjs",

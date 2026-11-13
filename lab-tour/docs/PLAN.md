@@ -635,9 +635,9 @@ pressure, plastic that is melted and injected). One entry in
 - The wall bench with its five placeholders is as it was. Every machine in
   the room can be seen and tapped from where the visitor stands (`npm run
   e2e` checks it). The two new ones head the room's list.
-- The two markers stood on top of each other on a phone at first. The SR
-  Ivocap now stands 650 mm from the thermopress instead of 500, and the
-  markers are clear of each other.
+- The two markers touched each other on a phone at first (27 pixels apart,
+  each 28 across). The SR Ivocap now stands 650 mm from the thermopress
+  instead of 500, and the markers are clear of each other.
 - The SR Ivocap stands on the bench assembled, as in its viewer. At work it
   stands in a bath of boiling water.
 
@@ -686,7 +686,6 @@ redoes the shadows from 493 to 560 draw calls; the download from 400 to 428 KB.
 The SR Ivocap has 24,004 triangles, just under the 25,000 the README asks a
 machine to stay under. The views of the other eleven machines cost what they
 did before, to the draw call.
-
 
 ## What was found in the asset library
 

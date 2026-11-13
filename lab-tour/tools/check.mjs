@@ -6,6 +6,10 @@
 //   • what the visitor reads (knowledge.js) is complete: every machine has a
 //     description, every figure a source, every icon and brand exists; and it
 //     lists the notes that still need the lab's confirmation
+//   • a machine's guides (how-to.js) are complete and name their source, and
+//     every step that points at the machine points at something: the part is
+//     in the model, and each mark is in plain sight from the side the step
+//     looks from, with the lid as the step has it
 //   • nothing pokes through a wall, blocks a door, or overlaps its neighbour
 //   • machines fit on the bench they are placed on
 //   • every imported machine builds, and its baked ("lite") form is identical in size
@@ -22,9 +26,11 @@ const { LEGACY_ASSETS } = await import(js('assets/legacy/manifest.js'));
 const { VIEWER_ASSETS } = await import(js('assets/viewers/manifest.js'));
 const { bakeLite } = await import(js('core/batch.js'));
 const { isShown, preciseBox, sceneStats } = await import(js('core/measure.js'));
+const { findPlaces, sightOf } = await import(js('core/places.js'));
 const { m, toM, toMm } = await import(js('core/units.js'));
 const { EQUIPMENT } = await import(js('rooms/catalogue.js'));
 const { ROOM_CONTENT, STATIONS } = await import(js('rooms/content.js'));
+const { HOW_TO } = await import(js('rooms/how-to.js'));
 const { BRANDS, GUIDE, MACHINE_INFO, ROOM_INFO, ROUTE } = await import(js('rooms/knowledge.js'));
 const { ICONS, UI } = await import(js('ui/icons.js'));
 const { buildRooms } = await import(js('rooms/build-rooms.js'));
@@ -37,6 +43,7 @@ const BUDGET = { drawCalls: 400, triangles: 450_000 };
 const SIZE_TOLERANCE_MM = 15;
 const DOOR_CLEARANCE_M = 0.8;
 const SHORT_NAME_FITS = 14; // letters of a machine's short name that fit on the first pill of its panel
+const STEP_TEXT_FITS = 215; // letters of a guide's step that can be read on a phone without scrolling (five lines on a screen 360 px wide)
 const EPS = m(0.005);
 
 const failures = [];
@@ -251,6 +258,74 @@ const types = Object.keys(EQUIPMENT).length;
 console.log(`  ${ROOMS.length} rooms described, route: ${ROUTE.join(' → ')}`);
 console.log(`  ${types} machine types described · About on ${pills.about} · Features on ${pills.features} · Capabilities on ${pills.capabilities} · ${Object.keys(BRANDS).length} makers`);
 
+// "How to use it": a machine's guides. Here what is written; further down, once
+// the models are built, whether each step points at something (section 6).
+const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+const isPoint = (value) => Array.isArray(value) && (value.length === 3 || value.length === 4) && value.every(isNumber) && (value[3] === undefined || value[3] > 0);
+const guided = { machines: 0, guides: 0, steps: 0 };
+for (const [id, entry] of Object.entries(HOW_TO)) {
+  const where = `how-to.js "${id}"`;
+  const type = EQUIPMENT[id];
+  if (!type) {
+    fail(`${where} is not a machine in catalogue.js`);
+    continue;
+  }
+  guided.machines++;
+  const built = type.status === 'built';
+  const canOpen = Boolean(built && describeEquipment(id)?.canOpen);
+  // The rule this file exists for: a guide retells the maker's instructions, and says which.
+  if (!entry.source) fail(`${where} does not name the instructions its guides come from (\`source\`)`);
+  else checkSources([entry.source], where);
+  if (entry.note !== undefined) needText(entry.note, `${where} note`);
+
+  const places = entry.places ?? {};
+  for (const [name, place] of Object.entries(places)) {
+    const here = `${where} place "${name}"`;
+    needText(place?.part, `${here}: \`part\` (the name of a group in the model)`);
+    if (place?.at !== undefined && !isPoint(place.at) && !(Array.isArray(place.at) && place.at.length && place.at.every(isPoint))) fail(`${here}: \`at\` is a point [x, y, z] or a list of points (a fourth number is that ring's diameter)`);
+    if (place?.size !== undefined && !(isNumber(place.size) && place.size > 0)) fail(`${here}: \`size\` is the diameter of its rings, in the model's units`);
+    if (!(Array.isArray(place?.from) && place.from.length === 2 && place.from.every(isNumber))) fail(`${here}: \`from\` is [turn, tilt] in degrees, the side the camera looks from`);
+    else if (place.from[1] < 2 || place.from[1] > 85) fail(`${here}: the camera cannot look from a tilt of ${place.from[1]}° (2 to 85)`);
+    if (place?.show !== undefined && !isText(place.show) && !(isNumber(place.show) && place.show > 0)) fail(`${here}: \`show\` is a width in the model's units, or the name of a part`);
+  }
+  if (!built && Object.keys(places).length) fail(`${where} has places, but the machine has no 3D model to find them on`);
+
+  const pointedAt = new Set();
+  const guideIds = new Set();
+  if (!Array.isArray(entry.guides) || !entry.guides.length) fail(`${where} needs at least one guide`);
+  for (const [guideIndex, guide] of (Array.isArray(entry.guides) ? entry.guides : []).entries()) {
+    const inGuide = `${where} guide ${guideIndex + 1}`;
+    // Its name in the address: #/room/machine/how-to/<id>
+    if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(guide?.id ?? '')) fail(`${inGuide}: \`id\` is its name in the address: lower-case letters, digits and hyphens (got "${guide?.id}")`);
+    else if (guideIds.has(guide.id)) fail(`${inGuide}: another guide of this machine is called "${guide.id}" as well`);
+    guideIds.add(guide?.id);
+    needText(guide?.title, `${inGuide} title`);
+    if (!Array.isArray(guide?.steps) || !guide.steps.length) fail(`${inGuide} needs at least one step`);
+    guided.guides++;
+    for (const [stepIndex, step] of (Array.isArray(guide?.steps) ? guide.steps : []).entries()) {
+      const here = `${where} "${guide.id}" step ${stepIndex + 1}`;
+      guided.steps++;
+      needText(step?.title, `${here} title`);
+      needText(step?.text, `${here} text`);
+      if (isText(step?.text) && step.text.length > STEP_TEXT_FITS) warn(`${here} ("${step.title}") has ${step.text.length} letters; about ${STEP_TEXT_FITS} can be read on a phone without scrolling`);
+      if (step?.at !== undefined) {
+        if (!places[step.at]) fail(`${here}: \`at\` names "${step.at}", which is not one of the machine's places`);
+        else pointedAt.add(step.at);
+      }
+      if (step?.open !== undefined && step.open !== true) fail(`${here}: \`open\` is either true or left out`);
+      if (step?.open && !canOpen) fail(`${here}: \`open\`, but the machine's model has no lid or cover that opens`);
+      if (step?.without !== undefined && !(Array.isArray(step.without) && step.without.length && step.without.every(isText))) fail(`${here}: \`without\` is a list of the names of parts of the model`);
+      if (step?.without && !built) fail(`${here}: \`without\`, but the machine has no 3D model`);
+    }
+  }
+  for (const name of Object.keys(places)) if (!pointedAt.has(name)) warn(`${where}: no step points at the place "${name}"`);
+  if (entry.confirm !== undefined) {
+    needText(entry.confirm, `${where} confirm`);
+    toConfirm.push([`${type.shortName ?? type.name ?? id}, how to use it`, entry.confirm]);
+  }
+}
+console.log(`  How to use it: ${guided.guides} guide${guided.guides === 1 ? '' : 's'} with ${guided.steps} steps for ${guided.machines} machine${guided.machines === 1 ? '' : 's'}`);
+
 // ── 4. Floor plan ────────────────────────────────────────────────────────────
 section('Floor plan');
 for (const room of ROOMS) {
@@ -398,6 +473,52 @@ async function checkBuiltLab() {
     bench.dispose();
   }
 
+  // The guides, each step on its model. A step shows the machine as it is at
+  // that point of the work (its lid open, a part not in yet) and points at a
+  // place on it. From the side the step looks from, the first thing the eye
+  // meets at each mark has to be the part the mark belongs to.
+  const guidedTypes = Object.keys(HOW_TO).filter((id) => EQUIPMENT[id]?.status === 'built' && Array.isArray(HOW_TO[id].guides));
+  if (guidedTypes.length) section('Guides: every step on its model  (✓ a mark in plain sight)');
+  for (const id of guidedTypes) {
+    const entry = HOW_TO[id];
+    const asset = await createEquipment(id);
+    // As the tour does it: the places are found while the model stands shut and whole.
+    const { places, problems } = findPlaces(asset.root, entry.places);
+    for (const problem of problems) fail(`how-to.js "${id}": ${problem}`);
+    for (const guide of entry.guides) {
+      console.log(`  ${EQUIPMENT[id].shortName ?? id} › ${guide.title}`);
+      for (const [index, step] of (guide.steps ?? []).entries()) {
+        const here = `how-to.js "${id}" "${guide.id}" step ${index + 1} ("${step.title}")`;
+        asset.setOpen(step.open ? 1 : 0);
+        const taken = [];
+        for (const name of Array.isArray(step.without) ? step.without : []) {
+          const part = asset.root.getObjectByName(name);
+          if (!part) fail(`${here}: \`without\` names "${name}", which is not a part of the model`);
+          else {
+            taken.push([part, part.visible]);
+            part.visible = false;
+          }
+        }
+        const place = step.at ? places.get(step.at) : null;
+        let verdict = step.at ? `${step.at} (not found)` : 'points nowhere';
+        if (place) {
+          const sights = sightOf(asset.root, place);
+          verdict = `${step.at} ${sights.map((sight) => (sight.seen ? '✓' : '✗')).join('')}`;
+          sights.forEach((sight, mark) => {
+            if (sight.seen) return;
+            const why = !sight.by && !sight.own ? 'nothing is there' : sight.own ? `the point is ${sight.gap.toFixed(2)} units off the surface of its part` : `"${sight.by}" is in the way`;
+            fail(`${here}: mark ${mark + 1} of "${step.at}" cannot be seen from [${place.from.join(', ')}]${step.open ? ' with the lid open' : ''}: ${why}`);
+          });
+        }
+        for (const [part, was] of taken) part.visible = was;
+        const state = `${step.open ? 'open' : 'shut'}${taken.length ? `, without ${taken.map(([part]) => part.name).join(', ')}` : ''}`;
+        console.log(`    ${String(index + 1).padStart(2)}. ${String(step.title).padEnd(26)} ${state.padEnd(34)} ${verdict}`);
+      }
+    }
+    asset.setOpen(0);
+    asset.dispose();
+  }
+
   // ── 7. Budget ────────────────────────────────────────────────────────────────
   section('Drawing budget (overview, everything visible)');
   const shellStats = sceneStats(shell.group);
@@ -427,7 +548,7 @@ try {
 
 // ── Result ───────────────────────────────────────────────────────────────────
 if (toConfirm.length) {
-  section(`To confirm with the lab (${toConfirm.length}) — notes from knowledge.js, never shown to visitors`);
+  section(`To confirm with the lab (${toConfirm.length}) — notes from knowledge.js and how-to.js, never shown to visitors`);
   for (const [name, note] of toConfirm) console.log(`  ? ${name}: ${note}`);
 }
 if (warnings.length) {

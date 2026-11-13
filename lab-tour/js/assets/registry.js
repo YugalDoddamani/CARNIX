@@ -13,6 +13,7 @@
 //   asset.root            THREE.Object3D, origin bottom-centre, +Z = operator side
 //   asset.parts           { name → Object3D } sub-assemblies
 //   asset.setExplode(f)   0 (assembled) … 1 (exploded)
+//   asset.setOpen(f)      0 (closed) … 1 (cover or lid open); does nothing for a machine without one
 //   asset.dispose()
 //
 // Fixes and overrides for imported assets belong HERE, never in the generated
@@ -80,8 +81,15 @@ export function describeEquipment(id) {
     datasheetMm: entry.datasheetMm ? { w: entry.datasheetMm[0], d: entry.datasheetMm[1], h: entry.datasheetMm[2] } : null,
     cost: { drawCalls: entry.measured.drawCalls, triangles: entry.measured.triangles, materials: entry.measured.materials },
     canExplode: entry.instanceKeys.includes('setExplodeFactor'),
+    canOpen: COVER_FUNCTIONS.some((key) => entry.instanceKeys.includes(key)),
   };
 }
+
+/**
+ * What the imported models call the function that opens their cover or lid.
+ * (A scanner's `setScanPoseFactor` is not one: it moves the scanner's arm.)
+ */
+const COVER_FUNCTIONS = ['setCoverOpenFactor', 'setLidOpenFactor'];
 
 /** A model that returns no map of its sub-assemblies: they are the named groups directly under its root. */
 const namedGroups = (root) => Object.fromEntries(root.children.filter((child) => child.isGroup && child.name).map((child) => [child.name, child]));
@@ -117,6 +125,8 @@ export async function createEquipment(id) {
     root,
     parts: instance.assemblies ?? instance.subAssemblies ?? namedGroups(root),
     setExplode: (factor) => instance.setExplodeFactor?.(factor),
+    // Only a step of a "How to use it" guide opens a machine so far (main.js).
+    setOpen: (factor) => instance[COVER_FUNCTIONS.find((key) => typeof instance[key] === 'function')]?.(factor),
     dispose: () => instance.dispose?.(),
   };
 }

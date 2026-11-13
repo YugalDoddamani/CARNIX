@@ -528,7 +528,7 @@ desktop with a mouse, on a phone with a finger (390 × 844, then 360 × 640 and
 320 × 568), on a first visit, with "reduce motion" switched on, one who watches
 the opening, one who follows a machine's guides, and one with a browser from
 2021–22 — with real clicks, taps, drags and key presses, and checks what
-happens (708 checks, 13 to 18 minutes; `--only=entrance,older` runs some of
+happens (708 checks, about 15 minutes; `--only=entrance,older` runs some of
 them). Among them: a drag turns the machine about its own middle and leaves the
 lab behind it unchanged, pixel for pixel; a machine fits the area the panel
 leaves free, in a wide window, a small one and on a phone; leaving a machine
@@ -699,8 +699,9 @@ Things to know — none of the existing CARNIX files have been changed:
 - A step of a guide is read without scrolling where the browser leaves the
   page 360 × 740 px or more (tried on the emulated phone at 360 × 740,
   360 × 800, 390 × 844 and 412 × 915). At 360 × 640 the two longest of the 20
-  steps run a line or two past the sheet and scroll under their title; at
-  320 × 568 most steps do. "Back · Next" stay in view on all of them.
+  steps run a line or two past the sheet, and at 320 × 568 most steps do.
+  Those are scrolled, and the guide's name goes up with the text; "Back ·
+  Next" stay in view.
 - The SR Ivocap stands on a bench, assembled, as in its viewer. In use it
   stands in a bath of boiling water, and it needs a hydraulic press and a
   vibrator for its capsules: the room has a placeholder for a flask press and

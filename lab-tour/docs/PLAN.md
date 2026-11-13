@@ -236,21 +236,19 @@ as it was sketched and approved:
 - **One step at a time** on a phone: a title, two or three sentences, Back and
   Next, and a row of dashes showing how far along. On a desktop all the steps
   are a list, with the current one open.
-- **The model shows the step.** The camera goes to the part the step is about,
-  and rings mark the keys or screws to use. The machine is shown as it is at
-  that point of the work: its lid open or shut, the flask in or not yet.
+- **The model shows the step.** It turns to the part the step is about, and
+  rings mark the keys or screws to use.
 - **Every step comes from the maker's instructions for use**, named and linked
   under the guide, with a sentence saying that the guide does not replace the
   manual that came with the machine, or training on it. The rule of
   `knowledge.js` holds here too: nothing without a source.
 
-Where it differs from the sketch:
+Added while building, beyond what was approved:
 
-- The guides have 13, 5 and 2 steps where the sketch had 9, 6 and 3. The steps
-  follow bredent's tables, and a step too long for a phone was split: there is
-  one for each clamping screw, for example.
+- The machine is shown as it is at that point of the work: its lid open or
+  shut, the flask in or not yet.
 - On a phone a guide's sheet is taller than a machine's own: 56 % of the
-  picture's height against 48 %. With less, a step had to be scrolled.
+  height against 48 %. With less, a step had to be scrolled.
 - The open step has a button, "Show it on the machine again". It brings the
   step's view back after the visitor has turned the machine. Turned so far
   that the part is out of sight, the rings go and the button stands out.

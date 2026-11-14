@@ -3,7 +3,7 @@
 // rooms/how-to.js names places on a machine in the terms of its 3D model: a
 // part (a named group of the model), points on it, the side to look from. This
 // file finds them on the model as built: where the rings go and what the camera
-// frames. It is plain scene-graph arithmetic, with no page and no renderer in
+// frames, with the machine shut and with it open. It is plain scene-graph arithmetic, with no page and no renderer in
 // it, so `npm run check` can ask the same questions without a browser: is the
 // part there, and can the spot be seen from the side that the guide looks from?
 //
@@ -31,12 +31,17 @@ export function directionOf([turn, tilt], out = new THREE.Vector3()) {
 }
 
 /**
- * Find a machine's places on its model. Call this while the model stands closed
- * and assembled, as it is built: a point is tied to its part as the part lies
- * at that moment, and moves with it from then on (a lid that swings open).
+ * Find a machine's places on its model. Call this while the model stands as it
+ * is built, assembled: a point is tied to its part as the part lies at that
+ * moment, and moves with it from then on (a lid that swings open, a furnace
+ * head that tips back, a lift that carries the firing table up).
  *
  * `definitions` is `places` of a machine in how-to.js:
  *   name: { part, at?, size?, from, show? }
+ *
+ * `asset`, for a machine that opens: { setOpen, openAtRest } of the model
+ * (assets/registry.js). The model is then opened and shut here once, to see
+ * what each place frames either way, and left as it stands in the lab.
  *
  * Returns { places, problems }: a Map from name to
  *   part    the group of the model that the place belongs to
@@ -45,10 +50,15 @@ export function directionOf([turn, tilt], out = new THREE.Vector3()) {
  *           ring): the place's `size`, or a point's own fourth number
  *   exact   were the points given (`at`), or is it the middle of the part?
  *   from    [turn, tilt], see directionOf
- *   box     what the camera frames, in the model's coordinates
+ *   shown   the part of the model that the camera frames, or
+ *   cube    the width of the cube around the points that it frames instead
+ *   frames  what the camera frames, in the model's coordinates: `shut` for a
+ *           step that has the machine shut, `open` for one that has it open.
+ *           The two differ where the place lies on the part that moves, or
+ *           shows it.
  * and a list of what could not be found, in words.
  */
-export function findPlaces(root, definitions = {}) {
+export function findPlaces(root, definitions = {}, asset = null) {
   root.updateWorldMatrix(true, true);
   const places = new Map();
   const problems = [];
@@ -73,28 +83,58 @@ export function findPlaces(root, definitions = {}) {
     const marks = inModel.map((point) => point.clone().applyMatrix4(toPart));
 
     // What the camera frames: a part's box, a cube around the points, or the place's own part.
-    let box;
+    let shown = part;
+    let cube = 0;
     if (typeof definition.show === 'string') {
-      const shown = root.getObjectByName(definition.show);
+      shown = root.getObjectByName(definition.show);
       if (!shown) {
         problems.push(`place "${name}": the model has no part called "${definition.show}" to show`);
         continue;
       }
-      box = preciseBox(shown, { space: root });
     } else if (typeof definition.show === 'number') {
-      const middle = inModel.reduce((sum, point) => sum.add(point), new THREE.Vector3()).divideScalar(inModel.length);
-      box = new THREE.Box3().setFromCenterAndSize(middle, new THREE.Vector3().setScalar(definition.show));
-    } else {
-      box = partBox.clone();
+      cube = definition.show;
     }
-    for (const point of inModel) box.expandByPoint(point);
-    if (box.isEmpty()) {
+    const place = { name, part, marks, sizes, exact: given.length > 0, from: definition.from ?? [0, 30], shown, cube, frames: null };
+    const built = frameOf(root, place);
+    if (built.isEmpty()) {
       problems.push(`place "${name}": there is nothing to frame`);
       continue;
     }
-    places.set(name, { name, part, marks, sizes, exact: given.length > 0, from: definition.from ?? [0, 30], box });
+    place.frames = { shut: built, open: built };
+    places.set(name, place);
+  }
+  if (asset?.setOpen && places.size) {
+    for (const [state, open] of [
+      ['shut', 0],
+      ['open', 1],
+    ]) {
+      asset.setOpen(open);
+      for (const place of places.values()) place.frames = { ...place.frames, [state]: frameOf(root, place) };
+    }
+    asset.setOpen(asset.openAtRest ?? 0);
   }
   return { places, problems };
+}
+
+/**
+ * What the camera frames at a place with the model as it stands right now: a
+ * box in the model's coordinates. The part that the place shows, as it lies at
+ * this moment, or a cube around the place's points; and the points themselves,
+ * wherever their part has taken them.
+ */
+export function frameOf(root, place) {
+  root.updateWorldMatrix(true, true);
+  const toModel = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const points = marksInWorld(place).map((point) => point.applyMatrix4(toModel));
+  let box;
+  if (place.cube) {
+    const middle = points.reduce((sum, point) => sum.add(point), new THREE.Vector3()).divideScalar(points.length);
+    box = new THREE.Box3().setFromCenterAndSize(middle, new THREE.Vector3().setScalar(place.cube));
+  } else {
+    box = preciseBox(place.shown, { space: root });
+  }
+  for (const point of points) box.expandByPoint(point);
+  return box;
 }
 
 /** Where a place's rings are right now, in world coordinates (the model's matrices must be up to date). */

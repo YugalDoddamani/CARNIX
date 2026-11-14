@@ -13,7 +13,8 @@
 //   asset.root            THREE.Object3D, origin bottom-centre, +Z = operator side
 //   asset.parts           { name → Object3D } sub-assemblies
 //   asset.setExplode(f)   0 (assembled) … 1 (exploded)
-//   asset.setOpen(f)      0 (closed) … 1 (cover or lid open); does nothing for a machine without one
+//   asset.setOpen(f)      0 (closed) … 1 (cover, lid, furnace head or lift open); does nothing for a machine without one
+//   asset.openAtRest      how far open the model is built, and so stands in the lab: 0, or 1 for a furnace drawn with its lift down
 //   asset.dispose()
 //
 // Fixes and overrides for imported assets belong HERE, never in the generated
@@ -81,7 +82,9 @@ export function describeEquipment(id) {
     datasheetMm: entry.datasheetMm ? { w: entry.datasheetMm[0], d: entry.datasheetMm[1], h: entry.datasheetMm[2] } : null,
     cost: { drawCalls: entry.measured.drawCalls, triangles: entry.measured.triangles, materials: entry.measured.materials },
     canExplode: entry.instanceKeys.includes('setExplodeFactor'),
-    canOpen: COVER_FUNCTIONS.some((key) => entry.instanceKeys.includes(key)),
+    canOpen: Boolean(OPENINGS[id]) || COVER_FUNCTIONS.some((key) => entry.instanceKeys.includes(key)),
+    /** How far open the model is built: 0 shut, 1 open. */
+    openAtRest: OPENINGS[id]?.rest ?? 0,
   };
 }
 
@@ -90,6 +93,41 @@ export function describeEquipment(id) {
  * (A scanner's `setScanPoseFactor` is not one: it moves the scanner's arm.)
  */
 const COVER_FUNCTIONS = ['setCoverOpenFactor', 'setLidOpenFactor'];
+
+/**
+ * A furnace opens as well, and the library's furnaces bring no function for
+ * it: theirs only take the furnace apart. So it is done here, on the model's
+ * own groups, with the numbers of the model's file.
+ *
+ *   rest   how the model is built, which is how the machine stands in the lab:
+ *          0 shut, 1 open
+ *   move   (parts, open) puts the moving part where it belongs for `open`,
+ *          0 shut … 1 open. It is called after the model's own function has
+ *          set every part for "taken apart", and adds to that.
+ */
+const smooth = (t) => t * t * (3 - 2 * t);
+const OPENINGS = {
+  // The head tips back on its hinge. The group `clamshellHead` has its origin
+  // on the hinge's axis; 0.58 (33°) is how far the model's own exploded view
+  // tips it, which its maker matched to a photo of the furnace standing open.
+  'ivoclar-programat-p300': {
+    rest: 0,
+    move: (parts, open) => {
+      parts.clamshellHead.rotation.x = Math.min(parts.clamshellHead.rotation.x, -0.58 * smooth(open));
+    },
+  },
+  // The lift carries the firing table up into the chamber. The model is drawn
+  // with the lift down, so shut is the state that has to be made: the table up
+  // by 2.73 units, where its metal collar (top at 1.06 + 0.36) meets the
+  // chamber's underside (4.18 − 0.03). The cone on it is inside the chamber
+  // then, and the collar hides the small nozzle that the model hangs under it.
+  'zubler-vario-200': {
+    rest: 1,
+    move: (parts, open) => {
+      parts.firingPedestal.position.y += 2.73 * (1 - smooth(open));
+    },
+  },
+};
 
 /** A model that returns no map of its sub-assemblies: they are the named groups directly under its root. */
 const namedGroups = (root) => Object.fromEntries(root.children.filter((child) => child.isGroup && child.name).map((child) => [child.name, child]));
@@ -120,13 +158,43 @@ export async function createEquipment(id) {
   root.traverse((node) => {
     if (node.isLight) node.visible = false;
   });
+  const parts = instance.assemblies ?? instance.subAssemblies ?? namedGroups(root);
+  const cover = COVER_FUNCTIONS.find((key) => typeof instance[key] === 'function');
+  const opening = OPENINGS[id];
+  if (!opening) {
+    return {
+      id,
+      root,
+      parts,
+      setExplode: (factor) => instance.setExplodeFactor?.(factor),
+      // Only a step of a "How to use it" guide opens a machine so far (main.js).
+      setOpen: (factor) => instance[cover]?.(factor),
+      openAtRest: 0,
+      dispose: () => instance.dispose?.(),
+    };
+  }
+  // A furnace that is opened here (OPENINGS). The model's own function places
+  // every part for "taken apart"; the opening is put on top of that each time
+  // either of the two changes.
+  let apart = 0;
+  let open = opening.rest;
+  const pose = () => {
+    instance.setExplodeFactor?.(apart);
+    opening.move(parts, open);
+  };
   return {
     id,
     root,
-    parts: instance.assemblies ?? instance.subAssemblies ?? namedGroups(root),
-    setExplode: (factor) => instance.setExplodeFactor?.(factor),
-    // Only a step of a "How to use it" guide opens a machine so far (main.js).
-    setOpen: (factor) => instance[COVER_FUNCTIONS.find((key) => typeof instance[key] === 'function')]?.(factor),
+    parts,
+    setExplode: (factor) => {
+      apart = Math.max(0, Math.min(1, factor));
+      pose();
+    },
+    setOpen: (factor) => {
+      open = Math.max(0, Math.min(1, factor));
+      pose();
+    },
+    openAtRest: opening.rest,
     dispose: () => instance.dispose?.(),
   };
 }

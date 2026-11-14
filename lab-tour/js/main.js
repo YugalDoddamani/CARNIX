@@ -112,6 +112,12 @@ function start() {
   // the view it was taken from, so this says what "the view" is.
   // A lid that a step of a guide is swinging open or shut: { item, from, to, elapsed }.
   let lidMotion = null;
+  /**
+   * How far open a machine stands: 0 shut … 1 open. Until a step of a guide
+   * moves it, that is how its model is built: shut, but for a furnace that is
+   * drawn with its lift down (`openAtRest`, assets/registry.js).
+   */
+  const openOf = (item) => item.open ?? item.asset?.openAtRest ?? 0;
   /** Is the picture still changing on the tour's own clock: the camera on its way, the lab fading, a lid swinging? */
   const pictureBusy = () => rig.busy || stage.spotlightState.busy || Boolean(lidMotion);
 
@@ -254,12 +260,10 @@ function start() {
     if (tier === 'lite') {
       item.asset.setExplode(0);
       item.apart = 0;
-      // Whatever a step of a guide did to it is undone as well: it is shut and whole again.
+      // Whatever a step of a guide did to it is undone as well: it stands as it is built, and whole again.
       if (lidMotion?.item === item) lidMotion = null;
-      if (item.open) {
-        item.asset.setOpen(0);
-        item.open = 0;
-      }
+      if (openOf(item) !== item.asset.openAtRest) item.asset.setOpen(item.asset.openAtRest);
+      item.open = item.asset.openAtRest;
       showParts(item, []);
     }
     item.holder.remove(tier === 'hero' ? lite : hero);
@@ -359,9 +363,9 @@ function start() {
     stage.shadowsDirty();
   }
 
-  /** Swing the machine's lid to `target` (0 shut … 1 open). */
+  /** Swing the machine's lid, or run its lift, to `target` (0 shut … 1 open). */
   function moveLid(item, target, { instant = false } = {}) {
-    const now = item.open ?? 0;
+    const now = openOf(item);
     if (lidMotion?.item === item) lidMotion = null;
     if (Math.abs(now - target) < 1e-3) return;
     if (instant || REDUCED_MOTION.matches) {
@@ -386,15 +390,15 @@ function start() {
   });
 
   /**
-   * Show the machine as the open step has it: the lid open or shut, without
-   * the parts that are not there yet. With no step open it is shut and whole.
+   * Show the machine as the open step has it: open or shut, without the parts
+   * that are not there yet. With no step open it stands as it is built, and whole.
    */
   function dress({ instant = false } = {}) {
     const item = itemOf(state.itemId);
     if (!item?.asset || item.tier !== 'hero') return;
     const step = openStep()?.step ?? null;
     showParts(item, step?.without ?? []);
-    moveLid(item, step?.open ? 1 : 0, { instant });
+    moveLid(item, step ? (step.open ? 1 : 0) : item.asset.openAtRest, { instant });
   }
 
   // The rings. They are put in place after every frame that is drawn, where the
@@ -490,7 +494,8 @@ function start() {
     updateInsets();
     if (state.mode === 'item') {
       const item = itemOf(state.itemId);
-      const place = openStep()?.place;
+      const open = openStep();
+      const place = open?.place;
       if (place) {
         // A step of a guide: what its place frames, from the side its place names.
         // `within`: a place that takes in half the machine, with the margin of a wide screen
@@ -504,9 +509,12 @@ function start() {
           padding: WIDE_LAYOUT.matches ? VIEWS.step.paddingWide : VIEWS.step.padding,
           within: { box: boundsOf(item).clone(), view: itemView(item), padding: VIEWS.step.padding },
         };
-        // The place is written in the model's own coordinates: bring it to where the model stands.
+        // What the place frames with the machine as this step has it: a furnace's head, say, is
+        // elsewhere open than shut. It is written in the model's own coordinates: bring it to
+        // where the model stands.
+        const frame = open.step.open ? place.frames.open : place.frames.shut;
         item.asset.hero.updateWorldMatrix(true, false);
-        return rig.frame(place.box.clone().applyMatrix4(item.asset.hero.matrixWorld), view, { duration, limits: LIMITS.item, room: 'stay' });
+        return rig.frame(frame.clone().applyMatrix4(item.asset.hero.matrixWorld), view, { duration, limits: LIMITS.item, room: 'stay' });
       }
       // `room: 'stay'`: from here on the visitor turns the machine, not the lab.
       return rig.frame(boundsOf(item), itemView(item), { duration, limits: LIMITS.item, room: 'stay' });
@@ -884,8 +892,8 @@ function start() {
       try {
         const asset = await createEquipment(item.typeId);
         const model = { ...asset, hero: asset.root, lite: bakeLite(asset.root) };
-        // Where the steps of its guides point: found now, while the model stands shut and whole.
-        const found = findPlaces(asset.root, HOW_TO[item.typeId]?.places);
+        // Where the steps of its guides point: found now, while the model stands as it is built, and whole.
+        const found = findPlaces(asset.root, HOW_TO[item.typeId]?.places, asset);
         model.places = found.places;
         for (const problem of found.problems) console.warn(`how-to.js "${item.typeId}": ${problem}`);
         putInPlace(() => {
@@ -933,7 +941,7 @@ function start() {
     },
     rooms: ROOMS.map((room) => room.id),
     route: route.map((room) => room.id),
-    items: () => [...rooms.items.values()].map(({ id, status, known, name, modelState, tier, apart, open, without }) => ({ id, status, known, name, modelState, tier, apart: apart ?? 0, open: open ?? 0, without: without ?? [] })),
+    items: () => [...rooms.items.values()].map((item) => ({ id: item.id, status: item.status, known: item.known, name: item.name, modelState: item.modelState, tier: item.tier, apart: item.apart ?? 0, open: openOf(item), openAtRest: item.asset?.openAtRest ?? 0, without: item.without ?? [] })),
     renderInfo: () => ({ ...stage.renderer.info.render, ...stage.renderer.info.memory, framesDrawn: stage.framesDrawn, quality: stage.quality }),
     stage,
     rig,

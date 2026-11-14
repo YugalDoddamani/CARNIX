@@ -14,8 +14,9 @@ DGSHAPE DWX-52Di Plus, and the two injection units of the Acrylic room, Ivoclar
 SR Ivocap and bredent thermopress 400), and 22 placeholders for machines that
 are not modelled yet; on top of that a guided route through the rooms, a page
 that explains each machine, with sourced figures for the eleven real ones,
-step-by-step guides to working one of them (the thermopress 400), and an
-opening in which the lab comes up part by part.
+step-by-step guides to working three of them (the thermopress 400 and two of
+the ceramic furnaces, the Zubler Vario 200 and the Ivoclar Programat P300),
+and an opening in which the lab comes up part by part.
 What comes next, and why it is built in this order, is in
 [`docs/PLAN.md`](docs/PLAN.md).
 
@@ -42,8 +43,11 @@ What comes next, and why it is built in this order, is in
   one step at a time on a phone, all the steps as a list beside the lab. At
   each step the machine turns to the part the step is about, rings mark the
   keys or screws to use, and the machine is shown as it is at that point of
-  the work: its lid open, the flask not in yet. So far one machine has them,
-  the bredent thermopress 400: three guides, 20 steps.
+  the work: its lid open, the flask not in yet, a furnace's head tipped back
+  or its lift down. Three machines have them so far, three guides each: the
+  bredent thermopress 400 (20 steps), the Zubler Vario 200 (17) and the
+  Ivoclar Programat P300 (18). The third furnace, the UPCERA A7+, has none
+  yet: no instructions for use were found for it.
 
 ## Run it
 
@@ -291,7 +295,7 @@ while the step is open:
 | In a step | What it does |
 |---|---|
 | `at` | names a place: the machine turns to it, and rings mark it |
-| `open: true` | the lid or cover stands open. Five models have one that the tour can open: the thermopress 400, the SR Ivocap, the two milling machines and the resin printer |
+| `open: true` | the machine stands open: its lid or cover, a furnace's head or lift. Left out, it stands shut. Seven models can be opened: the thermopress 400, the SR Ivocap, the two milling machines, the resin printer, and two furnaces, the Vario 200 and the Programat P300 |
 | `without` | parts of the model, by name, that are not there yet at this point of the work |
 
 A place is written in the terms of the machine's 3D model, with the numbers of
@@ -302,10 +306,20 @@ its left to its right as one stands in front of it, y up, z towards the front,
 | In a place | What it is |
 |---|---|
 | `part` | the name of a group in the model. The marks belong to it. With nothing else given, its middle is marked and the camera frames it whole |
-| `at` | a point `[x, y, z]` on the part's surface, or a list of points: each gets a ring |
+| `at` | a point `[x, y, z]` on the part's surface, or a list of points: each gets a ring. Written where the model's file has the part; when a step moves the part, its rings go with it |
 | `size` | the diameter of the rings, in the model's units. A point with a fourth number has a ring of that diameter instead. Left out: the smallest ring, 30 px |
 | `from` | `[turn, tilt]` in degrees, the side the camera looks from. Turn 0 is straight in front, 90 the machine's right-hand end, −90 its left, 180 its back; tilt is the height above the horizon, from 2 to 85 |
-| `show` | what the camera frames: a number (a cube that wide around the marks) or the name of another part (that part, whole) |
+| `show` | what the camera frames: a number (a cube that wide around the marks), or a name: another part, one mesh of the model, or the model's own id for the whole machine. It is framed where it lies at that step: a furnace's head is elsewhere open than shut |
+
+A model opens by a function in its own file (`setCoverOpenFactor` or
+`setLidOpenFactor`), which the importers bring along. The furnaces' files have
+none, so theirs is written in `OPENINGS` in
+[`js/assets/registry.js`](js/assets/registry.js), on the model's own groups:
+`move(parts, open)` puts the moving part where it belongs, from 0 (shut) to 1
+(open), and `rest` says which of the two the model is drawn as. That is how
+the machine stands in the lab while no step is open. The Vario 200 is drawn
+with its lift down, so it stands open in the lab, and a step without
+`open: true` raises the lift.
 
 The rule for this file is the rule of `knowledge.js` and one more: **a guide
 retells the maker's instructions for use**, in the maker's order and in plain
@@ -315,8 +329,9 @@ belongs to a step is part of that step. Under every guide the panel names the
 instructions and says that a guide does not replace the manual or training.
 
 `npm run check` builds the model and tries every step. The parts must exist; a
-step that says `open` needs a model with a lid; and from the side a step looks
-from, with the lid as the step has it, each mark must be in plain sight: the
+step that says `open` needs a model that can be opened; and from the side a
+step looks from, with the machine open or shut as the step has it, each mark
+must be in plain sight: the
 first thing the eye meets there is the part the mark belongs to, and a point
 that was given lies on that part's surface. It warns about a step of more than
 215 letters, which is about what a phone 360 px wide shows without scrolling.
@@ -327,9 +342,11 @@ eyes, on every step, on a phone and beside the lab:
 npm run shots -- /tmp/guide --size=390x844 --touch 'step2=#/acrylic/bredent-thermopress-400/how-to/run-a-program/2'
 ```
 
-`npm run e2e` then walks through the guides of one machine, the thermopress
-(`--guided=room/machine` names another), and takes what it expects from
-`how-to.js`: so a new step is checked without a line of test being written.
+`npm run e2e` then walks through the guides of every machine that has them,
+and takes what it expects from `how-to.js`: so a new step, or a new machine,
+is checked without a line of test being written. The first machine gets the
+whole walk; of the others every step is taken, beside the lab and on a phone.
+`--only=howto --guided=room/machine` gives one machine the whole walk, alone.
 
 How much room a step leaves around what it frames is `VIEWS.step` in
 `layout.js`; how a guide is laid out is the end of section 6 of `css/tour.css`,
@@ -526,9 +543,9 @@ vendor/three-r160/      three.js 0.160.0, unmodified (see its README for why thi
 `npm run e2e` walks through the tour the way seven visitors would — on a
 desktop with a mouse, on a phone with a finger (390 × 844, then 360 × 640 and
 320 × 568), on a first visit, with "reduce motion" switched on, one who watches
-the opening, one who follows a machine's guides, and one with a browser from
+the opening, one who follows the machines' guides, and one with a browser from
 2021–22 — with real clicks, taps, drags and key presses, and checks what
-happens (708 checks, about 15 minutes; `--only=entrance,older` runs some of
+happens (1038 checks, about 20 minutes; `--only=entrance,older` runs some of
 them). Among them: a drag turns the machine about its own middle and leaves the
 lab behind it unchanged, pixel for pixel; a machine fits the area the panel
 leaves free, in a wide window, a small one and on a phone; leaving a machine
@@ -548,20 +565,35 @@ clear of each other, the buttons of the first sheet and of the welcome guide
 stay in view on a short screen, and a model whose file never arrives leaves a
 note that fits beside the lab's name.
 
-The walk through the guides (`--only=howto`, about 5 minutes) takes every step
-of every guide, beside the lab and on a phone. At each step, what the panel
-says is the text of `how-to.js`; the camera has gone to the part; every ring
-sits on the very point that `how-to.js` names, to a pixel and a half, which the
-test works out from the 3D scene on its own and not with the tour's code; a tap
-on a ring lands on the machine under it; and the machine is shown as the step
-has it, its lid open or shut and the flask in or not yet. Beside that: the
-rings go when their part is turned out of sight, and "Show it on the machine
-again" brings them back; the lid swings and does not jump, except with "reduce
-motion"; Escape and the browser's Back lead from a step to the list, the
-machine and the room; a link to a step is put right once its model has arrived;
-a machine left in the middle of a guide is shut and whole again; and on a phone
-a step starts at its first line and is read without scrolling, with "Back ·
-Next" at the bottom edge of the sheet.
+The walk through the guides (`--only=howto`, 547 checks, about 10 minutes)
+takes every step of every guide of every machine that has them, beside the lab
+and on a phone. At each step, what the panel says is the text of `how-to.js`;
+the camera has gone to the part, where the part is at that step; every ring
+sits on the very point that `how-to.js` names, to a pixel and a half; a tap on
+a ring lands on the machine under it; and the machine is shown as the step has
+it, open or shut and the flask in or not yet. Where that point is, the test
+works out from the 3D scene on its own and not with the tour's code: it builds
+the model a second time, as its file has it, and takes the point from where
+its part lies there to where the part lies in the picture, tipped back with a
+furnace's head or carried up by its lift. Whether the machine is open it reads
+from the model's parts as well, not only from what the tour says of itself.
+
+Beside that: the rings go when their part is turned out of sight, and "Show it
+on the machine again" brings them back; a lid swings open and a furnace's lift
+runs shut without a jump, except with "reduce motion"; Escape and the
+browser's Back lead from a step to the list, the machine and the room; a link
+to a step is put right once its model has arrived; a machine left in the
+middle of a guide stands as it does in the lab again, whole, the thermopress
+shut and the Vario with its lift down; and on a phone a step starts at its
+first line and is read without scrolling, with "Back · Next" at the bottom
+edge of the sheet.
+
+The first machine with guides, the thermopress, gets all of that. Of each
+other machine the walk takes every step of every guide, beside the lab and on
+a phone, and what depends on how that machine opens. What is the same for all
+of them (Escape and Back, addresses that do not exist, smaller phones, reduced
+motion) is left to the first. `--only=howto --guided=ceramic/zubler-vario-200`
+gives one machine the whole walk, alone (223 checks, about 4 minutes).
 
 It needs the tour running (`npm run serve`) and a headless Chromium, which is
 not part of the repository. Install it once, anywhere outside the repo:
@@ -686,22 +718,46 @@ Things to know — none of the existing CARNIX files have been changed:
   Both models show details that were not checked against the makers'
   documents (a type plate, the display, the capsule's label, the manometer's
   face); `npm run check` lists them.
-- Guides ("How to use it") exist for one machine, the bredent thermopress 400.
-  They retell the part of its operation manual that bredent reprints in its
-  2025 instructions for use, which is for software 2.61 and later. The manual
-  that came with the lab's own unit was not read. Left out: working with both
-  heating chambers at once, the error messages, cleaning. `npm run check`
-  lists what is to be confirmed.
+- Guides ("How to use it") exist for three machines: the bredent thermopress
+  400 and two of the three furnaces, the Zubler Vario 200 and the Ivoclar
+  Programat P300. Each set retells one document. The thermopress's: the part
+  of its operation manual that bredent reprints in its 2025 instructions for
+  use, which is for software 2.61 and later. The Vario's: Zubler's operating
+  instructions as Zubler USA publishes them, in English, for 120 V units,
+  without a date. The P300's: Ivoclar Vivadent's operating instructions of
+  2006, for the first P300 and not the later P300/G2. The manuals that came
+  with the lab's own units were not read. Each set leaves things out. The
+  thermopress's: working with both heating chambers at once, the error
+  messages, cleaning. The Vario's: copying, moving and erasing programs, the
+  USB transfer, the settings, the purge program, the fuses and the pump's
+  filter; and loading and unloading, which Zubler's instructions do not
+  describe. The P300's: the settings and test programs, calibration, the
+  error messages. `npm run check` lists what is to be confirmed, and
+  `docs/PLAN.md` ("The furnaces' guides") has the furnaces' list in short.
+- The third furnace, the UPCERA A7+, has no guides. No instructions for use
+  were found for it, and a guide is not written from another furnace's
+  manual. With the manual that came with the lab's unit it is one entry in
+  `js/rooms/how-to.js`.
 - The thermopress's 3D model does not draw the keypad as it is: it has the
   same fourteen keys in the same places, with other signs on some of them. A
   guide's rings go by a key's place, which was checked against bredent's
   numbered drawing and a product photo, and every step says so under its text.
+- The furnaces' 3D models are not drawn as the furnaces are either, and every
+  step says so under its text. The P300's keypad is not the real one: five
+  letters on the firing curve where the furnace has eight keys, the block of
+  number keys upside down, three keys too many left of the display, and no
+  key with the cogwheels. A guide's rings go by a key's place, compared with a
+  photo of a P300 and one of its keypad. On the Vario nothing is drawn that
+  carries the lift table, which rises on its own, and the display is one
+  fixed picture whatever a step says it shows. Neither model brings a
+  function that opens it: the tour tips the P300's head back and runs the
+  Vario's lift itself (`OPENINGS` in `js/assets/registry.js`).
 - A step of a guide is read without scrolling where the browser leaves the
-  page 360 × 740 px or more (tried on the emulated phone at 360 × 740,
-  360 × 800, 390 × 844 and 412 × 915). At 360 × 640 the two longest of the 20
-  steps run a line or two past the sheet, and at 320 × 568 most steps do.
-  Those are scrolled, and the guide's name goes up with the text; "Back ·
-  Next" stay in view.
+  page 360 × 740 px or more (all 55 steps, tried on the emulated phone at
+  360 × 740, 360 × 800, 390 × 844 and 412 × 915). At 360 × 640 eleven of the
+  55 steps run a line past the sheet, and at 320 × 568 nearly all do. Those
+  are scrolled, and the guide's name goes up with the text; "Back · Next"
+  stay in view.
 - The SR Ivocap stands on a bench, assembled, as in its viewer. In use it
   stands in a bath of boiling water, and it needs a hydraulic press and a
   vibrator for its capsules: the room has a placeholder for a flask press and

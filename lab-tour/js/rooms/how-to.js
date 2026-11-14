@@ -43,7 +43,9 @@
 //          straight in front, 90 the machine's right-hand end, −90 its left,
 //          180 its back; tilt is the height above the horizon (2 to 85).
 //   show   what the camera frames: a number (a cube that wide around the
-//          marks) or the name of another part (that part, whole)
+//          marks), or a name: another part, one mesh of the model, or the
+//          model's own id for the whole machine. It is framed where it lies
+//          at that step: a furnace's head is elsewhere open than shut.
 //
 // `npm run check` builds the model and tries every step: the parts must exist,
 // and from the side a step looks from, each mark must be in plain sight (the
@@ -568,8 +570,8 @@ export const HOW_TO = {
             at: 'keypad',
           },
           {
-            title: 'Every month, every year',
-            text: 'Each month, check that the head opens smoothly and quietly, and look at the insulation: hairline cracks do no harm, worn insulation is for Ivoclar’s service. At least once a year, test the temperature.',
+            title: 'Every month, twice a year',
+            text: 'Each month, see that the head opens smoothly and quietly, and look at the insulation: fine cracks do no harm, worn insulation is for Ivoclar’s service. Twice a year, test the temperature with Ivoclar’s checking set.',
             at: 'insulation',
             open: true,
           },
@@ -577,6 +579,6 @@ export const HOW_TO = {
       },
     ],
     confirm:
-      "(1) The guides retell Ivoclar Vivadent's operating instructions for the Programat P300 of 2006 (chapters 2, 5, 6 and 7), the first P300; a dealer hosts the file. The later P300/G2 differs. Which one does the lab have, and what does its own manual say? (2) The model's keypad is not the real one. The real keypad was compared on a photo of a P300 and on a photo of its membrane: display top left, right of it the two keys for the head (upper: open, lower: close), STOP above START, a bottom row of cursor keys, P, − and +, the firing curve with eight keys (V2, V1, B, S, t, T, L, H) and a block of number keys whose rows read 1 2 3, 4 5 6, 7 8 9, ESC 0 ENTER. The model draws five letters on the curve (B, t, T, H, C), turns the number block upside down (7 8 9 at the top, '. 0 C' at the bottom), adds three keys left of the display that the furnace does not have, and leaves out the key with the cogwheels beside the display. The rings go by a key's place. That the upper of the two head keys opens was read from its symbol on those photos, not from the instructions. (3) What the instructions say about the signal at the end of a firing is a table whose columns were read with difficulty: the guide keeps to what is certain in it (the head is open, a signal sounds, STOP silences it, the work can be taken out and cooled on the cooling tray). (4) The instructions name two intervals for testing the temperature: twice a year in the table of chapter 7.1, at least once a year under 'Calibration'. The guide says 'at least once a year'. (5) The model has no function that opens its head; the tour tips the head back on its hinge by as much as the model's own exploded view does (assets/registry.js). (6) Left out: the settings and test programs behind the key with the cogwheels (calibration, vacuum test, cleaning and dehumidification programs), error messages, quick opening of the head, write protection.",
+      "(1) The guides retell Ivoclar Vivadent's operating instructions for the Programat P300 of 2006 (chapters 2, 5, 6 and 7), the first P300; a dealer hosts the file. The later P300/G2 differs. Which one does the lab have, and what does its own manual say? (2) The model's keypad is not the real one. The real keypad was compared on a photo of a P300 and on a photo of its membrane: display top left, right of it the two keys for the head (upper: open, lower: close), STOP above START, a bottom row of cursor keys, P, − and +, the firing curve with eight keys (V2, V1, B, S, t, T, L, H) and a block of number keys whose rows read 1 2 3, 4 5 6, 7 8 9, ESC 0 ENTER. The model draws five letters on the curve (B, t, T, H, C), turns the number block upside down (7 8 9 at the top, '. 0 C' at the bottom), adds three keys left of the display that the furnace does not have, and leaves out the key with the cogwheels beside the display. The rings go by a key's place. That the upper of the two head keys opens was read from its symbol on those photos, not from the instructions. (3) What the instructions say about the signal at the end of a firing is a table whose columns were read with difficulty: the guide keeps to what is certain in it (the head is open, a signal sounds, STOP silences it, the work can be taken out and cooled on the cooling tray). (4) The instructions name two intervals for checking the temperature: twice a year, with the temperature checking set, in the table of chapter 7.1; at least once a year, with the silver test, under 'Calibration'. The guide follows the table, which is what that step retells. (5) The model has no function that opens its head; the tour tips the head back on its hinge by as much as the model's own exploded view does (assets/registry.js). (6) Left out: the settings and test programs behind the key with the cogwheels (calibration, vacuum test, cleaning and dehumidification programs), error messages, quick opening of the head, write protection.",
   },
 };

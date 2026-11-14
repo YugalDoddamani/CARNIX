@@ -2411,10 +2411,11 @@ async function guidesOf(browser, guided, { whole = true } = {}) {
     check(`the machine is shown as each step has it: its lid open in ${open} of them and shut in the rest, a part out of the picture in ${less}`, wrong.length === 0, tell(wrong));
     // The model itself, not the number the tour keeps: where it is not as it is built, something in it lies elsewhere.
     const otherwise = seen.filter((at) => (at.step.open ? 1 : 0) !== rest);
+    const mover = otherwise.find((at) => at.moved?.length)?.moved[0];
     wrong = off((at) => Array.isArray(at.moved) && ((at.step.open ? 1 : 0) !== rest ? at.moved.length > 0 : at.moved.length === 0), (at) => (at.moved?.length ? `${at.moved.slice(0, 3).join(', ')} moved` : 'nothing has moved'));
     check(
       otherwise.length
-        ? `and so does its model: in the ${otherwise.length} steps that have it ${rest ? 'shut' : 'open'}, "${otherwise[0].moved?.[0] ?? '?'}" lies elsewhere than it is built; in the others every part lies as built`
+        ? `and so does its model: in the ${otherwise.length} steps that have it ${rest ? 'shut' : 'open'}, ${mover ? `"${mover}"` : 'a part'} lies elsewhere than it is built; in the others every part lies as built`
         : 'and so does its model: every part lies as it is built, at every step',
       wrong.length === 0,
       tell(wrong),

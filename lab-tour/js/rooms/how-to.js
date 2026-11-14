@@ -9,6 +9,16 @@
 //     it out. A warning that belongs to a step is part of that step.
 //   · `source` names those instructions. The panel prints it under every guide,
 //     and says that a guide does not replace the manual or training.
+//   · One machine has no such instructions to be had: the lab has no manual for
+//     its UPCERA A7+, and UPCERA publishes none. At the lab's wish it has a
+//     BASIC guide all the same. `basic` says so, on every page of it, and a
+//     label "Basic guide" stands over it. Such a guide rests on what there is
+//     (here a dealer's directions for use, the maker's product sheet and photos,
+//     and how furnaces of its build are worked). It names a key only by what is
+//     printed on it, gives no settings and no keystrokes it cannot show, and
+//     says where it does not know. `confirm` lists what it takes for granted.
+//     It is the exception, not a second way of writing guides: a machine with
+//     instructions gets its guides from those.
 //   · `confirm` is a note to ourselves, as in knowledge.js: never shown, listed
 //     by `npm run check`, and as public as the page itself.
 //
@@ -16,6 +26,8 @@
 // catalogue.js. Its panel then shows a card "How to use it" on the first pill.
 //
 //   source   { label, url }: "A short guide from <label>."
+//   basic    only for a basic guide (above): one sentence saying that it is
+//            one and what else it rests on, printed right after the source
 //   note     optional: one sentence about the 3D model that the reader of a
 //            guide should know, printed after the source
 //   places   where on the machine a step can point (see below)
@@ -137,6 +149,38 @@ const P = {
   escape: [...onP300(0.032, -0.308, 0.042), 0.16],
   enter: [...onP300(0.304, -0.308, 0.042), 0.16],
 };
+
+// ── UPCERA A7+ ───────────────────────────────────────────────────────────────
+// Its console is a flat plate that leans back by about 35°: a display in the
+// middle, three keys left of it, a two-part key START | STOP under it, and a
+// block of keys on the right. UPCERA's photos of the furnace show the same
+// plate, key for key. `onA7(x, y)` is a point on it, with the numbers of the
+// model's file: x and y from the plate's middle, to the right and up along the
+// plate. (The plate's group stands at [0, 0.98, 2.18] and is turned by
+// atan(1.08 / 1.56); the keys' tops are 0.286 in front of it, the display 0.274.)
+const A7_LEAN = Math.atan2(1.08, 1.56);
+const onA7 = (x, y, out = 0.29) => [x, 0.98 + y * Math.cos(A7_LEAN) + out * Math.sin(A7_LEAN), 2.18 - y * Math.sin(A7_LEAN) + out * Math.cos(A7_LEAN)];
+// Looked at from well above, like the Vario's: the display is glossy. What is
+// framed is the keypad's plate, not the housing around it.
+const A7_CONSOLE = { part: 'controlConsole', size: 0.34, from: [0, 58], show: 'keypadOverlayPlane' };
+const A7 = {
+  display: [...onA7(-0.1, 0.06, 0.276), 0.9],
+  leftKeys: [...onA7(-1.19, 0.17), 0.82], // two arrows, and a cogwheel under the second
+  startStop: [...onA7(0.345, -0.58), 0.56], // one key in two halves
+  block: [...onA7(1.1, -0.05), 1.34], // 1 to 9, "+ 0 −", two arrows, Esc P Enter
+  start: onA7(0.22, -0.58), // the dark half
+  stop: onA7(0.47, -0.58), // the red half
+};
+// The firing platform: a stainless dish with a white ceramic table on it. The
+// model is drawn with the lift down, as UPCERA's photos show the furnace: the
+// table's top is at 2.57 and the dish's rim at 1.70. Both places on it share
+// one view of the whole furnace, so that between two steps only the lift moves.
+// (With the lift down the console hides the dish; the mark on it is for a step
+// in which it shuts the chamber, and sits on its lower edge: seen from a little
+// above, the chamber's underside hides the rim itself.)
+const A7_TABLE_TOP = [0, 2.57, 0.4];
+const A7_DISH = [0, 1.62, 1.29];
+const A7_WHOLE = { part: 'firingPedestal', from: [24, 12], show: 'upcera-a7-plus' };
 
 export const HOW_TO = {
   'bredent-thermopress-400': {
@@ -580,5 +624,109 @@ export const HOW_TO = {
     ],
     confirm:
       "(1) The guides retell Ivoclar Vivadent's operating instructions for the Programat P300 of 2006 (chapters 2, 5, 6 and 7), the first P300; a dealer hosts the file. The later P300/G2 differs. Which one does the lab have, and what does its own manual say? (2) The model's keypad is not the real one. The real keypad was compared on a photo of a P300 and on a photo of its membrane: display top left, right of it the two keys for the head (upper: open, lower: close), STOP above START, a bottom row of cursor keys, P, − and +, the firing curve with eight keys (V2, V1, B, S, t, T, L, H) and a block of number keys whose rows read 1 2 3, 4 5 6, 7 8 9, ESC 0 ENTER. The model draws five letters on the curve (B, t, T, H, C), turns the number block upside down (7 8 9 at the top, '. 0 C' at the bottom), adds three keys left of the display that the furnace does not have, and leaves out the key with the cogwheels beside the display. The rings go by a key's place. That the upper of the two head keys opens was read from its symbol on those photos, not from the instructions. (3) What the instructions say about the signal at the end of a firing is a table whose columns were read with difficulty: the guide keeps to what is certain in it (the head is open, a signal sounds, STOP silences it, the work can be taken out and cooled on the cooling tray). (4) The instructions name two intervals for checking the temperature: twice a year, with the temperature checking set, in the table of chapter 7.1; at least once a year, with the silver test, under 'Calibration'. The guide follows the table, which is what that step retells. (5) The model has no function that opens its head; the tour tips the head back on its hinge by as much as the model's own exploded view does (assets/registry.js). (6) Left out: the settings and test programs behind the key with the cogwheels (calibration, vacuum test, cleaning and dehumidification programs), error messages, quick opening of the head, write protection.",
+  },
+
+  'upcera-a7-plus': {
+    source: {
+      label: 'the dealer Oralkart’s directions for use for the A7+',
+      url: 'https://oralkart.com/products/upcera-a7-porcelain-furnace',
+    },
+    basic: 'A basic one: UPCERA’s own instructions for use could not be had, so it also leans on UPCERA’s product sheet and on how furnaces with a lift are worked, and it names no settings.',
+    note: 'On the 3D model the platform rises on its own: what carries it on the real furnace is not drawn. Its display shows one fixed picture.',
+    places: {
+      // At the back, low down, as the model has it (see `confirm`).
+      mainSwitch: { part: 'liftColumn', at: [-1.12, 0.38, -2.37], size: 0.5, from: [192, 12], show: 4.5 },
+      // On the console. Every step there shares one view, so only the rings move.
+      console: { ...A7_CONSOLE, at: [A7.display, A7.leftKeys, A7.startStop, A7.block] },
+      display: { ...A7_CONSOLE, at: A7.display },
+      start: { ...A7_CONSOLE, at: A7.start },
+      stop: { ...A7_CONSOLE, at: A7.stop },
+      // The top of the firing platform, for a step in which the lift is down;
+      // and its dish, for a step in which it shuts the chamber.
+      platform: { ...A7_WHOLE, at: A7_TABLE_TOP, size: 1.2 },
+      lift: { ...A7_WHOLE, at: A7_DISH, size: 1.6 },
+      // The chamber's front, in the same view.
+      chamber: { part: 'chamberHead', at: [0, 5.98, 1.47], size: 1.6, from: [24, 12], show: 'upcera-a7-plus' },
+      // The two metal trays that stand out at the sides, seen from as high up
+      // as the console is (lower down, its display mirrors the room's light).
+      trays: { part: 'baseAssembly', at: [[-2.08, 1.285, 0.05], [2.08, 1.285, 0.05]], size: 0.9, from: [0, 58], show: 'upcera-a7-plus' },
+    },
+    guides: [
+      {
+        id: 'run-a-program',
+        title: 'Run a firing program',
+        steps: [
+          {
+            title: 'Switch on',
+            text: 'Switch the furnace on at its mains switch. The 3D model has it at the back, at the bottom: that is where to look on the lab’s furnace.',
+            at: 'mainSwitch',
+            open: true,
+          },
+          {
+            title: 'Know the console',
+            text: 'In the middle is the display. Left of it are two arrow keys and a key with a cogwheel, under it the two-part key START | STOP. On the right: the number keys, + and −, two more arrows, Esc, P and Enter.',
+            at: 'console',
+            open: true,
+          },
+          {
+            title: 'Choose the program',
+            text: 'Choose the program for the ceramic and the kind of firing: its values come from the ceramic maker’s firing chart. Top left, the display names it: P01 on UPCERA’s photos. Let the technician show you the keys for it.',
+            at: 'display',
+            open: true,
+          },
+          {
+            title: 'Load the platform',
+            text: 'The platform must be down. Stand the work on its firing tray and set the tray on the middle of the white ceramic table. The furnace moves the platform itself: UPCERA calls that an automatic platform lift.',
+            at: 'platform',
+            open: true,
+          },
+          {
+            title: 'Start the program',
+            text: 'Press START, the dark half of the two-part key under the display. From here the furnace follows the program.',
+            at: 'start',
+            open: true,
+          },
+          {
+            title: 'Keep clear of the lift',
+            text: 'The platform rises and shuts the chamber from below. Never reach between the platform and the chamber, or under the platform. The chamber gets very hot: the yellow sign on its front warns of it.',
+            at: 'lift',
+          },
+          {
+            title: 'While it fires',
+            text: 'The furnace heats and holds as the program says, under vacuum if the program asks for it. It warns of errors by itself. STOP, the red half of the two-part key, breaks a firing off.',
+            at: 'stop',
+          },
+          {
+            title: 'Unload',
+            text: 'When the firing is over and the platform is down again, everything on it is very hot. Lift the firing tray off with furnace tongs, never by hand. Set it on one of the metal trays at the sides and let the work cool.',
+            at: 'trays',
+            open: true,
+          },
+        ],
+      },
+      {
+        id: 'look-after-it',
+        title: 'Look after it',
+        steps: [
+          {
+            title: 'Keep it closed',
+            text: 'A porcelain furnace is kept closed while not in use: Zubler and Ivoclar both ask that of theirs, to keep moisture and dirt out of the chamber. Do the same with the A7+, platform up, unless its manual says otherwise.',
+            at: 'lift',
+          },
+          {
+            title: 'Its maintenance procedures',
+            text: 'UPCERA lists maintenance procedures built into the furnace: vacuum testing, cleaning and drying. It has a temperature compensation as well. When and how to use them is in the furnace’s manual: ask the technician.',
+            at: 'chamber',
+          },
+          {
+            title: 'If it warns of an error',
+            text: 'UPCERA builds an error warning into the furnace. If one comes up, do not carry on firing: note what the display says and call the technician. What each warning means is in the furnace’s manual.',
+            at: 'display',
+          },
+        ],
+      },
+    ],
+    confirm:
+      "(1) A BASIC GUIDE, at the lab's wish: the lab has no manual for its A7+, and UPCERA publishes none (its download centre lists nothing under 'Equipment Manual'; the one download on the product page, A7+-2025.pdf, is a product sheet of two pages). The steps follow the dealer Oralkart's 'Direction to use', UPCERA's product page and product sheet (the list of features, the photos of the console) and the usual way a furnace with a lift is worked. No step was checked against the furnace or its manual: the lab's technician should read the guides through. (2) Keys are named by what UPCERA's photos show printed on them. What a key does is said of START and STOP alone, by their names. Not known: how a program is called up (the key P and the number keys?), what the two arrow keys and the cogwheel key left of the display do, whether a key moves the lift, what an error warning looks like. (3) Taken from the furnace's build, not from a source: that the mains switch is at the back (the model has it there; no photo of the back was found), that the two metal trays at the sides are for the fired work to cool on, and that the platform comes down again after a firing without a key. (4) 'Keep it closed' is what Zubler and Ivoclar ask for their furnaces; what UPCERA asks for the A7+ is not known. Nor is how the A7+ is shut down in the evening (the dealer says only 'following the recommended shutdown procedure'): the guides leave that out. (5) The guides name none of UPCERA's figures: its web page and its product sheet of 2025 disagree (see the A7+ in knowledge.js).",
   },
 };

@@ -281,6 +281,8 @@ function install() {
         apart: entry.apart ?? 0,
         count: text(panel.querySelector('.howto-count')),
         heading: shownText(panel.querySelector('.howto-title')),
+        basic: text(panel.querySelector('.howto-basic')), // the label of a basic guide; empty when it is not shown
+        basicShown: Boolean(panel.querySelector('.howto-basic')?.getClientRects().length),
         nameShown: Boolean(panel.querySelector('.howto-machine')?.getClientRects().length),
         back: text(panel.querySelector('.back')),
         open: current
@@ -2516,6 +2518,11 @@ async function guidesOf(browser, guided, { whole = true } = {}) {
       h.note && h.note.links.length === 1 && h.note.links[0].href === info.source.url && h.note.links[0].target === '_blank' && /noopener/.test(h.note.links[0].rel) && h.note.text.includes(info.source.label) && /not replace the manual/.test(h.note.text),
       JSON.stringify(h.note),
     );
+    check(
+      info.basic ? 'a basic guide is labelled as one over the list, and the note under it says so after the source' : 'the guides come from the maker\'s instructions: no label "Basic guide"',
+      info.basic ? h.basic === 'Basic guide' && h.basicShown && h.note.text.includes(norm(info.basic)) && h.note.text.indexOf(norm(info.basic)) > h.note.text.indexOf(info.source.label) : h.basic === '',
+      `label "${h.basic}", note: ${h.note?.text}`,
+    );
     check('the keyboard focus has moved to the panel, since the card has gone', h.focus === 'panel', h.focus);
     check(rest ? 'nothing is marked yet, and the machine stands open, as it does in the lab' : 'nothing is marked and nothing is opened yet', h.rings.length === 0 && h.lid === rest && h.without.length === 0, `${h.rings.length} rings, lid ${h.lid}`);
   });
@@ -2541,6 +2548,8 @@ async function guidesOf(browser, guided, { whole = true } = {}) {
       check('the keyboard focus stays on "Next" from step to step, though every step is drawn afresh', wrong.length === 0, tell(wrong));
       wrong = off((at) => at.h.note && at.h.note.links[0]?.href === info.source.url && /not replace the manual/.test(at.h.note.text) && (!info.note || at.h.note.text.includes(norm(info.note))), () => 'no source');
       check(`the source and the reminder about the manual stand under every step${info.note ? ', with the remark about the 3D model' : ''}`, wrong.length === 0, tell(wrong));
+      wrong = off((at) => (info.basic ? at.h.basic === 'Basic guide' && at.h.basicShown && at.h.note?.text.includes(norm(info.basic)) : at.h.basic === ''), (at) => `label "${at.h.basic}"`);
+      check(info.basic ? 'every step of a basic guide carries the label "Basic guide" beside the guide\'s name, and says under the steps what it rests on' : 'no step carries the label "Basic guide"', wrong.length === 0, tell(wrong));
       check('on the last step "Next" has become "Done"', seen[seen.length - 1].h.next === 'Done' && seen.slice(0, -1).every((at) => at.h.next === 'Next'), seen.map((at) => at.h.next).join(' '));
     });
   }

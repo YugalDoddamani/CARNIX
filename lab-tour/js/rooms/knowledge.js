@@ -317,7 +317,7 @@ export const MACHINE_INFO = {
       'Warns of errors by itself.',
     ],
     sources: [{ label: 'UPCERA, FLNTOven A7+ product page', url: 'http://dental.upcera.com/en/products/identity/29/30/en-a7-plus-41' }],
-    confirm: "UPCERA's page gives the heating rate as '10-100 ℃' with no unit of time; the tour reads it as per minute, the usual unit. It gives the vacuum as < 35 mmHg; some dealers quote < 30 mmHg.",
+    confirm: "UPCERA's page gives the heating rate as '10-100 ℃' with no unit of time; the tour reads it as per minute, the usual unit. It gives the vacuum as < 35 mmHg; some dealers quote < 30 mmHg. UPCERA's product sheet of 2025 (A7+-2025.pdf, a download on the same page) gives other figures than the page: 32.5 kg instead of 26.5, a heating rate of 5~100 °C instead of 10-100, a maximum working temperature of 1200 °C instead of 1150. The tour shows the page's. Which hold for the lab's furnace? Its type plate and its manual say.",
   },
   'ivoclar-programat-p300': {
     brand: 'ivoclar',

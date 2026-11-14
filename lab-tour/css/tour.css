@@ -2268,6 +2268,13 @@ button.howto-step__row:hover {
     color: var(--accent-ink);
   }
 
+  /* The label of a basic guide is four pixels taller than this small heading.
+     It may not make the head taller: a step would then have four pixels less
+     than on the other machines, and on a small phone that is its last line. */
+  .howto-titlerow .howto-basic {
+    margin-block: -2px;
+  }
+
   .howto-progress {
     margin-top: 6px;
   }

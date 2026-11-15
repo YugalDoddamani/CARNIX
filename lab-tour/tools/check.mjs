@@ -262,7 +262,7 @@ console.log(`  ${types} machine types described · About on ${pills.about} · Fe
 // the models are built, whether each step points at something (section 6).
 const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
 const isPoint = (value) => Array.isArray(value) && (value.length === 3 || value.length === 4) && value.every(isNumber) && (value[3] === undefined || value[3] > 0);
-const guided = { machines: 0, guides: 0, steps: 0 };
+const guided = { machines: 0, guides: 0, steps: 0, basic: [] };
 for (const [id, entry] of Object.entries(HOW_TO)) {
   const where = `how-to.js "${id}"`;
   const type = EQUIPMENT[id];
@@ -277,6 +277,12 @@ for (const [id, entry] of Object.entries(HOW_TO)) {
   if (!entry.source) fail(`${where} does not name the instructions its guides come from (\`source\`)`);
   else checkSources([entry.source], where);
   if (entry.note !== undefined) needText(entry.note, `${where} note`);
+  // A basic guide: written without the maker's instructions, and saying so.
+  if (entry.basic !== undefined) {
+    needText(entry.basic, `${where} basic`);
+    if (!isText(entry.confirm)) fail(`${where} is a basic guide: \`confirm\` has to list what it takes for granted`);
+    guided.basic.push(type.shortName ?? type.name ?? id);
+  }
 
   const places = entry.places ?? {};
   for (const [name, place] of Object.entries(places)) {
@@ -325,6 +331,7 @@ for (const [id, entry] of Object.entries(HOW_TO)) {
   }
 }
 console.log(`  How to use it: ${guided.guides} guide${guided.guides === 1 ? '' : 's'} with ${guided.steps} steps for ${guided.machines} machine${guided.machines === 1 ? '' : 's'}`);
+if (guided.basic.length) console.log(`  Basic guides, written without the maker's instructions for use: ${guided.basic.join(', ')}`);
 
 // ── 4. Floor plan ────────────────────────────────────────────────────────────
 section('Floor plan');

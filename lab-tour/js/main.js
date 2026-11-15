@@ -232,7 +232,7 @@ function start() {
         brand: info?.brand ? (BRANDS[info.brand] ?? null) : null,
         modelState: item.modelState,
         // Its guides, and which page of them is open (null: the machine's own page).
-        howTo: guides ? { guides: guides.guides, source: guides.source, note: guides.note ?? '', page: state.howTo } : null,
+        howTo: guides ? { guides: guides.guides, source: guides.source, basic: guides.basic ?? '', note: guides.note ?? '', page: state.howTo } : null,
         siblings: { index, total: list.length, previous: list[(index - 1 + list.length) % list.length], next: list[(index + 1) % list.length] },
       });
     } else if (state.mode === 'room') {

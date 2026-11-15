@@ -33,7 +33,7 @@ then filled in by editing a list.
 | 1c | Text on a phone: one scale of sizes for the phone layout, nothing under 12 px | ✅ done |
 | 2 | Make it true: real floor plan, real equipment list, real name, the lab's own words | ⏳ needs your input |
 | 3 | Room by room: replace placeholders with models, and write each machine's page | next |
-| 4 | The rest of the concept's interface | "How to use it" is built, for three machines; the rest later |
+| 4 | The rest of the concept's interface | "How to use it" is built, for four machines (one with a basic guide); the rest later |
 | 5 | Atmosphere | later |
 | 6 | Launch | later |
 
@@ -163,7 +163,7 @@ What could not be settled from documents alone:
 | SHINING 3D AutoScan-DS-EX Pro | SHINING 3D's product page and the data sheets of the three versions | **Which version the lab has**: Pro, Pro(C) or Pro(H). They differ in cameras (1.3 to 5 megapixels), accuracy (10 to 8 µm) and scan time, so the panel shows ranges for now. |
 | 3Shape E4 | 3Shape's E4 page, Dental System catalogue and E-scanner press release | Auto-start and articulator support are described by 3Shape for the E1–E3 and listed by dealers for the E4; 3Shape's own E4 page does not mention them. |
 | Zubler VARIO 200 | Zubler's operating instructions and product table | **VARIO 200 or VARIO 200ZR?** Controlled cooling (TTC) belongs to the ZR only; the panel says so. Also: the asset library calls it a "pressing & ceramic furnace", Zubler's manual says it fires ceramics only (the press furnace is the VARIO PRESS 300), so the tour calls it a ceramic furnace. |
-| UPCERA A7+ | UPCERA's product page | Its heating rate is printed without a unit of time (read as per minute); dealers quote a slightly different vacuum figure. |
+| UPCERA A7+ | UPCERA's product page | Its heating rate is printed without a unit of time (read as per minute); dealers quote a slightly different vacuum figure. **UPCERA's own product sheet of 2025 gives other figures than its page**: 32.5 kg instead of 26.5, a heating rate of 5~100 °C instead of 10-100, a maximum working temperature of 1200 °C instead of 1150. The panel shows the page's. The furnace's type plate says which hold. |
 | Ivoclar Programat P300 | Ivoclar's operating instructions, 2006 | The later P300/G2 holds more programs. Which one is in the lab? |
 | UniFormation GK3 | UniFormation's GK3 product page | **GK3 (T), GK3 (B) or GK3 Pro?** T and B differ only in the screw that lifts the platform, and the figures shown hold for both. The GK3 Pro uses 385 nm light instead of 405 nm, and UniFormation's own page points dental work to the Pro. The 3D model shows a ball screw and a 405 nm hood, which would be the GK3 (B). |
 
@@ -213,7 +213,7 @@ The Design Room already has all its machines.
 
 Built in phase 1b: per-machine content ("Explore features") and the route
 through the rooms, as numbered stops. Built since: **"How to use it"**, guides
-to working a machine, for three machines so far. See below.
+to working a machine, for four machines so far. See below.
 
 In the concept image and not built yet:
 
@@ -223,7 +223,7 @@ In the concept image and not built yet:
 - Compass, "About" the lab, and the left-hand navigation of the concept (the
   bar at the bottom does that job now).
 
-#### "How to use it" (built, for three machines)
+#### "How to use it" (built, for four machines)
 
 The concept's "See how it works": steps tied to the parts of a machine. Built
 as it was sketched and approved:
@@ -232,7 +232,7 @@ as it was sketched and approved:
   the number of guides.
 - **The guides** of that machine, each with its number of steps. The
   thermopress 400 has three: "Run a program" (13 steps), "Set a program" (5)
-  and "Eject a cartridge by hand" (2). The two furnaces that came after it
+  and "Eject a cartridge by hand" (2). The three furnaces that came after it
   are under "The furnaces' guides" below.
 - **One step at a time** on a phone: a title, two or three sentences, Back and
   Next, and a row of dashes showing how far along. On a desktop all the steps
@@ -266,8 +266,8 @@ lab and on a phone (README, "Testing").
 What is left:
 
 - **Guides for the other machines**: one entry in `how-to.js` each, from the
-  maker's instructions for use. Seven models can be opened by a step: five
-  have a lid or cover, and two furnaces open the way described below.
+  maker's instructions for use. Eight models can be opened by a step: five
+  have a lid or cover, and the three furnaces open the way described below.
 - **To confirm with the lab** (`npm run check` lists it): the guides retell the
   part of the unit's manual that bredent reprints in its 2025 instructions for
   use. The manual that came with the lab's own unit was not read. Which
@@ -280,21 +280,63 @@ What is left:
 ##### The furnaces' guides
 
 Asked for after the thermopress: "add the how to use to the furnaces". Two of
-the three furnaces of the Ceramic Room have guides now.
+the three furnaces of the Ceramic Room got guides from their makers'
+instructions. For the third, the UPCERA A7+, there are none to be had; asked
+for next, it has a basic guide (below the table).
 
 | Furnace | Guides | Retold from |
 |---|---|---|
 | Zubler Vario 200 | "Run a firing program" (8 steps), "Write or change a program" (5), "Through the working day" (4) | Zubler's operating instructions for the VARIO 200, as Zubler USA publishes them: in English, for 120 V units, without a date |
 | Ivoclar Programat P300 | "Run a firing program" (8), "Set a program of your own" (6), "Check and clean it" (4) | Ivoclar Vivadent's operating instructions for the Programat P300, 2006, from a dealer's site |
-| UPCERA A7+ | none | Nothing: no instructions for use were found. UPCERA's product page has figures and one download, "A7+-2025.pdf" (1 MB), which could not be opened from here and which, by its name and its one-picture preview, is a product sheet; dealers' pages and the lab's Drive folder for the furnace hold no manual either |
+| UPCERA A7+ | **A basic guide**: "Run a firing program" (8), "Look after it" (3) | No instructions for use: the lab has no manual, and UPCERA publishes none. Instead: the directions for use of a dealer (Oralkart), UPCERA's product page, product sheet and photos, and the usual way a furnace with a lift is worked |
 
-**The A7+ is left out on purpose.** The rule of `how-to.js` is that a guide
-retells the maker's instructions, and nothing is added from another machine.
-A guide for the A7+ written from the other two furnaces would look right and
-could be wrong where it matters: which key moves the lift, what the furnace
-does on its own. With the manual that came with the lab's unit it is one
-entry in `how-to.js`; its model has the same parts as the Vario's (a lift, a
-firing table, a console).
+**The A7+'s guide is a basic one.** When the other two furnaces got their
+guides the A7+ was left out: the rule of `how-to.js` is that a guide retells
+the maker's instructions, and a guide written from the other two furnaces
+would look right and could be wrong where it matters: which key moves the
+lift, what the furnace does on its own. The search since then: UPCERA's
+download centre has a heading "Equipment Manual" with nothing under it; the
+one download on the product page, "A7+-2025.pdf", is a product sheet of two
+pages (the features and a table of figures); dealers' pages and the lab's
+Drive hold no manual. The lab then said that it has no manual either, and
+asked for a basic guide all the same, like the Zubler's: "Find a basic guide
+for it. And make it as I don't have a manual, it's more like the zubler
+furnace".
+
+So the rule has one exception, and the tour says so wherever the guide is
+shown: a label "Basic guide" over the list of the guides and over every step,
+and after the source the sentence "A basic one: UPCERA’s own instructions for
+use could not be had, so it also leans on UPCERA’s product sheet and on how
+furnaces with a lift are worked, and it names no settings." What was done to
+keep it from being wrong where it matters:
+
+- **The one "basic guide" that was found** is the list "Direction to use" on
+  the page of the dealer Oralkart: switch on, choose the program, load the
+  platform, start, mind the error warnings, unload, switch off. It names no
+  key. The guide follows its order.
+- **Keys are named by what is printed on them.** UPCERA's photos show the
+  console the 3D model draws, key for key: two arrow keys and a cogwheel key
+  left of the display, the two-part key START | STOP under it, and on the
+  right the number keys, + and −, two arrows, Esc, P and Enter. The guide
+  says what START and STOP do, by their names, and of no other key. How a
+  program is called up it leaves to the technician, and says so.
+- **Like the Zubler's, as far as the build goes.** Both furnaces have a lift
+  that carries the work up into a fixed chamber, so the A7+'s first guide has
+  the shape of the Vario's: switch on, the console, the program, load, start,
+  keep clear of the lift, the firing, unload. Nothing of the Vario's software
+  was carried over: no menus, no key colours, no idle temperatures, no
+  stand-by. One step is taken from the other furnaces by name: "Keep it
+  closed" says that Zubler and Ivoclar ask that of theirs, and to do the
+  same "unless its manual says otherwise".
+- **No figures.** Not a temperature, not a time. UPCERA's own two documents
+  disagree on the furnace's figures (see the table of sources above).
+- **What it takes for granted** is listed in the entry's `confirm` note and
+  in the README under "Known limits": the mains switch at the back, the side
+  trays as the place to cool the work, the platform coming down by itself.
+
+**To do when a manual turns up:** rewrite the entry from it and take `basic`
+off. Until then the lab's technician should read the eleven steps against
+the furnace.
 
 What the furnaces needed beyond the thermopress:
 
@@ -303,11 +345,14 @@ What the furnaces needed beyond the thermopress:
   (`OPENINGS` in `js/assets/registry.js`), on the models' own groups. The
   P300's head tips back on its hinge by 33°, which is how far the model's
   exploded view tips it. The Vario's lift carries the firing table 2.73 units
-  (218 mm) up, until its metal collar meets the underside of the chamber.
-- **The Vario stands open in the lab.** Its model is drawn with the lift down,
-  and so it stands in the room and on its own page. A step that has the
-  furnace shut raises the lift; leaving the guide lowers it again. Before
-  this, every machine stood shut unless a step opened it.
+  (218 mm) up, until its metal collar meets the underside of the chamber. The
+  A7+'s carries its platform 2.69 units (215 mm) up, until the rim of its
+  dish meets the ring under the chamber, which carries the seal on UPCERA's
+  photos; its white ceramic table is inside the chamber then.
+- **The Vario and the A7+ stand open in the lab.** Their models are drawn with
+  the lift down, and so they stand in the room and on their own pages. A step
+  that has the furnace shut raises the lift; leaving the guide lowers it
+  again. Before this, every machine stood shut unless a step opened it.
 - **A step frames its place as the machine stands at that step.** A place on
   the P300's head was framed where the head lies shut, and the open head ran
   out of the top of the picture on a phone. What a place frames is now worked
@@ -319,7 +364,10 @@ What the furnaces needed beyond the thermopress:
   colours of the keys go pale. The Vario's console is looked at from 58°
   above, the P300's keypad from 18°. Both of the Vario's views of the lift
   are the same view of the whole furnace, so that between two steps only the
-  lift moves.
+  lift moves. The A7+ took the Vario's views over: its console from 58°
+  above, its lift and its chamber in one view of the whole furnace; its side
+  trays are looked at from 58° as well, because from 40° the display turned
+  white.
 
 Where the models are not the machines, which the sentence under each step
 says in short:
@@ -332,6 +380,10 @@ says in short:
   block of number keys upside down, adds three keys left of the display and
   leaves out the key with the cogwheels. The rings go by a key's place on the
   keypad, compared with a photo of a P300 and one of its membrane.
+- **UPCERA A7+:** the console is drawn as UPCERA's photos show it, key for
+  key, and its display shows the picture of those photos. Nothing is drawn
+  that carries the platform, so it rises on its own. The back of the furnace
+  (the mains switch, the socket) was compared with no photo: none was found.
 
 To confirm with the lab (`npm run check` prints the full notes):
 
@@ -343,6 +395,10 @@ To confirm with the lab (`npm run check` prints the full notes):
 - **P300 or the later P300/G2.** The guides follow the first P300.
 - **That the upper of the P300's two head keys opens.** Read from the symbols
   on photos, not from the instructions.
+- **The whole of the A7+'s basic guide**: see "The A7+'s guide is a basic
+  one" above. Most of all: where its mains switch is, what the side trays
+  are for, whether the platform comes down by itself after a firing, and
+  whether the lab keeps the furnace closed when it is not in use.
 - **How often the P300's temperature is checked.** The instructions say twice
   a year in the maintenance table and at least once a year under
   "Calibration". The guide follows the table.

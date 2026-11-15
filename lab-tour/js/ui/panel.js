@@ -233,11 +233,18 @@ function howToCard(howTo) {
 }
 
 /**
- * Under the guides: where they come from, and what they are not. `about` adds
- * the machine's remark on its 3D model, for a page that points at the model.
+ * Under the guides: where they come from, and what they are not. A basic guide
+ * (one written without the maker's instructions, rooms/how-to.js) says so right
+ * after its source. `about` adds the machine's remark on its 3D model, for a
+ * page that points at the model.
  */
-function howToNote({ source, note }, about = false) {
-  return `<p class="howto-note">A short guide from <a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(source.label)}</a>. It does not replace the manual that came with the machine, or training on it.${about && note ? ` ${esc(note)}` : ''}</p>`;
+function howToNote({ source, basic, note }, about = false) {
+  return `<p class="howto-note">A short guide from <a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(source.label)}</a>.${basic ? ` ${esc(basic)}` : ''} It does not replace the manual that came with the machine, or training on it.${about && note ? ` ${esc(note)}` : ''}</p>`;
+}
+
+/** The label over a basic guide: on the list of the guides, and over every step. */
+function howToBasic({ basic }) {
+  return basic ? '<span class="chip chip--basic howto-basic" title="Written without the maker’s instructions for use: see the note under the guide">Basic guide</span>' : '';
 }
 
 /** The guides of a machine. */
@@ -249,6 +256,7 @@ function howToListView({ item, howTo }) {
     <header class="panel__header">
       <p class="eyebrow">${esc(item.kind)}</p>
       <h1>How to use it</h1>
+      ${howTo.basic ? `<p class="howto-flag">${howToBasic(howTo)}</p>` : ''}
     </header>
     <ol class="list howto-guides">
       ${howTo.guides
@@ -289,7 +297,10 @@ function howToGuideView({ item, howTo }) {
         <span class="howto-count">Step ${step + 1} of ${total}</span>
       </div>
       <p class="eyebrow howto-machine">${name(item.name)}</p>
-      <h1 class="howto-title">${esc(guide.title)}</h1>
+      <div class="howto-titlerow">
+        <h1 class="howto-title">${esc(guide.title)}</h1>
+        ${howToBasic(howTo)}
+      </div>
       <div class="howto-progress" aria-hidden="true">${guide.steps.map((_, index) => `<i${index <= step ? ' class="is-done"' : ''}></i>`).join('')}</div>
     </div>
     <ol class="howto-steps">

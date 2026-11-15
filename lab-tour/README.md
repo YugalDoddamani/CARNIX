@@ -14,8 +14,9 @@ DGSHAPE DWX-52Di Plus, and the two injection units of the Acrylic room, Ivoclar
 SR Ivocap and bredent thermopress 400), and 22 placeholders for machines that
 are not modelled yet; on top of that a guided route through the rooms, a page
 that explains each machine, with sourced figures for the eleven real ones,
-step-by-step guides to working three of them (the thermopress 400 and two of
-the ceramic furnaces, the Zubler Vario 200 and the Ivoclar Programat P300),
+step-by-step guides to working four of them (the thermopress 400 and the three
+ceramic furnaces: the Zubler Vario 200, the Ivoclar Programat P300 and, with a
+basic guide, the UPCERA A7+),
 and an opening in which the lab comes up part by part.
 What comes next, and why it is built in this order, is in
 [`docs/PLAN.md`](docs/PLAN.md).
@@ -44,10 +45,14 @@ What comes next, and why it is built in this order, is in
   each step the machine turns to the part the step is about, rings mark the
   keys or screws to use, and the machine is shown as it is at that point of
   the work: its lid open, the flask not in yet, a furnace's head tipped back
-  or its lift down. Three machines have them so far, three guides each: the
-  bredent thermopress 400 (20 steps), the Zubler Vario 200 (17) and the
-  Ivoclar Programat P300 (18). The third furnace, the UPCERA A7+, has none
-  yet: no instructions for use were found for it.
+  or its lift down. Four machines have them so far. Three have three guides
+  each, retold from the maker's instructions: the bredent thermopress 400 (20
+  steps), the Zubler Vario 200 (17) and the Ivoclar Programat P300 (18). The
+  third furnace, the UPCERA A7+, has a **basic guide** in two parts (11
+  steps): the lab has no manual for it and UPCERA publishes none, so it rests
+  on a dealer's directions for use, on UPCERA's product sheet and photos and
+  on the usual way a furnace with a lift is worked. It is labelled "Basic
+  guide" on every page and says under every step what it rests on.
 
 ## Run it
 
@@ -271,6 +276,7 @@ them.
 ```js
 'bredent-thermopress-400': {
   source: { label: 'bredent’s instructions for use (2025)', url: 'https://…' },    // required; printed under every guide
+  // basic: 'A basic one: …',                  // only for a basic guide (see the rule below): what else it rests on; printed right after the source
   note: 'One sentence about the 3D model that the reader of a guide should know.', // optional; printed after the source
   places: {                                    // where on the machine a step can point
     mainSwitch: { part: 'lowerChassisAssembly', at: [4.167, 1.02, -1.42], size: 0.5, from: [68, 14], show: 3 },
@@ -295,7 +301,7 @@ while the step is open:
 | In a step | What it does |
 |---|---|
 | `at` | names a place: the machine turns to it, and rings mark it |
-| `open: true` | the machine stands open: its lid or cover, a furnace's head or lift. Left out, it stands shut. Seven models can be opened: the thermopress 400, the SR Ivocap, the two milling machines, the resin printer, and two furnaces, the Vario 200 and the Programat P300 |
+| `open: true` | the machine stands open: its lid or cover, a furnace's head or lift. Left out, it stands shut. Eight models can be opened: the thermopress 400, the SR Ivocap, the two milling machines, the resin printer, and the three furnaces, the Vario 200, the Programat P300 and the A7+ |
 | `without` | parts of the model, by name, that are not there yet at this point of the work |
 
 A place is written in the terms of the machine's 3D model, with the numbers of
@@ -317,9 +323,9 @@ none, so theirs is written in `OPENINGS` in
 [`js/assets/registry.js`](js/assets/registry.js), on the model's own groups:
 `move(parts, open)` puts the moving part where it belongs, from 0 (shut) to 1
 (open), and `rest` says which of the two the model is drawn as. That is how
-the machine stands in the lab while no step is open. The Vario 200 is drawn
-with its lift down, so it stands open in the lab, and a step without
-`open: true` raises the lift.
+the machine stands in the lab while no step is open. The Vario 200 and the A7+
+are drawn with their lifts down, so they stand open in the lab, and a step
+without `open: true` raises the lift.
 
 The rule for this file is the rule of `knowledge.js` and one more: **a guide
 retells the maker's instructions for use**, in the maker's order and in plain
@@ -327,6 +333,21 @@ words. Nothing is added from experience or from another machine. Where the
 instructions leave something open, the guide leaves it out. A warning that
 belongs to a step is part of that step. Under every guide the panel names the
 instructions and says that a guide does not replace the manual or training.
+
+**One machine is the exception, at the lab's wish: the UPCERA A7+ has a basic
+guide.** The lab has no manual for it and UPCERA publishes none, and the lab
+asked for a guide all the same, like the Zubler's. Such an entry carries
+`basic`: one sentence that says it is a basic guide and what else it rests on.
+The panel prints it after the source on every page and puts a label "Basic
+guide" over the list of the guides and beside the guide's name over every
+step; `npm run check` names the machines that have one, and wants a `confirm`
+note that lists what the guide takes for granted. A basic guide rests on what
+there is (for the A7+: a dealer's directions for use, UPCERA's product sheet
+and photos of the console, and how furnaces of its build are worked). It names
+a key only by what is printed on it, gives no settings and no keystrokes it
+cannot show, and says where it does not know. It is not a second way of
+writing guides: a machine whose instructions can be had gets its guides from
+those, and the A7+'s are to be rewritten from its manual once the lab has one.
 
 `npm run check` builds the model and tries every step. The parts must exist; a
 step that says `open` needs a model that can be opened; and from the side a
@@ -545,7 +566,7 @@ desktop with a mouse, on a phone with a finger (390 × 844, then 360 × 640 and
 320 × 568), on a first visit, with "reduce motion" switched on, one who watches
 the opening, one who follows the machines' guides, and one with a browser from
 2021–22 — with real clicks, taps, drags and key presses, and checks what
-happens (1038 checks, about 20 minutes; `--only=entrance,older` runs some of
+happens (1180 checks, about half an hour; `--only=entrance,older` runs some of
 them). Among them: a drag turns the machine about its own middle and leaves the
 lab behind it unchanged, pixel for pixel; a machine fits the area the panel
 leaves free, in a wide window, a small one and on a phone; leaving a machine
@@ -565,8 +586,9 @@ clear of each other, the buttons of the first sheet and of the welcome guide
 stay in view on a short screen, and a model whose file never arrives leaves a
 note that fits beside the lab's name.
 
-The walk through the guides (`--only=howto`, 547 checks, about 10 minutes)
-takes every step of every guide of every machine that has them, beside the lab
+The walk through the guides (`--only=howto`, 689 checks, a little under 20
+minutes) takes every step of every guide of every machine that has them,
+beside the lab
 and on a phone. At each step, what the panel says is the text of `how-to.js`;
 the camera has gone to the part, where the part is at that step; every ring
 sits on the very point that `how-to.js` names, to a pixel and a half; a tap on
@@ -577,6 +599,9 @@ the model a second time, as its file has it, and takes the point from where
 its part lies there to where the part lies in the picture, tipped back with a
 furnace's head or carried up by its lift. Whether the machine is open it reads
 from the model's parts as well, not only from what the tour says of itself.
+A basic guide carries its label "Basic guide" over the list of the guides and
+at every step, and says after its source what else it rests on; a guide from
+the maker's instructions carries no such label.
 
 Beside that: the rings go when their part is turned out of sight, and "Show it
 on the machine again" brings them back; a lid swings open and a furnace's lift
@@ -584,16 +609,17 @@ runs shut without a jump, except with "reduce motion"; Escape and the
 browser's Back lead from a step to the list, the machine and the room; a link
 to a step is put right once its model has arrived; a machine left in the
 middle of a guide stands as it does in the lab again, whole, the thermopress
-shut and the Vario with its lift down; and on a phone a step starts at its
-first line and is read without scrolling, with "Back · Next" at the bottom
-edge of the sheet.
+shut and the Vario and the A7+ with their lifts down; and on a phone a step
+starts at its first line and is read without scrolling, with "Back · Next" at
+the bottom edge of the sheet.
 
 The first machine with guides, the thermopress, gets all of that. Of each
 other machine the walk takes every step of every guide, beside the lab and on
 a phone, and what depends on how that machine opens. What is the same for all
 of them (Escape and Back, addresses that do not exist, smaller phones, reduced
 motion) is left to the first. `--only=howto --guided=ceramic/zubler-vario-200`
-gives one machine the whole walk, alone (223 checks, about 4 minutes).
+gives one machine the whole walk, alone (about 200 checks, four to five
+minutes).
 
 It needs the tour running (`npm run serve`) and a headless Chromium, which is
 not part of the repository. Install it once, anywhere outside the repo:
@@ -718,11 +744,12 @@ Things to know — none of the existing CARNIX files have been changed:
   Both models show details that were not checked against the makers'
   documents (a type plate, the display, the capsule's label, the manometer's
   face); `npm run check` lists them.
-- Guides ("How to use it") exist for three machines: the bredent thermopress
-  400 and two of the three furnaces, the Zubler Vario 200 and the Ivoclar
-  Programat P300. Each set retells one document. The thermopress's: the part
-  of its operation manual that bredent reprints in its 2025 instructions for
-  use, which is for software 2.61 and later. The Vario's: Zubler's operating
+- Guides ("How to use it") exist for four machines: the bredent thermopress
+  400 and the three furnaces. Three sets retell one document each; the
+  fourth, the UPCERA A7+'s, is a basic guide (next point). The thermopress's:
+  the part of its operation manual that bredent reprints in its 2025
+  instructions for use, which is for software 2.61 and later. The Vario's:
+  Zubler's operating
   instructions as Zubler USA publishes them, in English, for 120 V units,
   without a date. The P300's: Ivoclar Vivadent's operating instructions of
   2006, for the first P300 and not the later P300/G2. The manuals that came
@@ -734,10 +761,29 @@ Things to know — none of the existing CARNIX files have been changed:
   describe. The P300's: the settings and test programs, calibration, the
   error messages. `npm run check` lists what is to be confirmed, and
   `docs/PLAN.md` ("The furnaces' guides") has the furnaces' list in short.
-- The third furnace, the UPCERA A7+, has no guides. No instructions for use
-  were found for it, and a guide is not written from another furnace's
-  manual. With the manual that came with the lab's unit it is one entry in
-  `js/rooms/how-to.js`.
+- **The UPCERA A7+'s guide is a basic one, and was checked against nothing
+  but photos.** The lab has no manual for the furnace, and UPCERA publishes
+  none (its download centre lists nothing under "Equipment Manual"; the one
+  download on the product page is a product sheet of two pages). The lab
+  asked for a guide all the same, like the Zubler's. What it rests on: the
+  directions for use that a dealer, Oralkart, gives for the A7+ (a dozen
+  general lines: switch on, choose the program, load, start, unload); the
+  list of features on UPCERA's product page and product sheet; UPCERA's
+  photos of the furnace, on which the console is the one the 3D model draws,
+  key for key; and the usual way a furnace with a lift is worked. What it
+  takes for granted, from the furnace's build and not from a source: that
+  the mains switch is at the back, where the model has it (no photo of the
+  back was found); that the two metal trays at the sides are for the fired
+  work to cool on; that the platform comes down again after a firing without
+  a key. "Keep it closed while not in use" is what Zubler and Ivoclar ask for
+  their furnaces, and the step says so. What it does not know and leaves
+  out: how a program is called up or written, what the two arrow keys and
+  the cogwheel key left of the display do, whether a key moves the lift, what
+  the error warnings look like, how the furnace is shut down in the evening,
+  and every temperature and time. Nobody has compared a step with the
+  furnace: the lab's technician should read the guide through, and with the
+  furnace's manual it is to be rewritten from that. The label "Basic guide"
+  and the sentence under every step say as much to a visitor.
 - The thermopress's 3D model does not draw the keypad as it is: it has the
   same fourteen keys in the same places, with other signs on some of them. A
   guide's rings go by a key's place, which was checked against bredent's
@@ -749,15 +795,19 @@ Things to know — none of the existing CARNIX files have been changed:
   key with the cogwheels. A guide's rings go by a key's place, compared with a
   photo of a P300 and one of its keypad. On the Vario nothing is drawn that
   carries the lift table, which rises on its own, and the display is one
-  fixed picture whatever a step says it shows. Neither model brings a
-  function that opens it: the tour tips the P300's head back and runs the
-  Vario's lift itself (`OPENINGS` in `js/assets/registry.js`).
+  fixed picture whatever a step says it shows. The same holds for the A7+:
+  its platform rises on its own, and its display shows the picture of
+  UPCERA's photos; how far the platform goes up was worked out from the
+  model (its dish against the ring under the chamber, which carries the seal
+  on UPCERA's photos). None of the three models brings a function that opens
+  it: the tour tips the P300's head back and runs the lifts of the Vario and
+  the A7+ itself (`OPENINGS` in `js/assets/registry.js`).
 - A step of a guide is read without scrolling where the browser leaves the
-  page 360 × 740 px or more (all 55 steps, tried on the emulated phone at
-  360 × 740, 360 × 800, 390 × 844 and 412 × 915). At 360 × 640 eleven of the
-  55 steps run a line past the sheet, and at 320 × 568 nearly all do. Those
-  are scrolled, and the guide's name goes up with the text; "Back · Next"
-  stay in view.
+  page 360 × 740 px or more (all 66 steps, tried on the emulated phone at
+  360 × 740, 360 × 800, 390 × 844 and 412 × 915). At 360 × 640 sixteen of the
+  66 steps run a line past the sheet (five of them are the A7+'s, whose texts
+  are the longest), and at 320 × 568 all but three do. Those are scrolled,
+  and the guide's name goes up with the text; "Back · Next" stay in view.
 - The SR Ivocap stands on a bench, assembled, as in its viewer. In use it
   stands in a bath of boiling water, and it needs a hydraulic press and a
   vibrator for its capsules: the room has a placeholder for a flask press and

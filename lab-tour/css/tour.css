@@ -26,6 +26,8 @@
   --planned: #6f7f9b;
   --planned-soft: #eef1f6;
   --danger: #b42318;
+  --caution: #7a4f00;
+  --caution-soft: #fff1cf;
   --radius: 18px;
   --shadow: 0 14px 36px rgba(20, 33, 61, 0.13), 0 2px 6px rgba(20, 33, 61, 0.06);
   --shadow-small: 0 4px 14px rgba(20, 33, 61, 0.12), 0 1px 3px rgba(20, 33, 61, 0.08);
@@ -1512,6 +1514,25 @@ dl {
   text-decoration-color: currentColor;
 }
 
+/* A basic guide (rooms/how-to.js: one written without the maker's instructions
+   for use) is labelled as one: under the heading of the list of the guides, and
+   beside the guide's name over every step. */
+.chip--basic {
+  background: var(--caution-soft);
+  color: var(--caution);
+}
+
+.howto-flag {
+  margin: 8px 0 0;
+}
+
+.howto-titlerow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
 /* The list of the guides */
 .howto-guides {
   margin-top: 14px;
@@ -2245,6 +2266,13 @@ button.howto-step__row:hover {
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--accent-ink);
+  }
+
+  /* The label of a basic guide is four pixels taller than this small heading.
+     It may not make the head taller: a step would then have four pixels less
+     than on the other machines, and on a small phone that is its last line. */
+  .howto-titlerow .howto-basic {
+    margin-block: -2px;
   }
 
   .howto-progress {

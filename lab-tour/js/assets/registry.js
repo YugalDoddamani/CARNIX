@@ -127,6 +127,17 @@ const OPENINGS = {
       parts.firingPedestal.position.y += 2.73 * (1 - smooth(open));
     },
   },
+  // The same build: UPCERA calls it an "automatic platform lift". Drawn with
+  // the lift down as well, as UPCERA's photos show it. Shut, the platform is up
+  // by 2.69 units: the rim of its stainless dish (top at 1.30 + 0.40) then meets
+  // the ring under the chamber (4.44 − 0.05), which on UPCERA's photos carries
+  // the seal; its white ceramic table is inside the chamber.
+  'upcera-a7-plus': {
+    rest: 1,
+    move: (parts, open) => {
+      parts.firingPedestal.position.y += 2.69 * (1 - smooth(open));
+    },
+  },
 };
 
 /** A model that returns no map of its sub-assemblies: they are the named groups directly under its root. */

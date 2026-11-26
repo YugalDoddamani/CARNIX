@@ -1,0 +1,3111 @@
+/* Lab tour category. This styles the Stage 5 placeholder, not a live 3D experience. */
+@media screen {
+.lab-board{padding:0 32px 130px;min-height:750px}
+.lab-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin:0 0 26px}
+.lab-heading h1{font:600 clamp(2rem,3vw,2.8rem)/1.08 Outfit,sans-serif;letter-spacing:-.04em;margin:8px 0}
+.lab-heading p{color:#485852;font-size:15px}
+.lab-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(250px,.8fr);gap:20px}
+.lab-feature{background:#d5f3dc;border-radius:26px;padding:36px;display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.8fr);gap:16px;min-height:360px;overflow:hidden}
+.lab-feature-copy{align-self:center;position:relative;z-index:1}
+.lab-chip{display:inline-block;border-radius:18px;background:#fff;padding:7px 11px;font:600 10px Outfit,sans-serif;color:#356347;letter-spacing:.03em}
+.lab-feature h2{font:600 clamp(2.1rem,3.5vw,3.25rem)/1.05 Outfit,sans-serif;letter-spacing:-.04em;color:#17231f;margin:20px 0 12px}
+.lab-feature p{color:#40594b;max-width:380px;line-height:1.5}
+.lab-return{display:inline-flex;align-items:center;gap:25px;margin-top:25px;padding:12px 17px;background:#17231f;color:white;text-decoration:none;border-radius:25px;font:600 13px Outfit,sans-serif}
+.lab-return:hover{background:#2a755e}
+.lab-visual{min-height:230px;position:relative;display:grid;place-items:center}
+.lab-orbit{position:absolute;border:2px dotted #82c59a;border-radius:50%;width:220px;height:220px}
+.orbit-two{width:295px;height:295px;border-color:#a6d8b3}
+.lab-cube{width:124px;height:124px;border-radius:50%;display:grid;place-items:center;background:#fff;box-shadow:0 12px 30px #477a5620}
+.lab-cube svg{width:78px;height:78px;stroke:#25754d;stroke-width:3;fill:none}
+.lab-visual-label{position:absolute;bottom:15px;padding:7px 10px;border-radius:20px;background:#fff;font:600 10px Outfit,sans-serif;color:#2f6747}
+.lab-aside{background:#e9eeeb;border-radius:24px;padding:28px;align-self:start}
+.lab-aside h2{font:600 25px/1.12 Outfit,sans-serif;letter-spacing:-.03em;margin:13px 0}
+.lab-aside p{font-size:15px;color:#485852;line-height:1.5}
+.lab-note{display:flex;gap:12px;background:#fff;border-radius:18px;padding:16px;margin:22px 0}
+.lab-note span{font-size:20px;color:#2a755e}
+.lab-note p{font-size:13px}
+.lab-aside>a{font:600 13px Outfit,sans-serif;color:#205138;text-decoration:none}
+.lab-aside>a span{margin-left:12px}
+@media(max-width:800px){.lab-layout{grid-template-columns:1fr}.lab-feature{min-height:320px}.lab-board{padding:0 20px 125px}}
+@media(max-width:550px){.lab-heading{align-items:start}.lab-heading .heading-label{display:none}.lab-feature{grid-template-columns:1fr;padding:26px;gap:0}.lab-feature h2{font-size:2.3rem}.lab-visual{min-height:195px}.lab-orbit{width:150px;height:150px}.orbit-two{width:205px;height:205px}.lab-cube{width:100px;height:100px}.lab-cube svg{width:64px;height:64px}.lab-visual-label{bottom:2px}.lab-aside{padding:24px}}
+}
+
+
+/* Interactive tour: isolated to the tour-view document. */
+@font-face{font-family:Outfit;src:url('fonts/Outfit-Semibold.ttf') format('truetype');font-weight:600 800;font-display:swap}
+@font-face{font-family:SourceSans;src:url('fonts/SourceSans-Regular.ttf') format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:SourceSans;src:url('fonts/SourceSans-Semibold.ttf') format('truetype');font-weight:600 800;font-display:swap}
+/* Lab Tour — a light, airy look of its own (the CARNIX dashboard is dark).
+   System fonts only: nothing is fetched from another site.
+
+   Contents
+     1. Tokens              6. Panel: the three views
+     2. Frame               7. Navigation bar
+     3. Stage               8. Welcome guide
+     4. Labels in the lab   9. Phones and narrow windows
+     5. Panel: shell       10. Arriving (the opening)
+                           11. Touch, motion                                 */
+
+/* ── 1. Tokens ─────────────────────────────────────────────────────────── */
+
+html.tour-view{
+  --bg-top: #f5f6f4;
+  --bg-bottom: #e4efea;
+  --ink: #17231f;
+  --ink-soft: #485852;
+  --ink-faint: #8a94a9;
+  --line: #dde4ef;
+  --card: rgba(255, 255, 255, 0.93);
+  --surface: #f0f3f9;
+  --accent: #2a755e;
+  --accent-ink: #205138;
+  --accent-soft: #d8f2df;
+  --planned: #6f7f9b;
+  --planned-soft: #eef1f6;
+  --danger: #b42318;
+  --caution: #7a4f00;
+  --caution-soft: #fff1cf;
+  --radius: 18px;
+  --shadow: 0 14px 36px rgba(20, 33, 61, 0.13), 0 2px 6px rgba(20, 33, 61, 0.06);
+  --shadow-small: 0 4px 14px rgba(20, 33, 61, 0.12), 0 1px 3px rgba(20, 33, 61, 0.08);
+  --gap: 16px;
+  --panel-w: clamp(372px, 31vw, 430px);
+  /* The page behind everything. It has a name because the stills that bring the
+     lab in (section 10) carry the slice of it that lies behind the stage. */
+  --page-background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+
+  /* Motion. One "settle" curve for things that arrive, one with a little
+     overshoot for things that are picked (the highlight under a tab). */
+  --settle: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.42, 0.64, 1);
+
+  font-family: SourceSans, sans-serif;
+  color: var(--ink);
+}
+
+
+html.tour-view *,html.tour-view *::before,html.tour-view *::after{
+  box-sizing: border-box;
+}
+
+
+html.tour-view,html.tour-view body{
+  height: 100%;
+  margin: 0;
+}
+
+
+html.tour-view body{
+  overflow: hidden;
+  background: var(--page-background);
+  font-size: 15px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+
+html.tour-view button{
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+html.tour-view h1,html.tour-view h2,html.tour-view p,html.tour-view ol,html.tour-view ul,html.tour-view dl{
+  margin: 0;
+}
+
+
+html.tour-view :focus-visible{
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+
+html.tour-view .visually-hidden{
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+
+/* ── 2. Frame ──────────────────────────────────────────────────────────── */
+
+html.tour-view .app{
+  position: relative;
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto; /* top bar · lab · navigation bar (phones) */
+}
+
+
+html.tour-view .topbar{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+  animation: fade-in 0.3s var(--settle) both; /* the page's own entrance; the lab's is section 10 */
+}
+
+
+html.tour-view .brand{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 12px;
+}
+
+
+html.tour-view .brand__mark{
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--accent);
+  color: #fff;
+  transition: transform 0.4s var(--spring);
+}
+
+
+html.tour-view .brand:hover .brand__mark{
+  transform: rotate(-8deg) scale(1.06);
+}
+
+
+html.tour-view .brand__name{
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+
+html.tour-view .brand__tagline{
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .topbar__status{
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+
+html.tour-view .topbar__status.is-error{
+  color: var(--danger);
+  border-color: currentColor;
+}
+
+
+html.tour-view .topbar__guide{
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 13.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, transform 0.16s var(--settle);
+}
+
+
+html.tour-view .topbar__guide:hover{
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+
+html.tour-view .topbar__guide:active{
+  transform: scale(0.96);
+}
+
+
+html.tour-view .topbar__guide svg{
+  transition: transform 0.5s var(--spring);
+}
+
+
+html.tour-view .topbar__guide:hover svg{
+  transform: rotate(14deg);
+}
+
+
+/* ── 3. Stage: canvas, labels, floating controls ───────────────────────── */
+
+html.tour-view .stage{
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  --free-right: 0px;
+  --free-bottom: 0px;
+}
+
+
+html.tour-view .stage canvas{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+/* A machine on its own is there to be turned. */
+html.tour-view[data-mode="item"] .stage canvas{
+  cursor: grab;
+}
+
+
+html.tour-view[data-mode="item"] .stage canvas:active{
+  cursor: grabbing;
+}
+
+
+/* Stacking inside the stage: canvas 0 · stills of the canvas 0 (they come after
+   it, so they lie over it) · labels 1 · controls 2 · panel 3 */
+html.tour-view .stage__controls{
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow-small);
+  overflow: hidden;
+}
+
+
+html.tour-view .stage__controls button{
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+
+html.tour-view .stage__controls button + button{
+  border-top: 1px solid var(--line);
+}
+
+
+html.tour-view .stage__controls button:hover{
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+
+html.tour-view .stage__controls button:active svg{
+  transform: scale(0.82);
+}
+
+
+html.tour-view .stage__controls svg{
+  transition: transform 0.16s var(--settle);
+}
+
+
+html.tour-view .legend{
+  position: absolute;
+  left: 20px;
+  top: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow-small);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  transition: opacity 0.3s, visibility 0s;
+}
+
+
+/* With one machine on stage there is nothing left for the legend to explain. */
+html.tour-view[data-mode="item"] .legend{
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0s 0.3s;
+}
+
+
+html.tour-view .legend span{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+
+html.tour-view .legend i{
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+
+html.tour-view .legend .legend__built{
+  background: var(--accent);
+}
+
+
+html.tour-view .legend .legend__planned{
+  background: rgba(59, 130, 246, 0.2);
+  border: 1.5px solid var(--accent);
+}
+
+
+/* "Drag to turn": centred under the machine, in the part of the stage that is
+   not covered by the panel or the navigation bar. */
+html.tour-view .hint{
+  position: absolute;
+  left: calc((100% - var(--free-right)) / 2);
+  bottom: calc(var(--free-bottom) + 14px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 11px;
+  border-radius: 999px;
+  background: rgba(20, 33, 61, 0.86);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 10px);
+  transition: opacity 0.35s, transform 0.5s var(--settle);
+}
+
+
+html.tour-view .hint[hidden]{
+  display: none;
+}
+
+
+html.tour-view .hint.is-shown{
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+
+html.tour-view .hint svg{
+  animation: turn 2.8s var(--settle) infinite;
+}
+
+
+html.tour-view .fatal{
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  padding: 24px;
+  text-align: center;
+}
+
+
+html.tour-view .fatal p{
+  color: var(--ink-soft);
+}
+
+
+/* ── 4. Labels pinned to the lab ───────────────────────────────────────── */
+
+html.tour-view .label-layer{
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+
+html.tour-view .label{
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  /* --label-delay: main.js sets it when labels are asked for while the lab is
+     still faded (coming back from a machine); they wait until it has returned. */
+  transition: opacity 0.35s ease var(--label-delay, 0s), visibility 0s var(--label-delay, 0s);
+}
+
+
+html.tour-view .label.is-hidden,html.tour-view .label.is-offscreen{
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0s 0.2s;
+}
+
+
+/* Room name floating above each room */
+html.tour-view .room-pill{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px 7px 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-small);
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.35s ease var(--label-delay, 0s), visibility 0s var(--label-delay, 0s), border-color 0.2s, box-shadow 0.2s;
+}
+
+
+html.tour-view .room-pill::after{
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 11px;
+  height: 11px;
+  margin-left: -5.5px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
+  transition: border-color 0.2s;
+}
+
+
+html.tour-view .room-pill__icon{
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  transition: transform 0.4s var(--spring);
+}
+
+
+html.tour-view .room-pill__text strong{
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+
+html.tour-view .room-pill__text small{
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .room-pill:hover,html.tour-view .room-pill.is-hover{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.18), var(--shadow-small);
+}
+
+
+html.tour-view .room-pill:hover::after,html.tour-view .room-pill.is-hover::after{
+  border-color: var(--accent);
+}
+
+
+html.tour-view .room-pill:hover .room-pill__icon,html.tour-view .room-pill.is-hover .room-pill__icon{
+  transform: scale(1.1) rotate(-6deg);
+}
+
+
+html.tour-view .room-pill:active .room-pill__icon{
+  transform: scale(0.94);
+}
+
+
+/* Numbered marker above each machine */
+html.tour-view .hotspot{
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+
+html.tour-view .hotspot__dot{
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: var(--shadow-small);
+  transition: transform 0.35s var(--spring);
+}
+
+
+/* A ring that keeps widening and fading: "this can be tapped". */
+html.tour-view .hotspot--built .hotspot__dot::after{
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  animation: ping 2.6s var(--settle) infinite;
+  animation-delay: calc(var(--i, 0) * 0.3s);
+}
+
+
+html.tour-view .hotspot--planned .hotspot__dot{
+  background: #fff;
+  border-color: var(--planned);
+  border-style: dashed;
+  color: var(--planned);
+}
+
+
+/* Markers pop in one after the other when a room opens. */
+html.tour-view .label.is-hidden .hotspot__dot{
+  transform: scale(0.3);
+}
+
+
+html.tour-view .hotspot:not(.is-hidden) .hotspot__dot{
+  transition-delay: calc(var(--label-delay, 0s) + 0.25s + var(--i, 0) * 0.05s);
+}
+
+
+html.tour-view .hotspot__name{
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.25s var(--settle);
+}
+
+
+html.tour-view .hotspot:hover,html.tour-view .hotspot.is-hover,html.tour-view .hotspot:focus-visible{
+  z-index: 2;
+}
+
+
+html.tour-view .hotspot:hover .hotspot__name,html.tour-view .hotspot.is-hover .hotspot__name,html.tour-view .hotspot:focus-visible .hotspot__name{
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+
+html.tour-view .hotspot:hover .hotspot__dot,html.tour-view .hotspot.is-hover .hotspot__dot{
+  transform: scale(1.18);
+  transition-delay: 0s;
+}
+
+
+html.tour-view .hotspot:active .hotspot__dot{
+  transform: scale(0.92);
+  transition-delay: 0s;
+}
+
+
+/* Rings on a machine: the spots that a step of a guide is about. marker.js
+   gives each its place and its size; they take no taps, so a finger that
+   lands on one turns the machine under it. The ring itself is drawn by
+   ::before, because the element's own transform is its place on screen. */
+html.tour-view .marker-layer{
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+
+/* The part is turned away from the visitor: no ring over the wrong side. */
+html.tour-view .marker-layer.is-away{
+  opacity: 0;
+}
+
+
+html.tour-view .marker{
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+}
+
+
+html.tour-view .marker::before,html.tour-view .marker::after{
+  content: "";
+  position: absolute;
+  left: calc(var(--size, 30px) / -2);
+  top: calc(var(--size, 30px) / -2);
+  width: var(--size, 30px);
+  height: var(--size, 30px);
+  border-radius: 50%;
+}
+
+
+/* A line and no fill: a filled ring hid the sign on the key under it. The
+   white on either side keeps the line in sight on a dark part and on a light
+   one. */
+html.tour-view .marker::before{
+  border: 2.5px solid var(--accent);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9), inset 0 0 0 1.5px rgba(255, 255, 255, 0.9), 0 2px 8px rgba(20, 33, 61, 0.22);
+  animation: marker-in 0.45s var(--settle) both;
+  animation-delay: calc(0.25s + var(--i, 0) * 0.08s);
+}
+
+
+/* It pulses once when its step opens, to catch the eye, then keeps still. */
+html.tour-view .marker::after{
+  border: 2px solid var(--accent);
+  opacity: 0;
+  animation: marker-ping 1.1s ease-out both;
+  animation-delay: calc(0.65s + var(--i, 0) * 0.08s);
+}
+
+
+/* ── 5. Panel: the shell ───────────────────────────────────────────────── */
+
+html.tour-view .panel{
+  position: absolute;
+  top: 8px;
+  right: 20px;
+  z-index: 3;
+  width: var(--panel-w);
+  max-height: calc(100% - 28px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+
+html.tour-view .panel:focus{
+  outline: none; /* focused by script after navigating, never by Tab */
+}
+
+
+/* Nothing to show yet (still starting) or at all (the tour could not start):
+   no empty card, and no controls that would do nothing. */
+html.tour-view .panel:empty,html.tour-view[data-tour="failed"] .stage__controls,html.tour-view[data-tour="failed"] .legend,html.tour-view[data-tour="failed"] .dock,html.tour-view[data-tour="failed"] .hint,html.tour-view[data-tour="failed"] .topbar__guide{
+  display: none;
+}
+
+
+/* Each time the panel describes a new place, its parts rise in one by one. */
+html.tour-view .panel.is-entering > *{
+  animation: rise 0.5s var(--settle) both;
+}
+
+
+html.tour-view .panel.is-entering > :nth-child(2){
+  animation-delay: 0.04s;
+}
+
+
+html.tour-view .panel.is-entering > :nth-child(3){
+  animation-delay: 0.08s;
+}
+
+
+html.tour-view .panel.is-entering > :nth-child(4){
+  animation-delay: 0.12s;
+}
+
+
+html.tour-view .panel.is-entering > :nth-child(n + 5){
+  animation-delay: 0.16s;
+}
+
+
+/* The sticky "next room" bar must not ride up with the rest; nor do the head
+   and the "Back · Next" of a guide (section 6). */
+html.tour-view .panel.is-entering > .route-nav,html.tour-view .panel.is-entering > .howto-head,html.tour-view .panel.is-entering > .howto-nav{
+  animation-name: fade-in;
+}
+
+
+html.tour-view .panel__header h1{
+  margin: 2px 0 0;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+
+html.tour-view .panel__header--tile{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+
+html.tour-view .tile{
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(140deg, var(--accent), #5a8bff);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(47, 107, 255, 0.28);
+}
+
+
+html.tour-view .panel.is-entering .tile{
+  animation: pop 0.55s var(--spring) 0.08s both;
+}
+
+
+html.tour-view .tile svg{
+  width: 24px;
+  height: 24px;
+}
+
+
+html.tour-view .eyebrow{
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+
+html.tour-view .lead{
+  margin-top: 12px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+
+html.tour-view .body{
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .section-title{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .count{
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 11.5px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+
+html.tour-view .button{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.16s var(--settle), box-shadow 0.2s, background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+
+html.tour-view .button:hover{
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+
+html.tour-view .button:active{
+  transform: scale(0.97);
+}
+
+
+html.tour-view .button svg{
+  flex: none;
+  transition: transform 0.3s var(--settle);
+}
+
+
+html.tour-view .button--primary{
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.28);
+}
+
+
+html.tour-view .button--primary:hover{
+  border-color: var(--accent-ink);
+  background: var(--accent-ink);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(47, 107, 255, 0.36);
+}
+
+
+html.tour-view .button--primary:hover svg{
+  transform: translateX(3px);
+}
+
+
+html.tour-view .button--quiet{
+  padding: 0 12px 0 6px;
+  border-color: transparent;
+  background: none;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .button--quiet:hover{
+  border-color: transparent;
+  background: var(--accent-soft);
+}
+
+
+html.tour-view .button--quiet:hover svg{
+  transform: translateX(-3px);
+}
+
+
+html.tour-view .actions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+
+html.tour-view .actions .button--primary{
+  flex: 1 1 auto;
+}
+
+
+/* ── 6. Panel: the three views ─────────────────────────────────────────── */
+
+/* Lists of rooms and of machines */
+html.tour-view .list{
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+
+html.tour-view .row{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.16s var(--settle);
+}
+
+
+html.tour-view .row:hover{
+  background: var(--accent-soft);
+  border-color: rgba(47, 107, 255, 0.25);
+}
+
+
+html.tour-view .row:active{
+  transform: scale(0.985);
+}
+
+
+html.tour-view .row__icon{
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  transition: background 0.2s, color 0.2s, transform 0.4s var(--spring);
+}
+
+
+html.tour-view .row:hover .row__icon{
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.06) rotate(-6deg);
+}
+
+
+html.tour-view .row__number{
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  transition: transform 0.35s var(--spring);
+}
+
+
+html.tour-view .row:hover .row__number{
+  transform: scale(1.12);
+}
+
+
+html.tour-view .row__number--planned{
+  background: #fff;
+  border: 2px dashed var(--planned);
+  color: var(--planned);
+}
+
+
+html.tour-view .row__text{
+  flex: 1;
+  min-width: 0;
+}
+
+
+html.tour-view .row__text strong{
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+
+html.tour-view .row__text small{
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .row__step{
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .row__chevron{
+  flex: none;
+  display: grid;
+  color: var(--ink-faint);
+  transition: transform 0.25s var(--settle), color 0.2s;
+}
+
+
+html.tour-view .row:hover .row__chevron{
+  color: var(--accent-ink);
+  transform: translateX(3px);
+}
+
+
+html.tour-view .chip{
+  display: inline-block;
+  flex: none;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+
+html.tour-view .chip--planned{
+  background: var(--planned-soft);
+  color: var(--planned);
+}
+
+
+/* "Back · Next room", always in reach at the bottom of a room's panel */
+html.tour-view .panel[data-mode="room"]{
+  padding-bottom: 0;
+}
+
+
+html.tour-view .route-nav{
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 12px -20px 0;
+  padding: 12px 20px 16px;
+  background: linear-gradient(to top, #fff 62%, rgba(255, 255, 255, 0));
+}
+
+
+/* A machine: back to the room, and step to its neighbours */
+html.tour-view .panel__top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -6px 0 12px;
+}
+
+
+html.tour-view .back{
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  margin-left: -8px;
+  padding: 6px 12px 6px 4px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+
+html.tour-view .back span{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+html.tour-view .back:hover{
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+
+html.tour-view .back svg{
+  flex: none;
+  transition: transform 0.25s var(--settle);
+}
+
+
+html.tour-view .back:hover svg{
+  transform: translateX(-3px);
+}
+
+
+html.tour-view .stepper{
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+  font-size: 12.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .stepper span{
+  min-width: 34px;
+  text-align: center;
+}
+
+
+html.tour-view .stepper button{
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, transform 0.16s var(--settle);
+}
+
+
+html.tour-view .stepper button:hover{
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+
+html.tour-view .stepper button:active{
+  transform: scale(0.9);
+}
+
+
+/* The pills: the machine itself · About · Features · Capabilities */
+html.tour-view .tabs{
+  position: relative;
+  display: flex;
+  gap: 2px;
+  margin-top: 14px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--surface);
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-padding: 0 12px;
+}
+
+
+html.tour-view .tabs::-webkit-scrollbar{
+  display: none;
+}
+
+
+/* More pills than fit: they scroll sideways, and the edge that hides some fades out. */
+html.tour-view .tabs.has-more-after{
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+}
+
+
+html.tour-view .tabs.has-more-before{
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 30px), transparent);
+}
+
+
+html.tour-view .tabs.has-more-before.has-more-after{
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 30px, #000 calc(100% - 30px), transparent);
+}
+
+
+html.tour-view .tabs__thumb{
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: var(--thumb-w, 0);
+  border-radius: 10px;
+  background: var(--accent);
+  box-shadow: 0 3px 10px rgba(47, 107, 255, 0.35);
+  transform: translateX(var(--thumb-x, 0));
+}
+
+
+/* Only once a pill has been picked: the thumb must not slide in on arrival. */
+html.tour-view .tabs.is-moving .tabs__thumb{
+  transition: transform 0.42s var(--spring), width 0.35s var(--settle);
+}
+
+
+html.tour-view .tabs [role="tab"]{
+  position: relative;
+  z-index: 1;
+  flex: 1 0 auto;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+
+
+html.tour-view .tabs [role="tab"]:hover{
+  color: var(--ink);
+}
+
+
+html.tour-view .tabs [role="tab"][aria-selected="true"]{
+  color: #fff;
+}
+
+
+html.tour-view .tabs [role="tab"]:focus-visible{
+  outline-offset: -3px;
+}
+
+
+html.tour-view .tabpanel.is-entering{
+  animation: slide-from-right 0.36s var(--settle) both;
+}
+
+
+html.tour-view .tabpanel.is-entering-back{
+  animation: slide-from-left 0.36s var(--settle) both;
+}
+
+
+/* The machine itself */
+html.tour-view .facts{
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+
+html.tour-view .facts div{
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+
+html.tour-view .facts dt{
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+
+html.tour-view .facts dd{
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: right;
+}
+
+
+html.tour-view .note{
+  margin-top: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: var(--planned-soft);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .note--error{
+  background: #fef3f2;
+  color: var(--danger);
+}
+
+
+html.tour-view .slider{
+  display: block;
+  margin-top: 14px;
+  padding: 12px 14px 10px;
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+
+html.tour-view .slider__label{
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+
+html.tour-view .slider output{
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+
+html.tour-view .slider input{
+  display: block;
+  width: 100%;
+  height: 28px;
+  margin: 4px 0 0;
+  accent-color: var(--accent);
+  cursor: grab;
+}
+
+
+html.tour-view .slider input:active{
+  cursor: grabbing;
+}
+
+
+html.tour-view .slider__ends{
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+
+
+/* About */
+html.tour-view .brand-card{
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+
+html.tour-view .brand-card__label{
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .brand-card__name{
+  margin-top: 1px;
+  font-size: 23px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+
+html.tour-view .brand-card__facts{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .brand-card__facts svg{
+  flex: none;
+  color: var(--accent-ink);
+}
+
+
+/* Features: the key figures, the first one large */
+html.tour-view .specs{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: dense;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+
+html.tour-view .spec{
+  display: flex;
+  flex-direction: column-reverse; /* the figure above its name */
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+
+html.tour-view .spec dd{
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+
+html.tour-view .spec dt{
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .spec dt small{
+  font-size: inherit;
+  color: var(--ink-faint);
+}
+
+
+html.tour-view .spec--wide,html.tour-view .spec--lead{
+  grid-column: 1 / -1;
+}
+
+
+html.tour-view .spec--lead{
+  padding: 14px 16px;
+  background: linear-gradient(135deg, var(--accent), #5a8bff);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(47, 107, 255, 0.25);
+}
+
+
+html.tour-view .spec--lead dd{
+  font-size: 27px;
+  letter-spacing: -0.02em;
+}
+
+
+html.tour-view .spec--lead dt,html.tour-view .spec--lead dt small{
+  color: rgba(255, 255, 255, 0.86);
+}
+
+
+html.tour-view .footnote{
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .sources{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+
+html.tour-view .sources a{
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink-soft);
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+
+html.tour-view .sources a:hover{
+  color: var(--accent-ink);
+  text-decoration-color: currentColor;
+}
+
+
+/* Capabilities */
+html.tour-view .points{
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 0;
+  list-style: none;
+}
+
+
+html.tour-view .points li{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+
+html.tour-view .points__mark{
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 0.5px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+
+/* Figures and points arrive one after the other when their pill is picked. */
+html.tour-view .tabpanel.is-entering .spec,html.tour-view .tabpanel.is-entering-back .spec,html.tour-view .tabpanel.is-entering .points li,html.tour-view .tabpanel.is-entering-back .points li{
+  animation: rise 0.45s var(--settle) both;
+  animation-delay: calc(0.06s + var(--i, 0) * 0.04s);
+}
+
+
+html.tour-view .tabpanel.is-entering .points__mark,html.tour-view .tabpanel.is-entering-back .points__mark{
+  animation: pop 0.5s var(--spring) both;
+  animation-delay: calc(0.14s + var(--i, 0) * 0.04s);
+}
+
+
+/* "How to use it": a machine's guides (rooms/how-to.js, ui/panel.js) */
+
+/* The way in: a card on the machine's first pill, above its description. */
+html.tour-view .howto-entry{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(47, 107, 255, 0.22);
+  border-radius: 14px;
+  background: var(--accent-soft);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.2s, transform 0.16s var(--settle);
+}
+
+
+html.tour-view .howto-entry:hover{
+  border-color: var(--accent);
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.16);
+}
+
+
+html.tour-view .howto-entry:active{
+  transform: scale(0.985);
+}
+
+
+html.tour-view .howto-entry__icon{
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--accent), #5a8bff);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(47, 107, 255, 0.28);
+}
+
+
+/* A filled triangle, where the other icons are lines. */
+html.tour-view .howto-entry__icon svg{
+  fill: currentColor;
+}
+
+
+html.tour-view .howto-entry__text{
+  flex: 1;
+  min-width: 0;
+}
+
+
+html.tour-view .howto-entry strong{
+  display: block;
+  font-size: 14.5px;
+  font-weight: 650;
+  line-height: 1.25;
+  color: var(--accent-ink);
+}
+
+
+html.tour-view .howto-entry small{
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .howto-entry .row__chevron{
+  color: var(--accent-ink);
+}
+
+
+html.tour-view .howto-entry:hover .row__chevron{
+  transform: translateX(3px);
+}
+
+
+/* Under the guides: where they come from, and that they are no manual. */
+html.tour-view .howto-note{
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+
+html.tour-view .howto-note a{
+  color: var(--ink-soft);
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+
+html.tour-view .howto-note a:hover{
+  color: var(--accent-ink);
+  text-decoration-color: currentColor;
+}
+
+
+/* A basic guide (rooms/how-to.js: one written without the maker's instructions
+   for use) is labelled as one: under the heading of the list of the guides, and
+   beside the guide's name over every step. */
+html.tour-view .chip--basic{
+  background: var(--caution-soft);
+  color: var(--caution);
+}
+
+
+html.tour-view .howto-flag{
+  margin: 8px 0 0;
+}
+
+
+html.tour-view .howto-titlerow{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+
+/* The list of the guides */
+html.tour-view .howto-guides{
+  margin-top: 14px;
+}
+
+
+/* A guide. Beside the lab all its steps are listed and the open one is
+   unfolded. Its head and "Back · Next" stay put, and the steps scroll between
+   the two: where one is ("Step 9 of 13"), the way back and the way on are
+   always in sight. (On a phone there is one step at a time: section 9.)
+   A step that the Tab key lands on is brought out from under the head and the
+   bar, not just into the panel: that is what scroll-padding is for. panel.js
+   measures the head, since a long title takes two lines. */
+html.tour-view .panel[data-howto="guide"]{
+  padding-bottom: 0;
+  scroll-padding: var(--howto-head, 128px) 0 72px;
+}
+
+
+/* The head reaches over the panel's padding to the very top (a sticky box
+   otherwise stops at the padding, and the steps would show above it). */
+html.tour-view .howto-head{
+  position: sticky;
+  top: -20px;
+  z-index: 1;
+  margin: -20px -20px 0;
+  padding: 20px 20px 10px;
+  background: linear-gradient(to bottom, #fff 88%, rgba(255, 255, 255, 0));
+}
+
+
+html.tour-view .howto-count{
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .howto-title{
+  margin: 2px 0 0;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+
+/* One dash per step, filled up to the open one. */
+html.tour-view .howto-progress{
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+
+html.tour-view .howto-progress i{
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+
+html.tour-view .howto-progress i.is-done{
+  background: var(--accent);
+}
+
+
+html.tour-view .howto-steps{
+  display: grid;
+  gap: 2px;
+  margin: 0 -8px;
+  padding: 0;
+  list-style: none;
+}
+
+
+html.tour-view .howto-step{
+  border-radius: 12px;
+}
+
+
+html.tour-view .howto-step.is-current{
+  background: var(--accent-soft);
+}
+
+
+html.tour-view .howto-step__row{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  text-align: left;
+}
+
+
+html.tour-view button.howto-step__row{
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+
+html.tour-view button.howto-step__row:hover{
+  background: var(--accent-soft);
+}
+
+
+html.tour-view .howto-step__number{
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .howto-step.is-current .howto-step__number{
+  background: var(--accent);
+  color: #fff;
+}
+
+
+html.tour-view .howto-step__title{
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+
+html.tour-view .howto-step__text{
+  padding: 0 12px 12px 40px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+
+/* "Show it on the machine again": brings the step's view back after the
+   visitor has turned the machine or zoomed. */
+html.tour-view .howto-aim{
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--accent-ink);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, box-shadow 0.2s, transform 0.16s var(--settle);
+}
+
+
+html.tour-view .howto-aim:hover{
+  background: rgba(47, 107, 255, 0.16);
+}
+
+
+html.tour-view .howto-aim:active{
+  transform: scale(0.92);
+}
+
+
+/* The part is turned out of sight and its rings are gone (main.js): now the
+   button is what the visitor needs, and it says so. */
+html.tour-view .panel[data-mark-away] .howto-aim{
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(47, 107, 255, 0.35);
+}
+
+
+/* "Back · Next", always in reach at the bottom of a guide, like the bar at
+   the bottom of a room's panel. The list of steps scrolls under it all the
+   time, so it is white up to the top of its buttons: no step's name shows
+   through behind "Back". */
+html.tour-view .howto-nav{
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 12px -20px 0;
+  padding: 12px 20px 16px;
+  background: linear-gradient(to top, #fff 84%, rgba(255, 255, 255, 0));
+}
+
+
+/* ── 7. Navigation bar ─────────────────────────────────────────────────── */
+
+/* Wide screens: a bar floating over the lab, centred in the part of the
+   window the panel leaves free. (Phones: section 9.) */
+html.tour-view .dock{
+  position: absolute;
+  left: calc((100% - var(--panel-w) - 20px) / 2);
+  bottom: 18px;
+  z-index: 4;
+  display: flex;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  transform: translateX(-50%);
+}
+
+
+html.tour-view .dock__highlight{
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--w, 0);
+  height: var(--h, 0);
+  border-radius: 14px;
+  background: var(--accent);
+  box-shadow: 0 6px 16px rgba(47, 107, 255, 0.35);
+  transform: translate(var(--x, 0), var(--y, 0));
+}
+
+
+html.tour-view .dock.is-ready .dock__highlight{
+  transition: transform 0.5s var(--spring), width 0.4s var(--settle);
+}
+
+
+html.tour-view .dock__item{
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 14px 0 12px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+
+
+html.tour-view .dock__item:hover{
+  color: var(--ink);
+}
+
+
+html.tour-view .dock__item[aria-current]{
+  color: #fff;
+}
+
+
+html.tour-view .dock__icon{
+  display: grid;
+  transition: transform 0.35s var(--spring);
+}
+
+
+html.tour-view .dock__icon svg{
+  width: 20px;
+  height: 20px;
+}
+
+
+html.tour-view .dock__item:hover .dock__icon{
+  transform: translateY(-2px);
+}
+
+
+html.tour-view .dock__item:active .dock__icon{
+  transform: scale(0.86);
+}
+
+
+html.tour-view .dock__item[aria-current] .dock__icon{
+  animation: pop 0.5s var(--spring);
+}
+
+
+html.tour-view .dock__label{
+  margin-left: 8px;
+}
+
+
+/* Not enough room for seven names: only the current stop keeps its name. */
+@media (min-width: 900px) and (max-width: 1279.98px) {
+  html.tour-view .dock__item{
+    padding: 0 12px;
+  }
+
+
+  html.tour-view .dock__label{
+    max-width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-width 0.4s var(--settle), margin-left 0.4s var(--settle), opacity 0.25s;
+  }
+
+
+  html.tour-view .dock__item[aria-current] .dock__label{
+    max-width: 96px;
+    margin-left: 8px;
+    opacity: 1;
+  }
+
+}
+
+
+/* ── 8. Welcome guide ──────────────────────────────────────────────────── */
+
+html.tour-view .guide{
+  width: min(468px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  background: #fff;
+  color: inherit;
+  box-shadow: 0 30px 80px rgba(20, 33, 61, 0.32);
+  overflow: auto;
+}
+
+
+html.tour-view .guide::backdrop{
+  background: rgba(20, 33, 61, 0.36);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+
+html.tour-view .guide[open]{
+  animation: guide-in 0.5s var(--settle) both;
+}
+
+
+html.tour-view .guide[open]::backdrop{
+  animation: fade-in 0.35s ease both;
+}
+
+
+html.tour-view .guide.is-closing{
+  animation: guide-out 0.17s ease-in both;
+}
+
+
+html.tour-view .guide.is-closing::backdrop{
+  animation: fade-out 0.17s ease both;
+}
+
+
+html.tour-view .guide__card{
+  position: relative;
+  padding: 28px 26px 20px;
+}
+
+
+/* Focus starts on the card (so a screen reader reads the title), not on a
+   button that would then wear a ring nobody asked for. */
+html.tour-view .guide__card:focus{
+  outline: none;
+}
+
+
+html.tour-view .guide__close{
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, transform 0.3s var(--spring);
+}
+
+
+html.tour-view .guide__close:hover{
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  transform: rotate(90deg);
+}
+
+
+html.tour-view .guide h2{
+  margin: 4px 44px 0 0;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+
+html.tour-view .guide .lead{
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .guide__steps{
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 0;
+  list-style: none;
+}
+
+
+html.tour-view .guide__steps li{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--surface);
+  animation: rise 0.5s var(--settle) both;
+  animation-delay: calc(0.18s + var(--i, 0) * 0.08s);
+}
+
+
+html.tour-view .guide__steps strong{
+  display: block;
+  font-size: 14.5px;
+}
+
+
+html.tour-view .guide__steps small{
+  display: block;
+  margin-top: 1px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+
+html.tour-view .guide__icon{
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: #fff;
+  color: var(--accent-ink);
+  box-shadow: var(--shadow-small);
+}
+
+
+/* Each step's icon acts out its step, gently and out of step with the others. */
+html.tour-view .guide__icon--1 svg{
+  animation: nudge 3.2s var(--settle) infinite;
+}
+
+
+html.tour-view .guide__icon--2 svg{
+  animation: tap 3.2s var(--settle) 1s infinite;
+  transform-origin: 50% 90%;
+}
+
+
+html.tour-view .guide__icon--3 svg{
+  animation: nudge 3.2s var(--settle) 2s infinite;
+}
+
+
+html.tour-view .guide__actions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+
+html.tour-view .guide__actions .button{
+  flex: 1 1 auto;
+  min-height: 46px;
+}
+
+
+html.tour-view .guide__hint{
+  margin-top: 12px;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--ink-faint);
+}
+
+
+/* ── 9. Phones and narrow windows ──────────────────────────────────────── */
+/* The panel becomes a sheet under the lab; the navigation bar a tab bar along
+   the bottom edge. */
+
+@media (max-width: 899.98px) {
+  /* Type. The 12 to 14 px that read well on a desk proved too small on a phone,
+     so the many sizes of sections 2 to 8 give way to one scale of five here.
+     To set everything on a phone larger or smaller, change these numbers.
+     Headings and figures keep their size: they were large enough.
+     (npm run e2e holds the tour to two floors: on a phone no text is under
+     12 px, and what is read is not under 16.) */
+  html.tour-view{
+    --type-read: 16px; /* what is read: descriptions, points, the names in a list */
+    --type-control: 15px; /* what is tapped or looked up: buttons, pills, facts */
+    --type-aside: 14px; /* what goes with something larger: kinds, notes, hints */
+    --type-label: 13px; /* labels, sources, the number in a marker */
+    --type-small: 12.5px; /* capitals and counts: the smallest text in the panel */
+    /* The seven stops of the bar share the width of the screen. 12 px is all
+       that fits on a phone 360 px wide; a narrower phone gets what fits. */
+    --type-bar: clamp(10.5px, 3.34vw, 12px);
+  }
+
+
+  html.tour-view .lead,html.tour-view .body,html.tour-view .points li,html.tour-view .row__text strong,html.tour-view .howto-step__text,html.tour-view .guide__steps strong{
+    font-size: var(--type-read);
+  }
+
+
+  html.tour-view .button,html.tour-view .back,html.tour-view .tabs [role="tab"],html.tour-view .facts dt,html.tour-view .facts dd,html.tour-view .slider__label,html.tour-view .howto-entry strong{
+    font-size: var(--type-control);
+  }
+
+
+  html.tour-view .row__text small,html.tour-view .stepper,html.tour-view .note,html.tour-view .brand-card__facts,html.tour-view .spec dt,html.tour-view .footnote,html.tour-view .hint,html.tour-view .topbar__guide,html.tour-view .guide__steps small{
+    font-size: var(--type-aside);
+  }
+
+
+  html.tour-view .section-title,html.tour-view .row__number,html.tour-view .hotspot__dot,html.tour-view .hotspot__name,html.tour-view .legend,html.tour-view .slider__ends,html.tour-view .brand-card__label,html.tour-view .sources,html.tour-view .howto-entry small,html.tour-view .howto-note,html.tour-view .howto-count,html.tour-view .guide__hint{
+    font-size: var(--type-label);
+  }
+
+
+  html.tour-view .eyebrow,html.tour-view .count,html.tour-view .chip,html.tour-view .howto-title,html.tour-view .topbar__status{
+    font-size: var(--type-small);
+  }
+
+
+  /* The faintest grey is 3 : 1 against the white of the panel, too little for
+     text this small. The next grey is 5.8 : 1. */
+  html.tour-view .slider__ends,html.tour-view .spec dt small,html.tour-view .sources,html.tour-view .howto-note,html.tour-view .guide__hint{
+    color: var(--ink-soft);
+  }
+
+
+  html.tour-view .topbar{
+    padding: 8px 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+
+  html.tour-view .brand__tagline{
+    display: none;
+  }
+
+
+  /* The note beside the name has little room on a phone. While the models
+     load it is short here ("Loading 3/14", see below) and keeps to its line;
+     the name gives way if it must, as it always has. If models failed, the
+     note is a sentence. It takes the room the name leaves and breaks into
+     lines there; only when that room is narrower than about three lines'
+     worth does the name give way as well. Either way the page never gets
+     wider than the screen. */
+  html.tour-view .topbar__status{
+    padding: 5px 10px;
+    border-radius: 14px;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+
+  html.tour-view .topbar__status.is-error{
+    flex: 1 1 0%; /* the room that is left, whatever the sentence would like */
+    min-width: 9em; /* narrower than this, the name wraps instead */
+    max-width: max-content; /* and no wider than the sentence on one line */
+    white-space: normal;
+  }
+
+
+  html.tour-view .panel{
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    max-height: 46%;
+    padding: 14px 14px 12px;
+  }
+
+
+  /* A machine's sheet keeps one height whichever pill is open, so the machine
+     above it does not jump. */
+  html.tour-view .panel[data-mode="item"]{
+    height: 48%;
+    max-height: none;
+  }
+
+
+  /* The machine's name is already on its first pill. */
+  html.tour-view .panel[data-mode="item"]:not([data-tabs="0"]) .panel__header{
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+
+  html.tour-view .panel[data-mode="item"]:not([data-tabs="0"]) .tabs{
+    margin-top: 0;
+  }
+
+
+  /* Less of a margin beside each pill's name. At this size and with the
+     margins of a desktop, the four of them fit a phone 360 px wide for three
+     machines in thirteen; the rest had to be scrolled sideways to reach
+     "Capabilities". This way it is five that scroll (README, "Change the size
+     of the text on a phone"). Where there is room the pills share it out and
+     look as they did; only a row with a long name is set this tight. */
+  html.tour-view .tabs [role="tab"]{
+    padding: 0 6px;
+  }
+
+
+  html.tour-view .panel__top{
+    margin: -4px 0 8px;
+  }
+
+
+  /* "1 / 10" at this size is as wide as the room it was given, and touched
+     the arrows on either side. */
+  html.tour-view .stepper span{
+    padding: 0 5px;
+  }
+
+
+  /* The rooms are one tap away on the bar below; keep the lab in view. */
+  html.tour-view .panel[data-mode="overview"] .route-list{
+    display: none;
+  }
+
+
+  /* "Start the tour" stays in reach at the bottom of the sheet, like
+     "Back · Next" in a room. On a short phone the words above it are taller
+     than the sheet (an iPhone SE in Safari leaves the sheet 200 px), and the
+     buttons would be cut off at its edge or pushed out of sight; this way
+     the words scroll and the buttons stay. Where everything fits, nothing
+     moves: the spacing adds up to what it was. */
+  html.tour-view .panel[data-mode="overview"]{
+    padding-bottom: 0;
+  }
+
+
+  html.tour-view .panel[data-mode="overview"] .actions{
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 0 -14px;
+    padding: 12px 14px;
+    background: linear-gradient(to top, #fff 72%, rgba(255, 255, 255, 0));
+  }
+
+
+  /* Like the bar in a room, they do not ride up with the rest of the sheet. */
+  html.tour-view .panel.is-entering > .actions{
+    animation-name: fade-in;
+  }
+
+
+  html.tour-view .panel__header h1{
+    font-size: 18px;
+  }
+
+
+  html.tour-view .tile{
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+
+  html.tour-view .lead{
+    margin-top: 8px;
+    line-height: 1.45;
+  }
+
+
+  html.tour-view .actions{
+    margin-top: 12px;
+  }
+
+
+  html.tour-view .section-title{
+    margin-top: 14px;
+  }
+
+
+  /* A row never asks for more width than the sheet has: at this size the
+     longest names would otherwise push the list past its edge on the narrowest
+     phones. A name wraps, and a word longer than its line may break. */
+  html.tour-view .list{
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+
+  html.tour-view .row__text{
+    overflow-wrap: anywhere;
+  }
+
+
+  html.tour-view .route-nav,html.tour-view .howto-nav{
+    margin: 8px -14px 0;
+    padding: 10px 14px 12px;
+  }
+
+
+  /* A guide on a phone: one step at a time. The sheet holds the way back and
+     the step's number, the guide's name, the dashes, then the open step alone:
+     its title, its text, the source, and "Back · Next" at the bottom edge.
+     A step takes more room than a machine's own page gives it: with the 48 %
+     of that page, four lines of a step could be read and the rest had to be
+     scrolled. So a guide's sheet is taller, and the machine above it is drawn
+     in what is left: still two fifths of the picture. It has one height for
+     every step, so the machine does not jump from step to step, and
+     "Back · Next" stay at its bottom edge however short the step is: a thumb
+     that taps "Next" finds the next "Next" under it. */
+  html.tour-view .panel[data-mode="item"][data-howto="guide"]{
+    display: flex;
+    flex-direction: column;
+    height: 56%;
+  }
+
+
+  html.tour-view .panel[data-howto="guide"] > *{
+    flex: none;
+  }
+
+
+  html.tour-view .panel[data-howto="guide"]{
+    scroll-padding: 0 0 66px;
+  }
+
+
+  /* The head goes with the step when a long one is scrolled: every line of
+     the sheet is for reading. */
+  html.tour-view .howto-head{
+    position: static;
+    margin: 0;
+    padding: 0;
+    background: none;
+  }
+
+
+  /* The machine's name is one level up, on the way back from the list. In its
+     place stands the guide's name, set as the small heading over a step. */
+  html.tour-view .howto-machine{
+    display: none;
+  }
+
+
+  html.tour-view .howto-title{
+    margin: 0;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+  }
+
+
+  /* The label of a basic guide is four pixels taller than this small heading.
+     It may not make the head taller: a step would then have four pixels less
+     than on the other machines, and on a small phone that is its last line. */
+  html.tour-view .howto-titlerow .howto-basic{
+    margin-block: -2px;
+  }
+
+
+  html.tour-view .howto-progress{
+    margin-top: 6px;
+  }
+
+
+  html.tour-view .howto-steps{
+    margin: 10px 0 0;
+  }
+
+
+  html.tour-view .howto-step:not(.is-current){
+    display: none;
+  }
+
+
+  html.tour-view .howto-step.is-current{
+    background: none;
+  }
+
+
+  html.tour-view .howto-step.is-current .howto-step__number{
+    display: none;
+  }
+
+
+  html.tour-view .howto-step__row{
+    min-height: 0;
+    padding: 0;
+  }
+
+
+  html.tour-view .howto-step__title{
+    font-size: 18px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+
+  html.tour-view .howto-step__text{
+    padding: 6px 0 0;
+    line-height: 1.45;
+  }
+
+
+  /* A finger's worth, without making the title's row taller. */
+  html.tour-view .howto-aim{
+    width: 40px;
+    height: 40px;
+    margin: -8px -8px -8px 0;
+  }
+
+
+  html.tour-view .howto-note{
+    margin-top: 10px;
+    margin-bottom: auto; /* what is left of the sheet lies between it and "Back · Next" */
+    padding-top: 8px;
+  }
+
+
+  html.tour-view .howto-guides{
+    margin-top: 8px;
+  }
+
+
+  html.tour-view .stage__controls{
+    left: auto;
+    right: 8px;
+    top: 8px;
+    bottom: auto;
+  }
+
+
+  html.tour-view .legend{
+    left: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 6px 10px;
+  }
+
+
+  html.tour-view .dock{
+    position: relative;
+    left: auto;
+    bottom: auto;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    padding: 5px 6px;
+    padding-bottom: max(5px, env(safe-area-inset-bottom));
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(6px, env(safe-area-inset-right));
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: none;
+    transform: none;
+  }
+
+
+  html.tour-view .dock__highlight{
+    border-radius: 12px;
+    background: var(--accent-soft);
+    box-shadow: none;
+  }
+
+
+  html.tour-view .dock__item{
+    flex-direction: column;
+    gap: 3px;
+    min-height: 50px;
+    padding: 5px 0 4px;
+    border-radius: 12px;
+    font-size: var(--type-bar);
+  }
+
+
+  html.tour-view .dock__item[aria-current]{
+    color: var(--accent-ink);
+  }
+
+
+  html.tour-view .dock__icon svg{
+    width: 22px;
+    height: 22px;
+  }
+
+
+  html.tour-view .dock__label{
+    margin-left: 0;
+  }
+
+
+  html.tour-view .guide{
+    margin-bottom: 12px; /* a sheet rising from the bottom edge, where the thumb is */
+  }
+
+
+  html.tour-view .guide[open]{
+    animation-name: guide-up;
+  }
+
+
+  html.tour-view .guide__card{
+    padding: 24px 18px 16px;
+  }
+
+
+  html.tour-view .guide h2{
+    font-size: 21px;
+  }
+
+
+  /* Set this large, the card is taller than a short screen (about 740 px on a
+     phone 360 px wide) and scrolls. Its two buttons stay in view all the same:
+     nobody should have to scroll to find "Start the tour". */
+  html.tour-view .guide__actions{
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 6px -18px 0;
+    padding: 12px 18px;
+    background: linear-gradient(to top, #fff 80%, rgba(255, 255, 255, 0));
+  }
+
+
+  html.tour-view .guide__hint{
+    margin-top: 0;
+  }
+
+}
+
+
+/* Narrower than 380 px, "Printing" at this size would touch "Ceramic" beside
+   it: the bar says "Print" (layout.js: `tabShort`). The stop keeps its full
+   name for screen readers. */
+@media (max-width: 379.98px) {
+  html.tour-view .dock__label[data-short]{
+    font-size: 0;
+  }
+
+
+  html.tour-view .dock__label[data-short]::after{
+    content: attr(data-short);
+    font-size: var(--type-bar);
+  }
+
+}
+
+
+/* Narrower than 360 px (in practice 320: a small phone, or a larger one set
+   to show everything bigger). The two buttons of the first sheet would no
+   longer fit one row at this size, and two rows would leave the words above
+   them a line and a half. They give up some margin, and "Start the tour" its
+   arrow. */
+@media (max-width: 359.98px) {
+  html.tour-view .panel[data-mode="overview"] .actions .button{
+    padding: 0 10px;
+  }
+
+
+  html.tour-view .panel[data-mode="overview"] .actions .button svg{
+    display: none;
+  }
+
+}
+
+
+/* Too narrow for the name, the whole note and the Guide button side by side:
+   the note says "Loading 3/14" (main.js marks the words that can go). */
+@media (max-width: 459.98px) {
+  html.tour-view .topbar__status-detail{
+    display: none;
+  }
+
+}
+
+
+/* Very narrow phones: the Guide button is its icon alone. */
+@media (max-width: 400px) {
+  html.tour-view .topbar__guide{
+    padding: 0 9px;
+  }
+
+
+  html.tour-view .topbar__guide span{
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+}
+
+
+/* Six full-size room name cards do not fit across a narrow stage: icon + short
+   name instead. main.js sets .is-compact from the width actually free. */
+html.tour-view .is-compact .room-pill{
+  gap: 6px;
+  padding: 4px 9px 4px 4px;
+  border-radius: 11px;
+}
+
+
+html.tour-view .is-compact .room-pill__icon{
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+
+html.tour-view .is-compact .room-pill__icon svg{
+  width: 16px;
+  height: 16px;
+}
+
+
+html.tour-view .is-compact .room-pill__text strong{
+  font-size: 11.5px;
+}
+
+
+html.tour-view .is-compact .room-pill__text strong[data-short]{
+  font-size: 0;
+}
+
+
+html.tour-view .is-compact .room-pill__text strong[data-short]::after{
+  content: attr(data-short);
+  font-size: 11.5px;
+}
+
+
+html.tour-view .is-compact .room-pill__text small{
+  display: none;
+}
+
+
+/* In the phone layout (a tablet held upright, a phone on its side) the short
+   names are set on the phone's scale, like everything else there. */
+@media (max-width: 899.98px) {
+  html.tour-view .is-compact .room-pill__text strong,html.tour-view .is-compact .room-pill__text strong[data-short]::after{
+    font-size: var(--type-small);
+  }
+
+}
+
+
+/* Phone width: the icon alone. The name stays available to screen readers. */
+html.tour-view .is-tiny .room-pill{
+  gap: 0;
+  padding: 4px;
+}
+
+
+html.tour-view .is-tiny .room-pill__text{
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+
+/* ── 10. Arriving ──────────────────────────────────────────────────────── */
+/* When the tour opens the lab comes up part by part, then the names over it,
+   then the interface around it. motion.js does the lab, with stills of the
+   picture laid over the live one and faded away one after the other; it sets
+   html[data-intro='playing'] meanwhile, and the rest happens here.
+
+   Every rule below only says how something arrives. Take the attribute away
+   (or let the animation run out, which it does by itself) and the thing is
+   simply there: nothing waits for a script to be shown. */
+
+html.tour-view .reveal{
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none; /* a still is a picture: every tap goes through to the lab */
+}
+
+
+/* One still: the lab at some stage, on the slice of the page's background that
+   lies behind the stage (motion.js measures where that is). It is opaque, so
+   what is under it stays hidden until it fades. */
+html.tour-view .reveal__still{
+  position: absolute;
+  inset: 0;
+  background: var(--page-background) 0 var(--reveal-y, 0px) / 100% var(--reveal-h, 100%) no-repeat;
+}
+
+
+html.tour-view[data-intro="playing"] .label:not(.is-hidden){
+  animation: intro-arrive 0.28s var(--settle) calc(var(--intro-labels, 1.55s) + var(--i, 0) * 0.06s) both;
+}
+
+
+html.tour-view[data-intro="playing"] :is(.stage__controls, .legend, .hint){
+  animation: intro-arrive 0.32s var(--settle) var(--intro-interface, 1.7s) both;
+}
+
+
+/* The panel and the navigation bar only fade: the camera frames the lab clear
+   of them by measuring where they are, and must not catch them on the move. */
+html.tour-view[data-intro="playing"] :is(.panel, .dock){
+  animation: intro-appear 0.32s var(--settle) var(--intro-interface, 1.7s) both;
+}
+
+
+/* For the checks: an opening that stands still until it is released. (Both
+   attributes, so that this outweighs the `animation` shorthands above, which
+   would otherwise set the play state back to running.) */
+html.tour-view[data-intro-hold][data-intro="playing"] :is(.label, .stage__controls, .legend, .hint, .panel, .dock){
+  animation-play-state: paused;
+}
+
+
+/* `visibility` as well as `opacity`: what cannot be seen yet cannot be tapped
+   or reached with the keyboard either. */
+@keyframes intro-appear {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* `translate`, not `transform`: a label's transform is its place over the lab.
+   (A browser that does not know `translate` yet, Chrome before 104, skips the
+   small rise and fades them in where they are.) */
+@keyframes intro-arrive {
+  from {
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 6px;
+  }
+}
+
+/* ── 11. Touch, motion ─────────────────────────────────────────────────── */
+
+/* Fingers need more room than a mouse pointer. The markers stay the same size
+   to look at (neighbouring machines can be 35 px apart); only the area that
+   responds grows. The machine under a marker and its row in the panel are
+   tappable too. */
+@media (pointer: coarse) {
+  html.tour-view .hotspot::before,html.tour-view .is-tiny .room-pill::before{
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+  }
+
+
+  html.tour-view .back{
+    min-height: 40px;
+  }
+
+
+  html.tour-view .stepper button{
+    width: 40px;
+    height: 40px;
+  }
+
+
+  html.tour-view .tabs [role="tab"]{
+    min-height: 40px;
+  }
+
+}
+
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+}
+
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+}
+
+@keyframes ping {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* A ring on a machine arrives, then pulses once: gentler than `ping`, because
+   it sits on the very thing the visitor is trying to read. */
+@keyframes marker-in {
+  from {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes marker-ping {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+@keyframes turn {
+  0%,
+  20% {
+    transform: rotate(0deg);
+  }
+  70%,
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nudge {
+  0%,
+  70%,
+  100% {
+    transform: none;
+  }
+  82% {
+    transform: scale(1.16) rotate(-8deg);
+  }
+  92% {
+    transform: scale(0.96);
+  }
+}
+
+@keyframes tap {
+  0%,
+  70%,
+  100% {
+    transform: none;
+  }
+  80% {
+    transform: translateY(3px) scale(0.92);
+  }
+  90% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes guide-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+}
+
+@keyframes guide-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+
+@keyframes guide-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* Visitors who asked their device for less motion get none: no glides (see
+   camera-rig.js), no slides, no pulsing. Everything simply appears. */
+@media (prefers-reduced-motion: reduce) {
+  html.tour-view *,html.tour-view *::before,html.tour-view *::after{
+    transition: none !important;
+    animation: none !important;
+  }
+
+}
+
+
+html.tour-view h1,html.tour-view h2,html.tour-view .brand__name,html.tour-view .dock__label{font-family:Outfit,sans-serif} html.tour-view .topbar{background:#111916;color:#fff} html.tour-view .brand__mark{background:#d3f4d9;color:#143c29} html.tour-view .brand__tagline{color:#c7d8ce} html.tour-view .topbar__guide{color:#17231f} html.tour-view .app{max-width:none;margin:0;border:0;border-radius:0;box-shadow:none} html.tour-view body{padding:0} html.tour-view .panel h1{letter-spacing:-.03em} 
+
+@media screen{.tour-wrap{background:#fff;border-radius:24px;padding:12px;box-shadow:0 5px 18px #355d4712}.tour-frame{display:block;border:0;width:100%;height:760px;border-radius:16px;background:#e4efea}.tour-help{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;padding:14px 5px 3px;color:#40584a;font-size:14px}.tour-help a{font-weight:600;color:#205138}.lab-warning{margin:18px 0 24px;background:#fff1cf;border-radius:18px;padding:16px 20px;color:#493b1a}.lab-warning p{margin:5px 0 0;line-height:1.45}@media(max-width:650px){.tour-wrap{padding:5px}.tour-frame{height:690px}.lab-board{padding:0 14px 115px}}}
+@media print{.tour-frame{display:none}.tour-wrap:after{content:'The interactive tour is available on screen.'}}
+
+@media screen{.lab-page .bottom-nav{position:static;transform:none;width:max-content;max-width:calc(100% - 20px);margin:12px auto 14px}.lab-page .lab-board{padding-bottom:35px}@media(max-width:650px){.lab-page .bottom-nav{width:calc(100% - 20px);max-width:none}.lab-page .lab-board{padding-bottom:24px}}}
+html.tour-view .return-site{color:#e4f2e9;font:600 13px SourceSans,sans-serif;margin-left:auto;white-space:nowrap}html.tour-view .topbar__status:not([hidden]){margin-left:0}@media(max-width:480px){html.tour-view .return-site{font-size:12px}}

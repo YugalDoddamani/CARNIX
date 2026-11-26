@@ -1,0 +1,117 @@
+name: Upload Study Desk UI Refresh (one-shot)
+
+on:
+  push:
+    branches:
+      - arena/983d494a-carnix
+    paths:
+      - '.github/workflows/upload-study-desk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upload-from-drive:
+    name: Download Study_Desk_UI_Refresh from Drive and commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install gdown
+        run: python -m pip install --quiet gdown
+
+      - name: Download files from Google Drive
+        run: |
+          mkdir -p study-desk-ui-refresh/chapters study-desk-ui-refresh/fonts study-desk-ui-refresh/guides study-desk-ui-refresh/revision
+          cd study-desk-ui-refresh
+          while read -r id path; do
+            [ -z "$id" ] && continue
+            echo "::group::$path"
+            gdown "https://drive.google.com/uc?id=${id}" -O "${path}" || exit 1
+            echo "::endgroup::"
+          done <<'EOF'
+          1Dhbix-4Wd_Tg_rknVaZXQnFpM-PKpv4a index.html
+          1BVsUC4TWOGsS77wY51aOcdStX-atxYn3 app.js
+          1XK9I69oF4s_6yZEFjojCxZcmHSq_vXoj lab.css
+          1Q4OUM8xRqsqhOnrjZxeTRO_293RaQ6yA guides.css
+          1SfxHDNjGgD2yPdtSaciNwjhV0dqmEzUr chapters.css
+          1uNwyh10O6_gZHMB_Wf2unTf1Pq_hrUuO styles.css
+          1loCy-d_DgvcPTWXfh8gGumXdnh1USGpp lab-tour.html
+          1Ym8U9CMVx7ya6eXCG1z6oMu07iGSnar9 tour-view.html
+          1u8lKFUKi5po2E_vfpcUFmCaSVNxLFPzR README.md
+          1gKRd87BwnB4-64EugB5gqp5iYsmjdh8K design-system.md
+          1LVEDOMrXtOezhc60SY8YxKs-SV0GsGUJ THREE-LICENSE.txt
+          1Gigrn1ePK4U0wvGtg9YuGBGHzi7JsERI chapters/chapter-04-substructure.html
+          1qPbebxX_jQhTf1snHtHlm84Y5U2QDbyh chapters/chapter-06-bonding.html
+          1G4-6Q32sEzDorTJoD-CW6hhosKV3uQob chapters/chapter-08-applying-porcelain.html
+          11nKUHMG8GeahaI_Eqptkah-j8wU9w8Lg chapters/chapter-09-finishing.html
+          1cgtymgaKOE9pgpEXTYqWKyu2Cr3xHvuX chapters/chapter-10-porcelain-margin.html
+          1F00sFueVXZC6voTYApfdE-xY-ar9WeW2 fonts/OFL-Outfit.txt
+          1DyEmxr9YM15MIlmAydKxyduSb46Za0D0 fonts/OFL-SourceSans3.txt
+          1biwbz8Kl0IyhYtd_nTiCNtFxz72Fk1Vz fonts/Outfit-Regular.ttf
+          1a4FEFU0SShueJQ2MA-hx7Kdbzq024OXe fonts/Outfit-Semibold.ttf
+          1MLlzCVolsgTBHNqPfeGMzHvnyrvQB7_0 fonts/SourceSans-Regular.ttf
+          1oOdVoiLUr0h2QwM9r08Ld3M6s5kAZguN fonts/SourceSans-Semibold.ttf
+          1lJD7MI-jBpwCqpmNnaIZJU8jUccqwu2u guides/cad-cam-fundamentals.html
+          1HcmSGdNIGI91-E5cuU4YSzcTt4GKwGos guides/day-1-mechanics.html
+          1xMBWComFlb1Tqyo_wozaN6Fhodl87wdU guides/day-2-ceramics.html
+          1XT5fpwVVYR2HugvVCeLkG939K3X3k7NX guides/day-3-prosthetics.html
+          1eSOJIgi1PSIDnPP1AZmq54SIix4ORwhS guides/day-4-digital-lab.html
+          1_La37kxG8eRmBG3phbYA7j4-aSd1eYdN revision/metal-ceramic-questions.html
+          EOF
+
+      - name: Verify checksums against Drive metadata
+        run: |
+          cd study-desk-ui-refresh
+          cat > /tmp/expected.md5 <<'EOF'
+          bba861a1367b2852f2da5f4c1d3207cd  index.html
+          89c02e3bb0f403ee0bfa65aa6fd4721c  app.js
+          9a78df5022ef5606e4a68648238f0a02  lab.css
+          461410aba01f385c52d48ca26ad1651f  guides.css
+          da7f68a22b23d79e5126a052d36b1514  chapters.css
+          8635dca25984fd17d8f2900b68549811  styles.css
+          191cc1760fd10a904f6f473de074ccae  lab-tour.html
+          52d15f9c33582ad68b949a9b616520cb  tour-view.html
+          813e4b4f58c2072fb5c2799f05060d93  README.md
+          2dbdabba475dcbbf201b1a25bcf0cdec  design-system.md
+          f655d7763863cf6503d6158421a95175  THREE-LICENSE.txt
+          5f51d49dbac671a4ecfaa8efc289be3f  chapters/chapter-04-substructure.html
+          f0e816290859b49e529b36b0acbfa0a3  chapters/chapter-06-bonding.html
+          680edcb5bd0de401afb4596f942ce069  chapters/chapter-08-applying-porcelain.html
+          bb959c621f50949c6e7b1f9f10fd731e  chapters/chapter-09-finishing.html
+          2b14314138f3a8b65e40beed4b1d78e6  chapters/chapter-10-porcelain-margin.html
+          fc7bcc2f3d37195db3ea982ccfecd531  fonts/OFL-Outfit.txt
+          b80846b87d2b15e26e95885e0a3d5fe7  fonts/OFL-SourceSans3.txt
+          55d5785290b1b79416f2d979bb627738  fonts/Outfit-Regular.ttf
+          5d10e86057713398adb241ac22568b12  fonts/Outfit-Semibold.ttf
+          80e6d812eb027fef1838322ec7d05bf8  fonts/SourceSans-Regular.ttf
+          7b90d935aca099a46f350f895dbfb57e  fonts/SourceSans-Semibold.ttf
+          579c5276b2ed457ecc4e2c695ef61a78  guides/cad-cam-fundamentals.html
+          628f62ea06d946434303c968e3df1888  guides/day-1-mechanics.html
+          a0e4cc0284eb5648e0a9e1a107c3d695  guides/day-2-ceramics.html
+          8a92d8d484c5b306ab0ca19640f36909  guides/day-3-prosthetics.html
+          824fda0e48eb4451d8b71e9fdfbb90fc  guides/day-4-digital-lab.html
+          2f96495d29a5a47db11b828420cb15ba  revision/metal-ceramic-questions.html
+          EOF
+          md5sum -c /tmp/expected.md5
+          echo '--- downloaded sizes ---'
+          find . -type f -printf '%s  %p\n' | sort -k2
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A study-desk-ui-refresh
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Upload Study_Desk_UI_Refresh site from Google Drive"
+            git push origin HEAD:arena/983d494a-carnix
+          fi

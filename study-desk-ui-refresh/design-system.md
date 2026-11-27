@@ -46,7 +46,7 @@ Invented progress, user profiles, analytics, event dates or buttons with no real
 
 ## Implementation
 
-Use a common design-system stylesheet (`styles.css`) and one shared stylesheet per category (`guides.css`, `chapters.css` for chapters and revision, and `lab.css`), plus the shared JavaScript file, separate HTML pages and relative paths. Use the dashboard palette, type, rounded surfaces and navigation across the site; preserve readable instructional diagrams and interactions. The five guides, five chapters and revision bank have been migrated; the 3D tour is integrated with its models in the single shared JavaScript bundle. The separate tour-view document isolates its specialised interface while using the lab category stylesheet. Keep all original learning content, citations and print features intact.
+Use a common design-system stylesheet (`styles.css`) and one shared stylesheet per category (`guides.css`, `chapters.css` for chapters and revision, and `lab.css`), plus the shared JavaScript file, separate HTML pages and relative paths. Use the dashboard palette, type, rounded surfaces and navigation across the site; preserve readable instructional diagrams and interactions. The five guides, five chapters and revision bank have been migrated; the 3D tour is integrated with its models in the single shared JavaScript bundle. The separate tour-view document isolates its specialised interface while using the lab category stylesheet. Keep all original learning content, citations and print features intact. Three lab-practice guides (diagnostic wax-up types, colour-coded FPD waxes, biomedical waste management) were added later from class notes; they use the guide category stylesheet and appear in the dashboard's Explore more column.
 
 ## Attribution
 

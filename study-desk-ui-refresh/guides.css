@@ -401,3 +401,7 @@
 @media(max-width:380px){:is(.guide-content,.cad-content) .hero{padding:25px 20px}:is(.guide-content,.cad-content) .hero h1{font-size:2.15rem}:is(.guide-content,.cad-content) .main{padding:0 18px}}
 }
 @media screen and (max-width:800px){:is(.guide-content,.cad-content) .sidebar{background:transparent;padding:0;margin-bottom:16px}:is(.guide-content,.cad-content) .mobile-contents{padding:14px 17px}}
+.guide-content .svg-figure{margin:24px 0;padding:14px;border:1px solid #b6d2c6;background:#f1f7f1;border-radius:6px}
+.guide-content .svg-figure svg{display:block;width:100%;height:auto}
+.guide-content .svg-figure figcaption{font-size:.8rem;color:#485852;margin-top:10px;text-align:center;line-height:1.4}
+@media print{.guide-content .svg-figure{break-inside:avoid;background:#fff;border-color:#999}.guide-content .svg-figure figcaption{color:#333}}

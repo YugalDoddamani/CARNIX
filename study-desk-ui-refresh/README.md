@@ -1,6 +1,6 @@
 # Study Desk — interactive 3D edition
 
-A static multipage study library: five study guides, five chapters, a 174-question revision bank and the interactive dental lab tour. Original study materials and models were not edited.
+A static multipage study library: five study guides, five chapters, a 174-question revision bank, lab-practice guides on diagnostic wax-up types, colour-coded dental waxes and biomedical waste management, and the interactive dental lab tour. Original study materials and models were not edited.
 
 ## Run or publish
 
